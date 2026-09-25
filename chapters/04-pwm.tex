@@ -1,0 +1,158 @@
+% =====================================================================
+\section{ШИМ (LEDC): плавная яркость}
+% =====================================================================
+\lessonintro
+  {понять принцип широтно-импульсной модуляции и научиться задавать «промежуточные» уровни}
+  {урок 1 (светодиод), урок 2 (команды), урок 3 (кнопка)}
+  {у лампы появляется яркость 0--100 \%, включение и выключение становятся плавными по восприятию}
+  {то же, что раньше; для раздела про серво --- сервопривод SG90 (по желанию)}
+
+\subsection{Что такое ШИМ}
+
+\code{digitalWrite()} умеет только «полностью включено» и «полностью выключено». ESP32-S3 не имеет ЦАП,
+но может «имитировать» промежуточное напряжение, быстро включая и выключая вывод.
+Доля времени во включённом состоянии называется \textbf{коэффициентом заполнения} (duty cycle):
+\[
+  D = \frac{t_\text{вкл}}{T}, \qquad U_\text{ср} = D \cdot \SI{3.3}{V}.
+\]
+При частоте в тысячи герц глаз не замечает мигания и видит среднюю яркость.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[x=0.9cm,y=0.75cm]
+  \foreach \d/\name [count=\row] in {0.1/10\%,0.5/50\%,0.9/90\%}{
+    \begin{scope}[yshift=-\row*1.9cm]
+      \draw[->] (0,0) -- (13,0) node[right,font=\scriptsize]{$t$};
+      \draw (0,0) -- (0,1.6);
+      \node[left,font=\sffamily\small] at (-0.1,0.7) {$D=\name$};
+      \foreach \k in {0,...,3}{
+        \pgfmathsetmacro{\s}{\k*3}
+        \pgfmathsetmacro{\e}{\k*3+3*\d}
+        \draw[very thick,esp] (\s,0) -- (\s,1.3) -- (\e,1.3) -- (\e,0) -- (\s+3,0);
+      }
+      \draw[dashed,accent,thick] (0,1.3*\d) -- (12,1.3*\d) node[right,font=\scriptsize,text=accent]{$U_\text{ср}$};
+    \end{scope}
+  }
+  \draw[decorate,decoration={brace,amplitude=3pt}] (0,-1.9cm+1.1cm) -- (3,-1.9cm+1.1cm) node[midway,above=3pt,font=\scriptsize]{период $T$};
+\end{tikzpicture}
+\caption{ШИМ с разным коэффициентом заполнения}
+\end{figure}
+
+\subsection{Периферия LEDC}
+
+В ESP32-S3 ШИМ формирует модуль \textbf{LEDC}: 8 каналов, 4 таймера, разрешение до 14 бит.
+Частота и разрешение связаны: чем выше частота, тем меньше доступное разрешение
+($f_\text{max} \approx \SI{80}{MHz}/2^{\text{bits}}$).
+
+\begin{center}\small
+\begin{tabular}{@{}lll@{}}
+\toprule
+Применение & Частота & Разрешение \\
+\midrule
+Светодиоды & \SI{5}{kHz} & 8--13 бит \\
+Сервопривод & \SI{50}{Hz} & 14 бит \\
+Двигатель через драйвер & \SIrange{10}{20}{kHz} & 10 бит \\
+Звук (пищалка) & \SIrange{100}{5000}{Hz} & 8 бит \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+В Arduino-ESP32 3.x канал выбирается автоматически, а обращаются к нему по номеру вывода:
+\code{ledcAttach(pin, freq, bits)} заменяет \code{pinMode()}, \code{ledcWrite(pin, duty)} ---
+\code{digitalWrite()}.
+
+\codecap{Плавное «дыхание» светодиода}
+\codeinput{l4_breathe}
+
+\subsection{Яркость и восприятие: гамма-коррекция}
+
+Запустив пример, вы заметите: светодиод быстро становится ярким, а дальше почти не меняется. Глаз
+воспринимает яркость нелинейно, поэтому «50 \% для человека» соответствует гораздо меньшему
+коэффициенту заполнения. Исправляет это гамма-коррекция: $D = D_\text{max}\cdot(x/100)^{2{,}2}$.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  width=0.55\textwidth, height=5cm,
+  xlabel={яркость для человека, \%}, ylabel={duty (0..255)},
+  xmin=0, xmax=100, ymin=0, ymax=260,
+  grid=major, grid style={gray!25},
+  legend pos=north west, legend style={font=\scriptsize},
+  tick label style={font=\scriptsize}, label style={font=\small},
+]
+  \addplot[very thick,gray,dashed,domain=0:100] {2.55*x};
+  \addlegendentry{линейно}
+  \addplot[very thick,esp,domain=0:100,samples=60] {255*(x/100)^2.2};
+  \addlegendentry{с гаммой 2,2}
+\end{axis}
+\end{tikzpicture}
+\caption{Перевод «человеческой» яркости в коэффициент заполнения}
+\end{figure}
+
+\subsection{Шаг проекта 4: яркость лампы}
+
+\progress{4}
+
+Состояние лампы теперь --- это не только «вкл/выкл», но и яркость. Соберём его в структуру,
+а все изменения будем делать через три функции. Функция \code{applyLamp()} --- единственное место,
+где состояние превращается в сигнал на выводе.
+
+\codecap{Умная лампа, шаг 4 (изменения относительно шага 3)}
+\codeinput{lamp_step4}
+
+Проверьте в Serial Monitor: \code{on}, затем \code{level 10}, \code{level 50}, \code{level 100} ---
+ступени яркости должны казаться примерно равными.
+
+\subsection{Другое применение ШИМ: сервопривод}
+
+Этот раздел не входит в проект, но показывает, что тот же LEDC умеет больше, чем яркость.
+Хобби-сервопривод ожидает импульсы с периодом \SI{20}{ms} (\SI{50}{Hz}); длительность импульса задаёт угол.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[x=0.55cm,y=0.8cm]
+  \foreach \w/\ang [count=\r] in {1/0°,1.5/90°,2/180°}{
+    \begin{scope}[yshift=-\r*1.5cm]
+      \draw[->] (0,0) -- (22.5,0) node[right,font=\scriptsize]{мс};
+      \draw[very thick,accent] (0,0) -- (0,1) -- (\w,1) -- (\w,0) -- (20,0) -- (20,1) -- (20+\w,1) -- (20+\w,0) -- (22,0);
+      \node[font=\sffamily\small,anchor=west] at (4,0.6) {импульс \w\ мс $\Rightarrow$ угол \ang};
+    \end{scope}
+  }
+  \draw[<->] (0,-5.3) -- node[below,font=\scriptsize]{20 мс} (20,-5.3);
+\end{tikzpicture}
+
+\vspace{5mm}
+\begin{circuitikz}[scale=0.9,transform shape]
+  \node[draw,thick,minimum width=2.2cm,minimum height=1.6cm,fill=blkper,font=\sffamily] (s) at (0,0) {Серво};
+  \draw ($(s.west)+(0,0.5)$) -- ++(-1.2,0) node[left,font=\sffamily\small]{\textcolor{orange!80!black}{сигнал} ← \pin{6}};
+  \draw ($(s.west)+(0,0)$) -- ++(-1.2,0) node[left,font=\sffamily\small]{\textcolor{red}{+5 В} ← отд. источник};
+  \draw ($(s.west)+(0,-0.5)$) -- ++(-1.2,0) node[left,font=\sffamily\small]{\textcolor{brown}{GND} ← общая земля};
+\end{circuitikz}
+\caption{Управляющие импульсы и подключение сервопривода}
+\end{figure}
+
+\codecap{Управление сервоприводом через LEDC}
+\codeinput{l4_servo}
+
+\begin{caution}
+Не питайте сервопривод от вывода 3V3 платы: пусковые токи достигают сотен миллиампер и вызывают
+перезагрузку ESP32. Используйте отдельный источник \SI{5}{V}, объединив земли.
+\end{caution}
+
+\begin{summary}
+\begin{itemize}[leftmargin=*]
+  \item ШИМ задаёт среднее напряжение долей времени включения; на ESP32-S3 его формирует LEDC.
+  \item \code{ledcAttach()} + \code{ledcWrite()} вместо \code{pinMode()} + \code{digitalWrite()}.
+  \item Для света используем гамма-коррекцию, иначе регулировка кажется неравномерной.
+  \item Состояние лампы собрано в структуру и меняется только через функции --- это пригодится в уроке~7.
+\end{itemize}
+\end{summary}
+
+\begin{tasks}
+\begin{enumerate}
+  \item Сделайте включение лампы плавным: \code{ledcFade(pin, from, to, ms)} делает переход аппаратно.
+  \item Добавьте короткий «щелчок» пьезопищалки при нажатии кнопки: \code{ledcWriteTone(pin, 2000)} на \SI{30}{ms}.
+  \item Сделайте RGB-лампу на трёх каналах LEDC с командой \code{color R G B}.
+\end{enumerate}
+\end{tasks}

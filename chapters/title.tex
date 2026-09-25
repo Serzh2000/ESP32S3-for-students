@@ -1,0 +1,56 @@
+% Титульная страница
+% ================= Титул =================
+\begin{titlepage}
+\centering
+\vspace*{2cm}
+{\sffamily\Huge\bfseries\color{espdark} ESP32-S3\par}
+\vspace{4mm}
+{\sffamily\LARGE Базовый курс в десяти уроках\par}
+\vspace{2mm}
+{\sffamily\large со сквозным проектом «умная лампа»\par}
+\vspace{1.2cm}
+\begin{tikzpicture}[scale=1.05]
+  \fill[rounded corners=3pt,fill=black!80] (-3.6,-1.6) rectangle (3.6,1.6);
+  \foreach \x in {-3.3,-2.9,...,3.4} {
+    \fill[yellow!70!orange] (\x-0.08,1.35) rectangle (\x+0.08,1.5);
+    \fill[yellow!70!orange] (\x-0.08,-1.5) rectangle (\x+0.08,-1.35);
+  }
+  \fill[gray!55,rounded corners=1pt] (-0.4,-1.0) rectangle (2.9,1.0);
+  \draw[gray!20,line width=0.6pt] (2.3,-0.8) -- ++(0,1.6);
+  \foreach \y in {-0.6,-0.2,0.2,0.6}{\draw[gray!20,line width=0.6pt] (2.3,\y) -- ++(0.45,0);}
+  \node[font=\sffamily\bfseries\small,white] at (0.95,0.15) {ESP32-S3};
+  \node[font=\sffamily\tiny,white] at (0.95,-0.25) {WROOM-1};
+  \fill[gray!70] (-3.9,0.35) rectangle (-3.3,0.95);
+  \fill[gray!70] (-3.9,-0.95) rectangle (-3.3,-0.35);
+  \node[font=\sffamily\tiny,white] at (-2.8,0.65) {UART};
+  \node[font=\sffamily\tiny,white] at (-2.8,-0.65) {USB};
+  \fill[white] (-1.6,0.1) rectangle (-1.2,0.5);
+  \fill[esp!60,opacity=0.6] (-1.4,0.3) circle (0.45);
+  \node[font=\sffamily\tiny,white] at (-1.4,-0.2) {RGB};
+  \foreach \s/\l in {-2.0/BOOT,-0.9/RST}{
+    \fill[gray!40] (\s-0.2,-1.15) rectangle (\s+0.2,-0.75);
+    \node[font=\sffamily\tiny,white] at (\s,-0.55) {\l};
+  }
+\end{tikzpicture}
+\vspace{1.2cm}
+
+\begin{minipage}{0.8\textwidth}
+\sffamily\large
+\begin{enumerate}[label=\arabic*.,start=0,itemsep=1pt]
+  \item Знакомство с чипом и настройка среды
+  \item Цифровой выход: светодиод
+  \item Последовательный порт: разговор с компьютером
+  \item Цифровой вход: кнопки и прерывания
+  \item ШИМ (LEDC): плавная яркость
+  \item АЦП: читаем аналоговые сигналы
+  \item Шина I\textsuperscript{2}C: дисплей
+  \item FreeRTOS: задачи и синхронизация
+  \item Wi-Fi и веб-сервер
+  \item Сон и энергосбережение
+\end{enumerate}
+\end{minipage}
+
+\vfill
+{\small Все примеры --- для Arduino-ESP32 версии 3.x (на базе ESP-IDF 5.x)\\
+и отладочной платы ESP32-S3-DevKitC-1 (или совместимой).\par}
+\end{titlepage}

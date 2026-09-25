@@ -1,0 +1,136 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{esp32s3-course}[2026/09/25 Оформление курса ESP32-S3]
+
+% ---------- Язык и шрифты ----------
+\RequirePackage{fontspec}
+\RequirePackage{polyglossia}
+\setdefaultlanguage{russian}
+\setotherlanguage{english}
+\setmainfont{Cambria}
+\setsansfont{Calibri}
+\setmonofont{Consolas}[Scale=0.92]
+\newfontfamily\cyrillicfont{Cambria}[Ligatures=TeX]
+\newfontfamily\cyrillicfontsf{Calibri}[Ligatures=TeX]
+\newfontfamily\cyrillicfonttt{Consolas}[Scale=0.92]
+
+% ---------- Вёрстка ----------
+\RequirePackage[margin=2.2cm,top=2.4cm,bottom=2.4cm]{geometry}
+\RequirePackage{microtype}
+\RequirePackage{amsmath}
+\RequirePackage{booktabs,tabularx,array}
+\RequirePackage{enumitem}
+\setlist{itemsep=2pt,topsep=4pt}
+\RequirePackage{xcolor}
+\RequirePackage{titlesec}
+\RequirePackage{fancyhdr}
+\RequirePackage[hidelinks]{hyperref}
+\RequirePackage{float}
+\RequirePackage{caption}
+\captionsetup{font=small,labelfont={bf,sf}}
+
+% ---------- Графика ----------
+\RequirePackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,calc,shapes.geometric,shapes.misc,fit,backgrounds,decorations.pathreplacing}
+\RequirePackage[siunitx,RPvoltages]{circuitikz}
+\RequirePackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\sisetup{output-decimal-marker={,},range-phrase={\,--\,},range-units=single}
+\RequirePackage{etoolbox,needspace}
+\pretocmd{\section}{\needspace{18\baselineskip}}{}{}
+\RequirePackage[most]{tcolorbox}
+
+% ---------- Цвета ----------
+\definecolor{esp}{HTML}{C0392B}
+\definecolor{espdark}{HTML}{7B241C}
+\definecolor{accent}{HTML}{1F618D}
+\definecolor{okgreen}{HTML}{1E8449}
+\definecolor{warn}{HTML}{D68910}
+\definecolor{codebg}{HTML}{F7F7F7}
+\definecolor{blkcpu}{HTML}{FADBD8}
+\definecolor{blkmem}{HTML}{D6EAF8}
+\definecolor{blkrf}{HTML}{D5F5E3}
+\definecolor{blkper}{HTML}{FCF3CF}
+\definecolor{blkrtc}{HTML}{E8DAEF}
+
+% ---------- Заголовки ----------
+\titleformat{\section}{\sffamily\LARGE\bfseries\color{espdark}}{Урок \thesection.}{0.6em}{}[{\color{esp}\titlerule[1.2pt]}]
+\titleformat{\subsection}{\sffamily\large\bfseries\color{accent}}{\thesubsection}{0.6em}{}
+\titleformat{\subsubsection}{\sffamily\normalsize\bfseries}{}{0em}{}
+\setcounter{section}{-1}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\sffamily\small\color{gray}Базовый курс ESP32-S3}
+\fancyhead[R]{\sffamily\small\color{gray}\nouppercase{\leftmark}}
+\fancyfoot[C]{\sffamily\small\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\sectionmark}[1]{\markboth{Урок \thesection. #1}{}}
+
+% ---------- Листинги ----------
+% Код подсвечен заранее скриптом highlight.py (Pygments): code/имя.cpp -> code/имя.tex
+\RequirePackage{fvextra}
+\RequirePackage{newfloat}
+\DeclareFloatingEnvironment[name=Листинг,fileext=lol]{listing}
+\input{code/pygments-style.tex}
+\DefineVerbatimEnvironment{CodeVerbatim}{Verbatim}{
+  commandchars=\\\{\}, fontsize=\small, numbers=none,
+  bgcolor=codebg, breaklines, tabsize=2,
+}
+\newcommand{\codeinput}[1]{\input{code/#1.tex}}
+\newcommand{\codecap}[1]{\needspace{8\baselineskip}\captionof{listing}{#1}}
+
+% ---------- Боксы ----------
+\newtcolorbox{introbox}{enhanced,colback=accent!5,colframe=accent,boxrule=0.8pt,arc=2pt,
+  left=6pt,right=6pt,top=5pt,bottom=5pt}
+\newcommand{\introlabel}[1]{\textsf{\bfseries\textcolor{accent}{#1}}}
+\newcommand{\lessonintro}[4]{%
+\begin{introbox}
+\renewcommand{\arraystretch}{1.25}
+\begin{tabularx}{\linewidth}{@{}p{27mm} X@{}}
+\introlabel{Цель} & #1\\
+\introlabel{Опирается на} & #2\\
+\introlabel{Шаг проекта} & #3\\
+\introlabel{Понадобится} & #4
+\end{tabularx}
+\end{introbox}}
+\newtcolorbox{caution}{enhanced,colback=warn!8,colframe=warn,fonttitle=\sffamily\bfseries,
+  title=Осторожно,boxrule=0.8pt,arc=2pt,left=6pt,right=6pt}
+\newtcolorbox{tip}{enhanced,colback=gray!6,colframe=gray!60,fonttitle=\sffamily\bfseries,
+  title=Совет,boxrule=0.8pt,arc=2pt,left=6pt,right=6pt}
+\newtcolorbox{summary}{enhanced,colback=okgreen!5,colframe=okgreen,fonttitle=\sffamily\bfseries,
+  title=Итоги урока,boxrule=0.8pt,arc=2pt,left=6pt,right=6pt}
+\newtcolorbox{tasks}{enhanced,colback=esp!4,colframe=esp,fonttitle=\sffamily\bfseries,
+  title=Задания для самостоятельной работы,boxrule=0.8pt,arc=2pt,left=6pt,right=6pt}
+
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\pin}[1]{\textsf{\bfseries GPIO#1}}
+
+\tikzset{
+  blk/.style={draw,rounded corners=2pt,align=center,font=\sffamily\small,minimum height=8mm,inner sep=3pt},
+  arr/.style={-{Stealth[length=2.2mm]},thick},
+  darr/.style={{Stealth[length=2.2mm]}-{Stealth[length=2.2mm]},thick},
+}
+
+% Индикатор прогресса проекта: \progress{номер шага}
+\newcommand{\progress}[1]{%
+\begin{center}
+\begin{tikzpicture}[x=11mm]
+  \node[anchor=east,font=\sffamily\scriptsize\bfseries,text=okgreen] at (0.85,0.17) {Умная лампа:};
+  \foreach \i/\l in {1/LED,2/Serial,3/кнопка,4/ШИМ,5/ручка,6/экран,7/задачи,8/Wi-Fi,9/сон}{
+    \ifnum\i>#1\relax \def\c{white}\def\t{gray}\else\def\c{okgreen!55}\def\t{black}\fi
+    \draw[fill=\c,draw=okgreen,rounded corners=1pt] (\i,0) rectangle ++(0.9,0.34);
+    \node[font=\sffamily\tiny,text=\t] at (\i+0.45,0.17) {\i};
+    \node[font=\sffamily\tiny,text=\t] at (\i+0.45,-0.18) {\l};
+  }
+\end{tikzpicture}
+\end{center}}
+
+% ---------- Приложения ----------
+\newcommand{\courseappendix}{%
+  \appendix
+  \renewcommand{\thesection}{\Alph{section}}%
+  \titleformat{\section}{\sffamily\LARGE\bfseries\color{espdark}}{Приложение \thesection.}{0.6em}{}[{\color{esp}\titlerule[1.2pt]}]%
+  \renewcommand{\sectionmark}[1]{\markboth{Приложение \thesection. ##1}{}}%
+}
+
+\endinput

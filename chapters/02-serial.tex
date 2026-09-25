@@ -1,0 +1,130 @@
+% =====================================================================
+\section{Последовательный порт: разговор с компьютером}
+% =====================================================================
+\lessonintro
+  {понять, как устроен UART, научиться выводить отладочные сообщения и принимать команды с компьютера}
+  {урок 1: неблокирующий цикл, светодиод лампы}
+  {лампа включается и выключается командами \code{on} / \code{off} из Serial Monitor}
+  {то же, что в уроке 1; для последнего раздела --- второе устройство с UART (по желанию)}
+
+Прежде чем добавлять в лампу кнопки и датчики, нужен способ видеть, что происходит внутри
+программы. Этим способом будет последовательный порт: через него мы будем проверять
+результат в каждом следующем уроке.
+
+\subsection{Кадр UART}
+
+UART --- асинхронный протокол: у приёмника и передатчика нет общего тактового сигнала, поэтому обе стороны
+должны заранее договориться о скорости (бодах). Линия в покое находится в состоянии HIGH.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[x=1.05cm,y=1cm]
+  \def\hi{1}
+  \draw[very thick,accent] (0,\hi) -- (1,\hi) -- (1,0) -- (2,0) -- (2,\hi) -- (3,\hi) -- (3,0) -- (8,0) -- (8,\hi) -- (9,\hi) -- (9,0) -- (10,0) -- (10,\hi) -- (12,\hi);
+  \foreach \x in {1,...,11} \draw[gray!50,dashed] (\x,-0.3) -- (\x,1.4);
+  \foreach \x/\l in {1.5/Старт,2.5/D0,3.5/D1,4.5/D2,5.5/D3,6.5/D4,7.5/D5,8.5/D6,9.5/D7,10.5/Стоп}
+    \node[font=\sffamily\scriptsize] at (\x,1.65) {\l};
+  \foreach \x/\b in {2.5/1,3.5/0,4.5/0,5.5/0,6.5/0,7.5/0,8.5/1,9.5/0}
+    \node[font=\ttfamily\small,text=esp] at (\x,-0.5) {\b};
+  \node[font=\sffamily\scriptsize] at (0.5,1.65) {покой};
+  \node[font=\sffamily\scriptsize] at (11.5,1.65) {покой};
+  \draw[decorate,decoration={brace,mirror,amplitude=4pt}] (2,-0.8) -- (10,-0.8)
+    node[midway,below=5pt,font=\sffamily\small]{8 бит данных, младший бит первым: \texttt{0x41} = 'A'};
+  \draw[<->] (1,-1.8) -- node[below,font=\scriptsize]{$t_\text{бит} = 1/115200 \approx \SI{8.68}{\micro s}$} (2,-1.8);
+\end{tikzpicture}
+\caption{Передача символа «A» в формате 8N1 (8 бит данных, без контроля чётности, 1 стоп-бит)}
+\end{figure}
+
+\subsection{Serial и Serial Monitor}
+
+У ESP32-S3 три аппаратных UART, а в Arduino им соответствуют объекты \code{Serial}:
+
+\begin{center}\small
+\begin{tabular}{@{}llll@{}}
+\toprule
+Объект Arduino & Контроллер & Выводы по умолчанию & Назначение \\
+\midrule
+\code{Serial} & USB CDC или UART0 & USB / 43, 44 & связь с компьютером \\
+\code{Serial0} & UART0 & TX 43, RX 44 & разъём «UART» на плате \\
+\code{Serial1} & UART1 & задаются в \code{begin()} & свободен \\
+\code{Serial2} & UART2 & задаются в \code{begin()} & свободен \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=10mm]
+  \node[blk,fill=blkmem,minimum width=30mm,minimum height=12mm] (pc) {Компьютер\\ \scriptsize Serial Monitor};
+  \node[blk,fill=blkcpu,minimum width=30mm,minimum height=12mm,right=40mm of pc] (esp) {ESP32-S3\\ \scriptsize \code{Serial}};
+  \draw[arr,accent] ($(pc.east)+(0,0.25)$) -- node[above,font=\ttfamily\scriptsize]{"on\textbackslash n"} ($(esp.west)+(0,0.25)$);
+  \draw[arr,okgreen] ($(esp.west)+(0,-0.25)$) -- node[below,font=\ttfamily\scriptsize]{"OK\textbackslash n"} ($(pc.east)+(0,-0.25)$);
+  \node[font=\sffamily\scriptsize,below=1mm of pc] {\code{Serial.readStringUntil()}};
+  \node[font=\sffamily\scriptsize,below=1mm of esp] {\code{Serial.print()}, \code{printf()}};
+\end{tikzpicture}
+\caption{Обмен строками между компьютером и платой}
+\end{figure}
+
+Основные функции:
+\begin{itemize}
+  \item \code{Serial.begin(115200)} --- открыть порт; скорость в Serial Monitor должна совпадать.
+  \item \code{Serial.print()}, \code{println()}, \code{printf()} --- отправить текст.
+  \item \code{Serial.available()} --- сколько байт пришло и ждёт чтения.
+  \item \code{Serial.readStringUntil('\textbackslash n')} --- прочитать строку до символа перевода строки.
+\end{itemize}
+
+\begin{tip}
+В Serial Monitor выберите окончание строки \textsf{New Line}: тогда каждая отправленная команда будет
+заканчиваться символом \code{\textbackslash n}, и \code{readStringUntil()} сразу поймёт, где конец команды.
+\end{tip}
+
+\subsection{Шаг проекта 2: команды с компьютера}
+
+\progress{2}
+
+Добавляем к шагу 1 обработку команд. Функция \code{handleSerial()} ничего не ждёт: если данных нет,
+она сразу возвращается, и \code{loop()} продолжает крутить «пульс».
+
+\codecap{Умная лампа, шаг 2 (полный скетч)}
+\codeinput{lamp_step2}
+
+\subsection{Второй UART: связь с другими устройствами}
+
+Тот же протокол используют GPS-модули, модемы и другие микроконтроллеры. Благодаря матрице GPIO
+UART1 и UART2 можно вывести почти на любые выводы.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  \node[blk,fill=blkcpu,minimum width=3cm,minimum height=2.6cm] (a) {ESP32-S3};
+  \node[blk,fill=blkper,minimum width=3cm,minimum height=2.6cm,right=5cm of a] (b) {GPS / другой МК\\ (3,3 В логика)};
+  \draw[arr] ($(a.east)+(0,0.7)$) node[above right,font=\scriptsize]{TX (\pin{17})} -- ($(b.west)+(0,-0.1)$) node[below left,font=\scriptsize]{RX};
+  \draw[arr] ($(b.west)+(0,0.7)$) node[above left,font=\scriptsize]{TX} -- ($(a.east)+(0,-0.1)$) node[below right,font=\scriptsize]{RX (\pin{18})};
+  \draw[thick] ($(a.east)+(0,-0.8)$) node[below right,font=\scriptsize]{GND} -- ($(b.west)+(0,-0.8)$) node[below left,font=\scriptsize]{GND};
+\end{tikzpicture}
+\caption{TX одного устройства соединяется с RX другого; земли объединяются}
+\end{figure}
+
+\codecap{Мост: всё, что пришло с модуля, пересылается на компьютер, и наоборот}
+\codeinput{l2_bridge}
+
+\begin{caution}
+Модули с 5-вольтовой логикой (часть Arduino, некоторые GPS) нельзя подключать к RX ESP32-S3 напрямую ---
+используйте делитель или преобразователь уровней.
+\end{caution}
+
+\begin{summary}
+\begin{itemize}[leftmargin=*]
+  \item UART передаёт байты кадрами: старт-бит, 8 бит данных, стоп-бит; скорости сторон должны совпадать.
+  \item \code{Serial} --- главный инструмент отладки: будем пользоваться им во всех следующих уроках.
+  \item Команды читаем неблокирующе: проверяем \code{available()} и только тогда читаем строку.
+\end{itemize}
+\end{summary}
+
+\begin{tasks}
+\begin{enumerate}
+  \item Добавьте в лампу команду \code{blink N}: мигнуть лампой N раз (без \code{delay()}, по образцу урока 1).
+  \item Выводите раз в 10 секунд строку с временем работы, не мешая приёму команд.
+  \item Соедините две платы по UART и передавайте команды лампе с другой платы.
+\end{enumerate}
+\end{tasks}

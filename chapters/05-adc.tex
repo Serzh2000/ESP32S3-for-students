@@ -1,0 +1,125 @@
+% =====================================================================
+\section{АЦП: читаем аналоговые сигналы}
+% =====================================================================
+\lessonintro
+  {научиться измерять напряжение, понять ограничения АЦП ESP32-S3, измерять напряжения выше 3,3 В}
+  {урок 2 (вывод результатов в Serial), урок 4 (яркость лампы)}
+  {потенциометр становится ручкой яркости}
+  {потенциометр \SI{10}{k\ohm}; для раздела про делитель --- резисторы \SI{100}{k\ohm} и \SI{33}{k\ohm}}
+
+\subsection{Как работает АЦП}
+
+АЦП последовательного приближения (SAR) преобразует напряжение в число. При разрешении 12 бит
+диапазон разбивается на $2^{12} = 4096$ уровней:
+\[
+  N = \left\lfloor \frac{U_\text{вх}}{U_\text{полн}} \cdot 4095 \right\rfloor .
+\]
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  width=0.62\textwidth, height=5.6cm,
+  xlabel={$U_\text{вх}$, В}, ylabel={код АЦП},
+  xmin=0, xmax=3.3, ymin=0, ymax=4300,
+  grid=major, grid style={gray!25},
+  legend pos=north west, legend style={font=\scriptsize},
+  tick label style={font=\scriptsize}, label style={font=\small},
+  scaled y ticks=false, yticklabel style={/pgf/number format/1000 sep={}},
+]
+  \addplot[very thick,gray,dashed,domain=0:3.3] {x/3.1*4095};
+  \addlegendentry{идеальный}
+  \addplot[very thick,esp,smooth] coordinates {
+    (0,0) (0.05,0) (0.1,40) (0.3,330) (0.8,1000) (1.5,1930) (2.2,2850) (2.7,3470) (2.95,3800) (3.1,4020) (3.2,4095) (3.3,4095)};
+  \addlegendentry{реальный (без калибровки)}
+  \draw[<-,thin] (axis cs:0.08,20) -- (axis cs:0.5,1400) node[above,font=\scriptsize,align=center]{«мёртвая зона»\\ у нуля};
+  \draw[<-,thin] (axis cs:3.2,4095) -- (axis cs:2.4,3900) node[left,font=\scriptsize]{насыщение};
+\end{axis}
+\end{tikzpicture}
+\caption{Характеристика АЦП (иллюстрация). Края диапазона нелинейны --- используйте калиброванное чтение}
+\end{figure}
+
+\subsubsection{Особенности АЦП ESP32-S3}
+
+\begin{itemize}
+  \item Два блока: \textbf{ADC1} (\pin{1}--\pin{10}) и \textbf{ADC2} (\pin{11}--\pin{20}).
+  \item \textbf{ADC2 недоступен при работающем Wi-Fi.} Лампа в уроке 8 будет подключена к сети,
+        поэтому ручку ставим на ADC1 --- \pin{1}.
+  \item Внутреннее опорное напряжение $\approx\SI{1.1}{V}$, поэтому на входе стоит \emph{аттенюатор}.
+        По умолчанию в Arduino выбран \SI{11}{dB} --- рабочий диапазон примерно \SIrange{0}{3.1}{V}.
+  \item Каждый чип откалиброван на заводе (eFuse). Функция \code{analogReadMilliVolts()} учитывает калибровку
+        и возвращает милливольты --- предпочитайте её «сырому» \code{analogRead()}.
+\end{itemize}
+
+\subsection{Потенциометр}
+
+\begin{figure}[H]
+\centering
+\begin{circuitikz}
+  \draw (0,3) node[vcc]{3,3 В} to[pR, n=pot, l_=\SI{10}{k\ohm}] (0,0) node[ground]{};
+  \draw (pot.wiper) -- ++(1,0) to[short,-o] ++(0.6,0) node[right]{\pin{1} (ADC1\_CH0)};
+\end{circuitikz}
+\caption{Потенциометр как регулируемый делитель напряжения}
+\end{figure}
+
+\codecap{Чтение потенциометра}
+\codeinput{l5_pot}
+
+\begin{tip}
+Откройте \textsf{Tools → Serial Plotter}: пары «имя:значение» IDE нарисует графиками. Покрутите
+ручку и обратите внимание на шум --- соседние отсчёты отличаются на единицы-десятки милливольт.
+\end{tip}
+
+\subsection{Шаг проекта 5: ручка яркости}
+
+\progress{5}
+
+Переводим милливольты в проценты яркости и боремся с шумом двумя приёмами:
+\begin{itemize}
+  \item \textbf{усреднение} --- 8 измерений подряд;
+  \item \textbf{порог} --- яркость меняется, только если ручку повернули больше чем на 3 \%.
+        Заодно это позволяет задавать яркость командой \code{level N}: пока ручку не трогают,
+        команда не будет перезаписана.
+\end{itemize}
+
+\codecap{Умная лампа, шаг 5 (изменения относительно шага 4)}
+\codeinput{lamp_step5}
+
+\subsection{Измерение напряжения выше 3,3 В}
+
+Чтобы измерить, например, батарею \SI{12}{V}, понижаем напряжение делителем:
+\[
+  U_\text{АЦП} = U_\text{вх}\cdot\frac{R_2}{R_1+R_2}
+  = 12 \cdot \frac{33}{100+33} \approx \SI{2.98}{V}.
+\]
+
+\begin{figure}[H]
+\centering
+\begin{circuitikz}
+  \draw (0,4) node[left]{$U_\text{вх}$ до 12 В} to[short,o-] (1,4)
+        to[R, l=$R_1$, a=\SI{100}{k\ohm}] (1,2) coordinate(m)
+        to[R, l=$R_2$, a=\SI{33}{k\ohm}] (1,0) node[ground]{};
+  \draw (m) -- (3,2) coordinate(n) to[C, l=\SI{100}{nF}] (3,0) node[ground]{};
+  \draw (n) to[short,-o] (4.5,2) node[right]{\pin{2}};
+\end{circuitikz}
+\caption{Делитель напряжения с фильтрующим конденсатором}
+\end{figure}
+
+\codecap{Вольтметр с усреднением}
+\codeinput{l5_voltmeter}
+
+\begin{summary}
+\begin{itemize}[leftmargin=*]
+  \item \code{analogReadMilliVolts()} даёт калиброванный результат; диапазон --- примерно \SIrange{0}{3.1}{V}.
+  \item ADC2 не работает вместе с Wi-Fi --- для сетевых проектов берите ADC1 (\pin{1}--\pin{10}).
+  \item Шум убираем усреднением, а дрожание управления --- порогом (гистерезисом).
+\end{itemize}
+\end{summary}
+
+\begin{tasks}
+\begin{enumerate}
+  \item Добавьте фоторезистор и режим «авто»: лампа ярче, когда в комнате темнее (с гистерезисом!).
+  \item Сравните показания мультиметра и программы в 5 точках. Постройте график ошибки.
+  \item Измерьте время одного вызова \code{readPotLevel()} с помощью \code{micros()}.
+\end{enumerate}
+\end{tasks}

@@ -1,0 +1,147 @@
+% =====================================================================
+\section{Цифровой выход: светодиод}
+% =====================================================================
+\lessonintro
+  {научиться управлять выводом GPIO как выходом, правильно подключать светодиод, отмерять время без остановки программы}
+  {урок 0: установка среды, \code{setup()} и \code{loop()}}
+  {подключаем светодиод лампы и «пульс» --- индикатор того, что плата работает}
+  {макетная плата, светодиод, резистор \SIrange{220}{330}{\ohm}, провода}
+
+\subsection{Как устроен выход GPIO}
+
+Выход GPIO --- это пара транзисторов (двухтактная схема, push-pull). Логическая \code{1} подключает вывод к
+\SI{3.3}{V}, логический \code{0} --- к земле.
+
+\begin{figure}[H]
+\centering
+\begin{circuitikz}[scale=0.9,transform shape]
+  \draw (0,3) node[vcc]{3,3 В} -- (0,2.4) node[pmos,anchor=S,xscale=-1](P){};
+  \draw (P.D) -- (0,0.5) coordinate(out) -- (0,-0.5) node[nmos,anchor=D,xscale=-1](N){};
+  \draw (N.S) -- (0,-2.8) node[ground]{};
+  \draw (P.G) -- ++(-0.8,0) coordinate(g1);
+  \draw (N.G) -- ++(-0.8,0) coordinate(g2);
+  \draw (g1) -- (g2);
+  \draw ($(g1)!0.5!(g2)$) -- ++(-0.8,0) node[not port,anchor=out](inv){};
+  \draw (inv.in) -- ++(-0.4,0) node[left]{логика};
+  \draw (out) to[short,-o] (2.5,0.5) node[right]{вывод GPIO};
+  \node[font=\sffamily\scriptsize,align=left,anchor=west] at (3.9,2) {«1»: верхний открыт,\\ ток \emph{вытекает}};
+  \node[font=\sffamily\scriptsize,align=left,anchor=west] at (3.9,-1) {«0»: нижний открыт,\\ ток \emph{втекает}};
+\end{circuitikz}
+\caption{Упрощённая схема выходного каскада GPIO}
+\end{figure}
+
+\begin{caution}
+\begin{itemize}[leftmargin=*]
+  \item ESP32-S3 работает с логикой \textbf{3,3 В}. Подача \SI{5}{V} на вывод может вывести чип из строя.
+  \item Допустимый ток вывода --- до $\approx$\SI{40}{mA} (по умолчанию сила выхода ограничена $\approx$\SI{20}{mA}).
+        Моторы, реле и мощные светодиоды подключаются только через транзистор или драйвер.
+\end{itemize}
+\end{caution}
+
+\subsection{Схема подключения}
+
+\begin{figure}[H]
+\centering
+\begin{circuitikz}
+  \draw (0,0) node[left]{\pin{4}} to[short,o-] (0.5,0)
+        to[R, l=$R$, a=\SI{220}{\ohm}] (3,0)
+        to[led, l=LED, v^>=$U_F\approx$\SI{2}{V}] (5.5,0) -- (5.5,-1.2) node[ground]{};
+  \draw[->,thick,accent] (0.8,0.9) -- node[above,font=\sffamily\small]{$I$} (2.6,0.9);
+  \node[font=\sffamily\small] at (2.8,-2) {Вариант A: ток вытекает (светит при HIGH)};
+  \begin{scope}[xshift=8cm]
+  \draw (0,1.2) node[vcc]{3,3 В} -- (0,0)
+        to[led, l_=LED] (0,-2) to[R, l_=$R$] (0,-4) -- (0,-4.2) coordinate(p);
+  \draw (p) to[short,-o] (0.8,-4.2) node[right]{\pin{4}};
+  \node[font=\sffamily\small,align=center] at (1,-5.2) {Вариант B: ток втекает\\(светит при LOW)};
+  \end{scope}
+\end{circuitikz}
+\caption{Два способа подключить светодиод. В проекте используем вариант A}
+\end{figure}
+
+Резистор ограничивает ток. По закону Ома:
+\[
+  R = \frac{U_\text{вых} - U_F}{I} = \frac{3{,}3 - 2{,}0}{0{,}006} \approx \SI{217}{\ohm}
+  \quad\Rightarrow\quad \text{берём } \SI{220}{\ohm}.
+\]
+
+\begin{table}[H]
+\centering\small
+\begin{tabular}{@{}lccc@{}}
+\toprule
+Цвет светодиода & $U_F$, В & $R$ для \SI{5}{mA} & $R$ для \SI{10}{mA}\\
+\midrule
+Красный & 1,8--2,0 & \SI{270}{\ohm} & \SI{150}{\ohm}\\
+Жёлтый/зелёный & 2,0--2,2 & \SI{220}{\ohm} & \SI{120}{\ohm}\\
+Синий/белый & 2,8--3,1 & \SI{68}{\ohm}  & \SI{33}{\ohm}\\
+\bottomrule
+\end{tabular}
+\caption{Ориентировочные номиналы резисторов при питании 3,3 В}
+\end{table}
+
+\subsection{Классический Blink}
+
+\codecap{Мигание светодиодом}
+\codeinput{l1_blink}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[x=1.1cm,y=1cm]
+  \draw[->] (0,0) -- (8.5,0) node[right]{$t$, мс};
+  \draw[->] (0,0) -- (0,1.6) node[above]{$U$};
+  \draw[very thick,esp] (0,0) -- (0,1) -- (2,1) -- (2,0) -- (4,0) -- (4,1) -- (6,1) -- (6,0) -- (8,0) -- (8,1);
+  \foreach \x/\l in {0/0,2/500,4/1000,6/1500,8/2000} \draw (\x,0.05)--(\x,-0.05) node[below,font=\scriptsize]{\l};
+  \draw (0.05,1) -- (-0.05,1) node[left,font=\scriptsize]{3,3 В};
+  \draw[decorate,decoration={brace,amplitude=4pt}] (0,1.15) -- (4,1.15) node[midway,above=4pt,font=\scriptsize]{период 1 с (1 Гц)};
+\end{tikzpicture}
+\caption{Напряжение на выводе при работе Blink}
+\end{figure}
+
+\subsection{Мигание без \texttt{delay()}}
+
+\code{delay()} останавливает всю программу: пока идёт ожидание, она не может делать ничего другого.
+В лампе нам предстоит одновременно следить за кнопкой, ручкой, экраном и сетью, поэтому сразу
+привыкаем к другому приёму --- сравнивать текущее время \code{millis()} с моментом последнего действия:
+
+\codecap{Неблокирующее мигание}
+\codeinput{l1_blink_millis}
+
+\subsection{Встроенный RGB-светодиод}
+
+На DevKitC-1 распаян адресный светодиод WS2812 (\pin{48} или \pin{38} в зависимости от ревизии).
+Для него в Arduino-ESP32 3.x есть готовая функция \code{rgbLedWrite(pin, r, g, b)}:
+
+\codecap{Смена цветов встроенного RGB-светодиода}
+\codeinput{l1_rgb}
+
+\subsection{Шаг проекта 1: светодиод лампы и «пульс»}
+
+\progress{1}
+
+Подключаем светодиод лампы к \pin{4} по схеме «вариант A». Встроенный RGB-светодиод будет
+«пульсом»: мигает зелёным, пока программа работает. Если он замер --- программа зависла.
+Обратите внимание: мигание сделано через \code{millis()}, поэтому \code{loop()} свободен для
+следующих шагов.
+
+\codecap{Умная лампа, шаг 1}
+\codeinput{lamp_step1}
+
+\begin{tip}
+Переменные с \code{static} внутри функции сохраняют значение между вызовами. Так состояние
+«пульса» не засоряет глобальную область --- этот приём пригодится и дальше.
+\end{tip}
+
+\begin{summary}
+\begin{itemize}[leftmargin=*]
+  \item \code{pinMode(pin, OUTPUT)} и \code{digitalWrite(pin, HIGH/LOW)} --- управление выходом.
+  \item Светодиод всегда подключается через резистор; ток вывода ограничен.
+  \item Для отсчёта времени без остановки программы используем \code{millis()}, а не \code{delay()}.
+\end{itemize}
+\end{summary}
+
+\begin{tasks}
+\begin{enumerate}
+  \item Соберите «светофор» из трёх светодиодов с правильной последовательностью и длительностями.
+  \item Сделайте два светодиода, мигающих с разной частотой (\SI{1}{Hz} и \SI{3}{Hz}) без \code{delay()}.
+  \item Сделайте «пульс» лампы двойным ударом, как сердцебиение: две короткие вспышки и пауза.
+\end{enumerate}
+\end{tasks}

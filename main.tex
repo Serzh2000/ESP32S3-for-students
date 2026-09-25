@@ -1,0 +1,28 @@
+% !TEX program = xelatex
+\documentclass[11pt,a4paper]{article}
+\usepackage{esp32s3-course}
+
+\begin{document}
+
+\input{chapters/title}
+
+\tableofcontents
+\newpage
+
+\input{chapters/00-intro}
+\input{chapters/01-gpio-output}
+\input{chapters/02-serial}
+\input{chapters/03-gpio-input}
+\input{chapters/04-pwm}
+\input{chapters/05-adc}
+\input{chapters/06-i2c}
+\input{chapters/07-freertos}
+\input{chapters/08-wifi}
+\input{chapters/09-sleep}
+
+% ---------- Приложения ----------
+\courseappendix
+\input{chapters/A-lamp-full}
+\input{chapters/B-reference}
+
+\end{document}

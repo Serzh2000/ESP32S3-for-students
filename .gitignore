@@ -1,0 +1,15 @@
+# Промежуточные файлы LaTeX
+*.aux
+*.log
+*.toc
+*.lol
+*.out
+*.xdv
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+_minted*/
+*.data.minted
+
+# Python
+__pycache__/

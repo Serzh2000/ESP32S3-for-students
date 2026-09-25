@@ -1,0 +1,161 @@
+% =====================================================================
+\section{Сон и энергосбережение}
+% =====================================================================
+\lessonintro
+  {разобраться в режимах сна ESP32-S3 и научиться будить чип таймером и кнопкой}
+  {урок 3 (кнопка), урок 7 (управление задачами), урок 8 (Wi-Fi как главный потребитель)}
+  {выключенная лампа через минуту засыпает и просыпается от кнопки}
+  {мультиметр для измерения тока (по желанию)}
+
+\subsection{Режимы питания}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  xbar, width=0.8\textwidth, height=5.8cm,
+  xmode=log, log basis x=10, log origin x=infty,
+  xmin=0.002, xmax=20000,
+  xlabel={потребление, мА (логарифмическая шкала)},
+  symbolic y coords={Hibernation,Deep-sleep,Light-sleep,Modem-sleep,Активный + Wi-Fi TX},
+  ytick=data, y tick label style={font=\sffamily\small},
+  tick label style={font=\scriptsize},
+  nodes near coords, nodes near coords align={horizontal},
+  every node near coord/.append style={font=\scriptsize,anchor=west,xshift=1pt},
+  point meta=explicit symbolic,
+  bar width=5mm, enlarge y limits=0.15,
+  xmajorgrids, grid style={gray!25},
+]
+\addplot[fill=esp!70,draw=espdark] coordinates {
+  (0.007,Hibernation) [$\approx$ 7 мкА]
+  (0.008,Deep-sleep) [$\approx$ 8 мкА]
+  (0.24,Light-sleep) [$\approx$ 240 мкА]
+  (30,Modem-sleep) [$\approx$ 30--100 мА]
+  (300,Активный + Wi-Fi TX) [$\approx$ 300 мА (пики)]
+};
+\end{axis}
+\end{tikzpicture}
+\caption{Типичное потребление самого чипа в разных режимах (ориентировочно, по datasheet).
+Отладочная плата со стабилизатором и светодиодом питания потребляет заметно больше}
+\end{figure}
+
+\begin{center}\small
+\begin{tabularx}{\textwidth}{@{}l X X@{}}
+\toprule
+Режим & Что работает & Что происходит при пробуждении \\
+\midrule
+Modem-sleep & CPU, радио выключается между пакетами & --- (обычная работа) \\
+Light-sleep & всё заморожено, память сохранена & программа продолжается со следующей строки \\
+Deep-sleep & только RTC, RTC-память и ULP & \textbf{полная перезагрузка}, \code{setup()} заново \\
+Hibernation & только RTC-таймер и некоторые выводы & полная перезагрузка \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+Главное про deep-sleep: при пробуждении программа начинается с начала, а обычные переменные теряются.
+Сохранить данные можно в RTC-памяти --- переменные с атрибутом \code{RTC\_DATA\_ATTR}.
+
+\subsection{Сколько проработает устройство от батареи}
+
+Типичный батарейный датчик просыпается, делает работу и снова засыпает:
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=6mm]
+  \node[blk,fill=blkrtc] (wake) {Пробуждение};
+  \node[blk,fill=blkper,right=of wake] (meas) {Измерение\\ датчика};
+  \node[blk,fill=blkrf,right=of meas] (wifi) {Wi-Fi: отправка\\ данных};
+  \node[blk,fill=blkcpu,right=of wifi] (sleep) {Deep-sleep\\ 10 минут};
+  \draw[arr] (wake) -- (meas); \draw[arr] (meas) -- (wifi); \draw[arr] (wifi) -- (sleep);
+  \draw[arr] (sleep.south) -- ++(0,-6mm) -| node[pos=0.25,below,font=\scriptsize]{RTC-таймер} (wake.south);
+\end{tikzpicture}
+
+\vspace{4mm}
+\begin{tikzpicture}[x=0.9cm,y=1cm]
+  \draw[->] (0,0) -- (15.5,0) node[right,font=\scriptsize]{$t$};
+  \draw[->] (0,0) -- (0,2.4) node[above,font=\scriptsize]{$I$};
+  \draw[very thick,esp] (0,0.05) -- (1,0.05) -- (1,1.9) -- (1.7,1.9) -- (1.7,0.05) -- (7.5,0.05) -- (7.5,1.9) -- (8.2,1.9) -- (8.2,0.05) -- (14,0.05) -- (14,1.9) -- (14.7,1.9) -- (14.7,0.05) -- (15.2,0.05);
+  \node[font=\scriptsize,align=center] at (4.4,0.6) {deep-sleep, мкА};
+  \node[font=\scriptsize,align=center,anchor=south] at (1.35,1.95) {$\sim$1--3 с\\ 100+ мА};
+\end{tikzpicture}
+\caption{Устройство почти всё время спит; средний ток определяется длительностью активной фазы}
+\end{figure}
+
+\[
+  I_\text{ср} = \frac{I_\text{акт}\,t_\text{акт} + I_\text{сон}\,t_\text{сон}}{t_\text{акт}+t_\text{сон}}
+  = \frac{\SI{120}{mA}\cdot\SI{2}{s} + \SI{0.01}{mA}\cdot\SI{598}{s}}{\SI{600}{s}}
+  \approx \SI{0.41}{mA}.
+\]
+Аккумулятор \SI{2000}{mAh} прослужит $\approx 2000/0{,}41 \approx 4900$ часов, то есть около полугода.
+
+\subsection{Deep-sleep по таймеру}
+
+\codecap{Пробуждение по таймеру с сохранением счётчика}
+\codeinput{l9_timer_sleep}
+
+\begin{caution}
+При питании через нативный USB-порт после засыпания USB-устройство исчезает из системы, и Serial Monitor
+«отваливается». Это нормально. Если плата не даёт залить новую прошивку, войдите в загрузчик вручную
+(BOOT + RST, урок 0).
+\end{caution}
+
+\subsection{Пробуждение кнопкой}
+
+Проснуться можно по уровню на RTC-выводе (\pin{0}--\pin{21}) --- кнопка лампы на \pin{5} подходит.
+Во сне обычная подтяжка из урока 3 отключается, поэтому включаем подтяжку RTC-домена:
+
+\codeinput{l9_ext0}
+
+\subsection{Шаг проекта 9: лампа засыпает}
+
+\progress{9}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=7mm and 9mm]
+  \node[blk,fill=blkrf] (work) {Работа\\ \scriptsize задачи, Wi-Fi};
+  \node[blk,fill=blkper,right=of work] (chk) {Лампа выключена\\ \scriptsize и > 60 с без действий?};
+  \node[blk,fill=blkcpu,right=of chk] (sl) {Deep-sleep\\ \scriptsize экран погашен};
+  \node[blk,fill=blkrtc,below=of chk] (wk) {Кнопка → пробуждение\\ \scriptsize \code{setup()}: лампа включается};
+  \draw[arr] (work) -- (chk);
+  \draw[arr] (chk) -- node[above,font=\scriptsize]{да} (sl);
+  \draw[arr] (chk.north) -- ++(0,5mm) -| node[pos=0.25,above,font=\scriptsize]{нет} (work.north);
+  \draw[arr] (sl) |- (wk);
+  \draw[arr] (wk) -| (work);
+\end{tikzpicture}
+\caption{Цикл жизни лампы с энергосбережением}
+\end{figure}
+
+Что нужно сделать:
+\begin{itemize}
+  \item запоминать время последнего действия --- удобно прямо в \code{applyLamp()}, через которую проходят все изменения;
+  \item перед сном остановить задачу экрана (\code{vTaskSuspend}, урок 7) и погасить дисплей;
+  \item сохранить состояние лампы в RTC-памяти, чтобы после пробуждения вернуть прежнюю яркость;
+  \item при пробуждении кнопкой сразу включить лампу --- пользователь ведь нажал кнопку именно для этого.
+\end{itemize}
+
+\codecap{Умная лампа, шаг 9 (изменения относительно шага 8)}
+\codeinput{lamp_step9}
+
+\begin{tip}
+Функция \code{buttonPressed()} из урока 3 читает начальное состояние кнопки при первом вызове. Поэтому
+нажатие, разбудившее лампу, не будет воспринято ещё раз как «выключить» --- даже если кнопку
+ещё не отпустили, когда программа запустилась.
+\end{tip}
+
+\begin{summary}
+\begin{itemize}[leftmargin=*]
+  \item Deep-sleep снижает ток до микроампер, но пробуждение --- это перезапуск программы.
+  \item Нужные данные храним в \code{RTC\_DATA\_ATTR}, причину пробуждения узнаём через \code{esp\_sleep\_get\_wakeup\_cause()}.
+  \item Будить можно таймером, уровнем на RTC-выводе, сенсорным входом.
+\end{itemize}
+\end{summary}
+
+\begin{tasks}
+\begin{enumerate}
+  \item Измерьте ток платы мультиметром в работе и во сне. Отключите светодиод питания и сравните.
+  \item Добавьте второй источник пробуждения --- таймер на 1 час --- и при таком пробуждении только
+        печатайте статистику и засыпайте снова, не включая лампу.
+  \item Считайте в RTC-памяти, сколько раз лампу включали, и показывайте счётчик на экране.
+\end{enumerate}
+\end{tasks}

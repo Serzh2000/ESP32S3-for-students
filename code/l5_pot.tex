@@ -1,0 +1,15 @@
+\begin{CodeVerbatim}
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{int}\PY{+w}{ }\PY{n}{POT\PYZus{}PIN}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{1}\PY{p}{;}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{setup}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{n}{Serial}\PY{p}{.}\PY{n}{begin}\PY{p}{(}\PY{l+m+mi}{115200}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{analogReadResolution}\PY{p}{(}\PY{l+m+mi}{12}\PY{p}{)}\PY{p}{;}\PY{+w}{                   }\PY{c+c1}{// 0..4095}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{loop}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{k+kt}{int}\PY{+w}{ }\PY{n}{raw}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{analogRead}\PY{p}{(}\PY{n}{POT\PYZus{}PIN}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{k+kt}{int}\PY{+w}{ }\PY{n}{mv}\PY{+w}{  }\PY{o}{=}\PY{+w}{ }\PY{n}{analogReadMilliVolts}\PY{p}{(}\PY{n}{POT\PYZus{}PIN}\PY{p}{)}\PY{p}{;}\PY{+w}{    }\PY{c+c1}{// с учётом калибровки}
+\PY{+w}{  }\PY{n}{Serial}\PY{p}{.}\PY{n}{printf}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{raw:\PYZpc{}d mV:\PYZpc{}d}\PY{l+s+se}{\PYZbs{}n}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{n}{raw}\PY{p}{,}\PY{+w}{ }\PY{n}{mv}\PY{p}{)}\PY{p}{;}\PY{+w}{   }\PY{c+c1}{// формат для Serial Plotter}
+\PY{+w}{  }\PY{n}{delay}\PY{p}{(}\PY{l+m+mi}{100}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+\end{CodeVerbatim}

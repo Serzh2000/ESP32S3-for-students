@@ -1,0 +1,47 @@
+\begin{CodeVerbatim}
+\PY{c+c1}{// Умная лампа, шаг 6: экран состояния}
+\PY{c+cp}{\PYZsh{}}\PY{c+cp}{include}\PY{+w}{ }\PY{c+cpf}{\PYZlt{}Wire.h\PYZgt{}}
+\PY{c+cp}{\PYZsh{}}\PY{c+cp}{include}\PY{+w}{ }\PY{c+cpf}{\PYZlt{}Adafruit\PYZus{}GFX.h\PYZgt{}}
+\PY{c+cp}{\PYZsh{}}\PY{c+cp}{include}\PY{+w}{ }\PY{c+cpf}{\PYZlt{}Adafruit\PYZus{}SSD1306.h\PYZgt{}}
+
+\PY{n}{Adafruit\PYZus{}SSD1306}\PY{+w}{ }\PY{n+nf}{display}\PY{p}{(}\PY{l+m+mi}{128}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{64}\PY{p}{,}\PY{+w}{ }\PY{o}{\PYZam{}}\PY{n}{Wire}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{\PYZhy{}1}\PY{p}{)}\PY{p}{;}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{drawDisplay}\PY{p}{(}\PY{k}{const}\PY{+w}{ }\PY{n}{LampState}\PY{o}{\PYZam{}}\PY{+w}{ }\PY{n}{s}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{n}{display}\PY{p}{.}\PY{n}{clearDisplay}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{display}\PY{p}{.}\PY{n}{setTextSize}\PY{p}{(}\PY{l+m+mi}{1}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{display}\PY{p}{.}\PY{n}{setCursor}\PY{p}{(}\PY{l+m+mi}{0}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{display}\PY{p}{.}\PY{n}{print}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{Smart lamp}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{display}\PY{p}{.}\PY{n}{setTextSize}\PY{p}{(}\PY{l+m+mi}{3}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{display}\PY{p}{.}\PY{n}{setCursor}\PY{p}{(}\PY{l+m+mi}{0}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{18}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{s}\PY{p}{.}\PY{n}{on}\PY{p}{)}\PY{+w}{ }\PY{n}{display}\PY{p}{.}\PY{n}{printf}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{\PYZpc{}3d\PYZpc{}\PYZpc{}}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{n}{s}\PY{p}{.}\PY{n}{level}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{k}{else}\PY{+w}{      }\PY{n}{display}\PY{p}{.}\PY{n}{print}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{OFF}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{display}\PY{p}{.}\PY{n}{drawRect}\PY{p}{(}\PY{l+m+mi}{0}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{54}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{128}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{10}\PY{p}{,}\PY{+w}{ }\PY{n}{SSD1306\PYZus{}WHITE}\PY{p}{)}\PY{p}{;}\PY{+w}{           }\PY{c+c1}{// рамка полоски}
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{s}\PY{p}{.}\PY{n}{on}\PY{p}{)}\PY{+w}{ }\PY{n}{display}\PY{p}{.}\PY{n}{fillRect}\PY{p}{(}\PY{l+m+mi}{2}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{56}\PY{p}{,}\PY{+w}{ }\PY{n}{s}\PY{p}{.}\PY{n}{level}\PY{+w}{ }\PY{o}{*}\PY{+w}{ }\PY{l+m+mi}{124}\PY{+w}{ }\PY{o}{/}\PY{+w}{ }\PY{l+m+mi}{100}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{6}\PY{p}{,}\PY{+w}{ }\PY{n}{SSD1306\PYZus{}WHITE}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{display}\PY{p}{.}\PY{n}{display}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{setup}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{n}{Serial}\PY{p}{.}\PY{n}{begin}\PY{p}{(}\PY{l+m+mi}{115200}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{ledcAttach}\PY{p}{(}\PY{n}{LAMP\PYZus{}PIN}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{5000}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{8}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{pinMode}\PY{p}{(}\PY{n}{BTN\PYZus{}PIN}\PY{p}{,}\PY{+w}{ }\PY{n}{INPUT\PYZus{}PULLUP}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{applyLamp}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{Wire}\PY{p}{.}\PY{n}{begin}\PY{p}{(}\PY{l+m+mi}{8}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{9}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{Wire}\PY{p}{.}\PY{n}{setClock}\PY{p}{(}\PY{l+m+mi}{400000}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{o}{!}\PY{n}{display}\PY{p}{.}\PY{n}{begin}\PY{p}{(}\PY{n}{SSD1306\PYZus{}SWITCHCAPVCC}\PY{p}{,}\PY{+w}{ }\PY{l+m+mh}{0x3C}\PY{p}{)}\PY{p}{)}\PY{+w}{ }\PY{n}{Serial}\PY{p}{.}\PY{n}{println}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{Дисплей не найден}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{display}\PY{p}{.}\PY{n}{setTextColor}\PY{p}{(}\PY{n}{SSD1306\PYZus{}WHITE}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{loop}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{n}{handleSerial}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{buttonPressed}\PY{p}{(}\PY{p}{)}\PY{p}{)}\PY{+w}{ }\PY{n}{lampToggle}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{k+kt}{int}\PY{+w}{ }\PY{n}{pot}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{readPotLevel}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{abs}\PY{p}{(}\PY{n}{pot}\PY{+w}{ }\PY{o}{\PYZhy{}}\PY{+w}{ }\PY{n}{lastPot}\PY{p}{)}\PY{+w}{ }\PY{o}{\PYZgt{}}\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{3}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{ }\PY{n}{lastPot}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{pot}\PY{p}{;}\PY{+w}{ }\PY{n}{lampSetLevel}\PY{p}{(}\PY{n}{pot}\PY{p}{)}\PY{p}{;}\PY{+w}{ }\PY{p}{\PYZcb{}}
+\PY{+w}{  }\PY{n}{heartbeat}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+
+\PY{+w}{  }\PY{k}{static}\PY{+w}{ }\PY{k+kt}{uint32\PYZus{}t}\PY{+w}{ }\PY{n}{lastDraw}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}\PY{+w}{                 }\PY{c+c1}{// экран \PYZhy{}\PYZhy{} 10 раз в секунду}
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{millis}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{o}{\PYZhy{}}\PY{+w}{ }\PY{n}{lastDraw}\PY{+w}{ }\PY{o}{\PYZgt{}}\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{100}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{    }\PY{n}{lastDraw}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{millis}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+\PY{+w}{    }\PY{n}{drawDisplay}\PY{p}{(}\PY{n}{lamp}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{p}{\PYZcb{}}
+\PY{p}{\PYZcb{}}
+\end{CodeVerbatim}

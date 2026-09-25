@@ -1,0 +1,22 @@
+\begin{CodeVerbatim}
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{int}\PY{+w}{ }\PY{n}{SERVO\PYZus{}PIN}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{6}\PY{p}{;}
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{uint8\PYZus{}t}\PY{+w}{ }\PY{n}{RES}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{14}\PY{p}{;}\PY{+w}{                    }\PY{c+c1}{// 0..16383 на период 20 мс}
+
+\PY{k+kt}{uint32\PYZus{}t}\PY{+w}{ }\PY{n+nf}{usToDuty}\PY{p}{(}\PY{k+kt}{uint32\PYZus{}t}\PY{+w}{ }\PY{n}{us}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{           }\PY{c+c1}{// микросекунды \PYZhy{}\PYZgt{} значение duty}
+\PY{+w}{  }\PY{k}{return}\PY{+w}{ }\PY{p}{(}\PY{k+kt}{uint32\PYZus{}t}\PY{p}{)}\PY{p}{(}\PY{p}{(}\PY{k+kt}{uint64\PYZus{}t}\PY{p}{)}\PY{n}{us}\PY{+w}{ }\PY{o}{*}\PY{+w}{ }\PY{p}{(}\PY{p}{(}\PY{l+m+mi}{1}\PY{+w}{ }\PY{o}{\PYZlt{}}\PY{o}{\PYZlt{}}\PY{+w}{ }\PY{n}{RES}\PY{p}{)}\PY{+w}{ }\PY{o}{\PYZhy{}}\PY{+w}{ }\PY{l+m+mi}{1}\PY{p}{)}\PY{+w}{ }\PY{o}{/}\PY{+w}{ }\PY{l+m+mi}{20000}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{servoWrite}\PY{p}{(}\PY{k+kt}{int}\PY{+w}{ }\PY{n}{angle}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{               }\PY{c+c1}{// 0..180 градусов}
+\PY{+w}{  }\PY{k+kt}{uint32\PYZus{}t}\PY{+w}{ }\PY{n}{us}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{map}\PY{p}{(}\PY{n}{angle}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{180}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{1000}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{2000}\PY{p}{)}\PY{p}{;}\PY{+w}{  }\PY{c+c1}{// у многих серво 500..2500}
+\PY{+w}{  }\PY{n}{ledcWrite}\PY{p}{(}\PY{n}{SERVO\PYZus{}PIN}\PY{p}{,}\PY{+w}{ }\PY{n}{usToDuty}\PY{p}{(}\PY{n}{us}\PY{p}{)}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{setup}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{n}{ledcAttach}\PY{p}{(}\PY{n}{SERVO\PYZus{}PIN}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{50}\PY{p}{,}\PY{+w}{ }\PY{n}{RES}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{loop}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{k}{for}\PY{+w}{ }\PY{p}{(}\PY{k+kt}{int}\PY{+w}{ }\PY{n}{a}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}\PY{+w}{ }\PY{n}{a}\PY{+w}{ }\PY{o}{\PYZlt{}}\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{180}\PY{p}{;}\PY{+w}{ }\PY{n}{a}\PY{+w}{ }\PY{o}{+}\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{2}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{ }\PY{n}{servoWrite}\PY{p}{(}\PY{n}{a}\PY{p}{)}\PY{p}{;}\PY{+w}{ }\PY{n}{delay}\PY{p}{(}\PY{l+m+mi}{20}\PY{p}{)}\PY{p}{;}\PY{+w}{ }\PY{p}{\PYZcb{}}
+\PY{+w}{  }\PY{k}{for}\PY{+w}{ }\PY{p}{(}\PY{k+kt}{int}\PY{+w}{ }\PY{n}{a}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{180}\PY{p}{;}\PY{+w}{ }\PY{n}{a}\PY{+w}{ }\PY{o}{\PYZgt{}}\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}\PY{+w}{ }\PY{n}{a}\PY{+w}{ }\PY{o}{\PYZhy{}}\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{2}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{ }\PY{n}{servoWrite}\PY{p}{(}\PY{n}{a}\PY{p}{)}\PY{p}{;}\PY{+w}{ }\PY{n}{delay}\PY{p}{(}\PY{l+m+mi}{20}\PY{p}{)}\PY{p}{;}\PY{+w}{ }\PY{p}{\PYZcb{}}
+\PY{p}{\PYZcb{}}
+\end{CodeVerbatim}
