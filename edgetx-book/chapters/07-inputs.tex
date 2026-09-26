@@ -1,0 +1,144 @@
+% =====================================================================
+\chapter{Входы: расходы, экспонента, триммеры}
+% =====================================================================
+\chapterintro
+  {как стик превращается во «вход», что такое расходы (dual rates) и экспонента, как сделать
+   переключаемые расходы и зачем нужна выборка по полётным режимам}
+  {модель с настроенным радиомодулем}
+
+\section{Страница Inputs}
+
+\mpath{MDL\sep Inputs} содержит список входов \sw{I1}, \sw{I2}, … У новой модели EdgeTX
+создаёт четыре входа по количеству осей стиков, в порядке \menu{Default channel order}:
+
+\begin{center}
+\lcd{\inv{INPUTS}\hfill 4/64\\
+{[I1]}Ail\quad Ail\quad 100\\
+{[I2]}Ele\quad Ele\quad 100\\
+{[I3]}Thr\quad Thr\quad 100\\
+{[I4]}Rud\quad Rud\quad 100}
+\end{center}
+
+Каждый вход может состоять из \emph{нескольких строк}. EdgeTX проверяет строки сверху вниз
+и использует \textbf{первую}, у которой выполнено условие (переключатель, полётный режим).
+На этом построены переключаемые расходы.
+
+\section{Параметры строки входа}
+
+Нажмите \btn{ENTER} на строке → \menu{Edit}:
+
+\begin{center}\small
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\linewidth}{@{}p{30mm}X@{}}
+\toprule
+\menu{Input name} & имя входа (одно на весь вход) \\
+\menu{Line name} & имя конкретной строки, например \code{High}, \code{Low} \\
+\menu{Source} & источник: стик, крутилка, переключатель, канал, телеметрия \\
+\menu{Weight} & вес --- масштаб, $-100\ldots+100\,\%$. Это и есть «расход» (rate) \\
+\menu{Offset} & смещение, прибавляется после умножения на вес \\
+\menu{Trim} & учитывать ли триммер источника (\menu{ON}), не учитывать (\menu{OFF}) или
+  взять триммер другой оси \\
+\menu{Curve} & функция формы: \menu{Diff} (дифференциал), \menu{Expo} (экспонента),
+  \menu{Func} (x>0, |x|, …), \menu{Curve} (своя кривая) \\
+\menu{Flight modes} & в каких полётных режимах строка активна \\
+\menu{Switch} & условие активности строки \\
+\menu{Side} & работать на всём ходе стика, только на $x>0$ или только на $x<0$ \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\section{Расходы (dual rates)}
+
+\textbf{Расход} --- максимальный ход, который даёт стик. Вес 100\,\% --- полный ход,
+60\,\% --- стик до упора даёт только 60\,\% отклонения рулей. Малые расходы используют
+для первых полётов и точного пилотажа, большие --- для фигур.
+
+\section{Экспонента}
+
+\textbf{Экспонента (expo)} делает управление мягче у центра стика, сохраняя полный ход
+по краям. В EdgeTX формула такая (для нормированного хода $x \in [-1, 1]$ и значения
+экспоненты $k = \text{expo}/100$):
+\[
+  y = x\,\bigl(k x^2 + (1-k)\bigr).
+\]
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{axis}[width=9cm,height=6.5cm,xmin=-100,xmax=100,ymin=-100,ymax=100,
+  xlabel={ход стика, \%},ylabel={выход, \%},grid=major,grid style={gray!20},
+  legend pos=north west,legend style={font=\scriptsize},tick label style={font=\scriptsize},
+  label style={font=\small}]
+\addplot[domain=-100:100,samples=60,thick,gray] {x};
+\addplot[domain=-100:100,samples=60,thick,etx] {x*(0.3*(x/100)^2+0.7)};
+\addplot[domain=-100:100,samples=60,thick,accent] {x*(0.6*(x/100)^2+0.4)};
+\addplot[domain=-100:100,samples=60,thick,okgreen,dashed] {0.7*x*(0.3*(x/100)^2+0.7)};
+\legend{expo 0,expo 30\,\%,expo 60\,\%,вес 70\,\%\,+\,expo 30\,\%}
+\end{axis}
+\end{tikzpicture}
+\caption{Экспонента и расход: у центра стика управление мягче, края --- без изменений}
+\end{figure}
+
+Типичные значения: 20--40\,\% на элеронах и руле высоты самолёта. Для квадрокоптера с
+Betaflight экспоненту и расходы обычно задают в полётном контроллере (rates),
+а в пульте оставляют вес 100\,\% и экспоненту 0.
+
+\section{Переключаемые расходы}
+
+\begin{recipe}{три расхода на элеронах по переключателю SB}
+Вход \sw{I1} (Ail) делаем из трёх строк:
+\begin{center}\small
+\begin{tabular}{@{}llllll@{}}
+\toprule
+Строка & Source & Weight & Curve & Switch \\
+\midrule
+High   & Ail & 100 & Expo 25 & \sw{SB↑} \\
+Mid    & Ail & 75  & Expo 30 & \sw{SB-} \\
+Low    & Ail & 50  & Expo 35 & --- (всегда) \\
+\bottomrule
+\end{tabular}
+\end{center}
+Порядок важен: последняя строка без переключателя срабатывает, если ни одна верхняя не
+подошла. Точно так же настройте \sw{I2} (Ele) на том же переключателе.
+\end{recipe}
+
+\begin{center}
+\begin{tikzpicture}[node distance=3mm,every node/.style={font=\sffamily\scriptsize}]
+  \node[blk,fill=blksw] (stk) {стик Ail};
+  \node[blk,fill=blkin,right=12mm of stk,yshift=9mm] (h) {High: 100\,\%};
+  \node[blk,fill=blkin,right=12mm of stk] (m) {Mid: 75\,\%};
+  \node[blk,fill=blkin,right=12mm of stk,yshift=-9mm] (l) {Low: 50\,\%};
+  \node[blk,fill=blkmix,right=14mm of m] (i1) {\sw{I1}};
+  \draw[arr] (stk.east) -- (h.west);
+  \draw[arr] (stk.east) -- (m.west);
+  \draw[arr] (stk.east) -- (l.west);
+  \draw[arr] (h.east) -- node[above,sloped,lbl]{SB↑} (i1.west);
+  \draw[arr] (m.east) -- node[above,lbl]{SB-} (i1.west);
+  \draw[arr] (l.east) -- node[below,sloped,lbl]{иначе} (i1.west);
+\end{tikzpicture}
+\end{center}
+
+\section{Дифференциал и функции}
+
+\begin{itemize}
+  \item \menu{Diff} уменьшает ход в одну сторону. На входе используется редко; дифференциал
+        элеронов правильнее задавать в миксерах (глава~\ref{ch:mixes}).
+  \item \menu{Func}: \menu{x>0} --- пропускать только положительную половину хода,
+        \menu{|x|} --- модуль, \menu{f>0}, \menu{sgn} (знак) и др. Например, для кнопки
+        аварийного сброса или для «половинного» стика.
+\end{itemize}
+
+\section{Триммеры во входах}
+
+Параметр \menu{Trim} = \menu{ON} (по умолчанию) добавляет значение триммера оси.
+Для квадрокоптеров выключайте триммеры (\menu{OFF}) --- случайное нажатие качельки изменит
+центр стика, и полётный контроллер будет считать, что вы держите стик отклонённым.
+
+\begin{tasks}
+\begin{enumerate}
+  \item Сделайте для самолёта два расхода на \sw{SC}: 100\,\% с экспо 20\,\% и 60\,\% с экспо 30\,\%.
+  \item Проверьте работу на странице \menu{Outputs} или на экране каналов: переключайте \sw{SC}
+        и смотрите, как меняется максимум.
+  \item Сделайте вход \sw{I5} с источником \sw{S1} и весом 50\,\% --- «половинную» крутилку.
+\end{enumerate}
+\end{tasks}

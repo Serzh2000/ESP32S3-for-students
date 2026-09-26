@@ -1,0 +1,60 @@
+% =====================================================================
+\chapter{Шпаргалка}
+% =====================================================================
+
+\section{Кнопки}
+
+\begin{center}\small
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\linewidth}{@{}p{50mm}X@{}}
+\toprule
+\btn{SYS} & настройки пульта \\
+\btn{MDL} & настройки модели (первая страница --- список моделей) \\
+\btn{TELE} & экраны телеметрии \\
+\btn{PAGE>} / \btn{PAGE<} & страницы меню \\
+\btn{ENTER} & войти / редактировать / подтвердить \\
+долгое \btn{ENTER} & контекстное меню (копировать, вставить, удалить …) \\
+\btn{RTN} & назад / отмена \\
+триммеры внутрь + питание & загрузчик (bootloader) \\
+выключенный пульт + USB & режим DFU для прошивки через Buddy \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\section{Где что настраивается}
+
+\begin{center}\small
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\linewidth}{@{}p{58mm}X@{}}
+\toprule
+Задача & Место \\
+\midrule
+Калибровка стиков & \mpath{SYS\sep Hardware\sep Calibration} \\
+Режим стиков, порядок каналов & \mpath{SYS\sep Radio Setup} \\
+Тип переключателя & \mpath{SYS\sep Hardware} \\
+Версия прошивки & \mpath{SYS\sep About} \\
+Настройка ELRS & \mpath{SYS\sep Tools\sep ExpressLRS} \\
+Имя, таймеры, радиомодуль & \mpath{MDL\sep Setup} \\
+Расходы и экспо & \mpath{MDL\sep Inputs} \\
+Элевоны, V-хвост, AUX-каналы & \mpath{MDL\sep Mixes} \\
+Реверс, пределы, сабтрим & \mpath{MDL\sep Outputs} \\
+Режимы планера & \mpath{MDL\sep Flight Modes} \\
+Условия («если…») & \mpath{MDL\sep Logical Switches} \\
+Действия (голос, отсечка, логи) & \mpath{MDL\sep Special Functions} \\
+Датчики, тревоги, экраны & \mpath{MDL\sep Telemetry} \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\section{Чек-лист перед первым полётом новой модели}
+
+\begin{enumerate}[label=\chkbox]
+  \item Выбрана правильная модель, приёмник привязан, Model Match настроен.
+  \item Все рули ходят в правильную сторону и не упираются.
+  \item Газ: минимум стика = мотор стоит; отсечка/арм работают.
+  \item Failsafe проверен выключением пульта (без пропеллеров!).
+  \item Телеметрия приходит, тревоги по батарее и связи настроены.
+  \item Таймер запускается по арму/газу.
+  \item Аккумуляторы модели и пульта заряжены.
+  \item Проверка дальности пройдена.
+\end{enumerate}

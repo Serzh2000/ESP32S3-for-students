@@ -1,0 +1,128 @@
+% =====================================================================
+\chapter{Тренер и симуляторы}
+\label{ch:trainer}
+% =====================================================================
+\chapterintro
+  {как соединить два пульта в режиме «учитель--ученик», как использовать пульт
+   в компьютерном симуляторе через USB или Bluetooth, как пользоваться EdgeTX Companion}
+  {второй пульт и тренерский кабель (для тренера); компьютер (для симулятора)}
+
+\section{Режим «учитель--ученик»}
+
+Учитель держит пульт, связанный с моделью, и передаёт управление ученику кнопкой.
+Отпустил кнопку --- управление снова у учителя. Это самый безопасный способ научиться летать
+на настоящей модели.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=10mm and 18mm]
+  \node[blk,fill=blkin,minimum width=26mm] (s) {Пульт ученика\\\scriptsize Slave};
+  \node[blk,fill=blkmix,right=of s,minimum width=26mm] (m) {Пульт учителя\\\scriptsize Master};
+  \node[blk,fill=blkout,right=of m,minimum width=20mm] (r) {Модель};
+  \draw[arr] (s) -- node[above,lbl]{кабель/радио} node[below,lbl]{PPM, каналы} (m);
+  \draw[arr,decorate,decoration={snake,amplitude=1.2pt,segment length=5pt,post length=3pt}] (m) -- (r);
+  \node[below=4mm of m,lbl,text width=40mm,align=center] {кнопка «Trainer»:\\нажата --- управляет ученик};
+\end{tikzpicture}
+\caption{Схема тренерского режима}
+\end{figure}
+
+\subsection{Подключение}
+
+Варианты связи пультов:
+\begin{itemize}
+  \item \textbf{Кабель} 3,5\,мм «джек--джек» через гнёзда тренера (если на вашей ревизии
+        пульта есть гнездо тренера; уточните по инструкции производителя).
+        Режимы \menu{Master/Jack} и \menu{Slave/Jack}.
+  \item \textbf{Мультипротокольный модуль} учителя может \emph{принимать} сигнал пульта ученика
+        по радио (режим \menu{Master/Multi}); ученик при этом работает как обычный передатчик
+        FrSky и т.\,п.
+  \item \textbf{Последовательный порт} (\menu{Master/Serial}) --- с внешними приёмниками
+        или модулями беспроводного тренера (например, на основе ELRS Backpack).
+\end{itemize}
+
+\subsection{Пульт ученика}
+
+\begin{enumerate}
+  \item Создайте отдельную модель \code{Trainee}.
+  \item \mpath{MDL\sep Setup}: радиомодули выключить (\menu{Internal RF} = \menu{OFF}),
+        \menu{Trainer mode} = \menu{Slave/Jack}.
+  \item Порядок каналов --- такой же, как у учителя (AETR). Никаких миксеров для крыла и т.\,п. ---
+        только «чистые» стики: миксует пульт учителя.
+\end{enumerate}
+
+\subsection{Пульт учителя}
+
+\begin{enumerate}
+  \item В модели: \mpath{MDL\sep Setup\sep Trainer mode} = \menu{Master/Jack}.
+  \item \mpath{SYS\sep Trainer}: для каждой оси (\sw{Ail}, \sw{Ele}, \sw{Thr}, \sw{Rud}) режим
+        \menu{:=} (заменять стик учителя) или \menu{+=} (добавлять к стику учителя), вес
+        (например, 100\,\% или меньше для начинающего) и номер канала ученика.
+  \item Там же --- калибровка: поставьте стики ученика в центр и выберите \menu{Cal}.
+  \item Специальная функция: \menu{Switch} = кнопка без фиксации (\sw{SF} на Boxer),
+        \menu{Function} = \menu{Trainer}, \menu{Sticks}.
+\end{enumerate}
+
+\begin{caution}
+Перед полётом проверьте на земле: при нажатой кнопке рули и газ должны слушаться
+пульта ученика, при отпущенной --- пульта учителя. Проверьте и газ, и направление всех осей.
+\end{caution}
+
+\section{Пульт в симуляторе}
+
+Тренироваться в симуляторе --- дёшево и эффективно: разбитый виртуальный квадрокоптер
+ничего не стоит.
+
+\subsection{USB-джойстик}
+
+\begin{enumerate}
+  \item Создайте модель \code{Sim}: радиомодуль \menu{OFF}, каналы \sw{CH1}--\sw{CH4} ---
+        стики, \sw{CH5}--\sw{CH8} --- переключатели (для сброса, режимов и т.\,п.).
+  \item Подключите пульт к компьютеру по USB и выберите режим \menu{USB Joystick (HID)}.
+  \item Компьютер увидит игровой контроллер с 8 осями (и кнопками --- в расширенном режиме).
+  \item В симуляторе откалибруйте оси и назначьте функции.
+\end{enumerate}
+
+В \mpath{MDL\sep Setup\sep USB Joystick} можно выбрать \menu{Classic} (каналы → оси) или
+\menu{Advanced} --- тогда для каждого канала задаётся, будет он осью, кнопкой или
+переключателем, что удобно для игр и симуляторов с кнопками.
+
+\subsection{Беспроводной джойстик ELRS}
+
+Модуль ExpressLRS на ESP32 умеет работать как Bluetooth-геймпад. Режим включается в скрипте
+\mpath{SYS\sep Tools\sep ExpressLRS}, пункт \menu{BLE Joystick}. Удобно для симуляторов на планшете или ноутбуке без проводов.
+Пока режим активен, модуль не управляет моделью.
+
+\subsection{Какие симуляторы бывают}
+
+\begin{itemize}
+  \item FPV-коптеры: Liftoff, VelociDrone, Uncrashed, TRYP FPV, DRL Simulator и др.;
+  \item самолёты, планеры, вертолёты: RealFlight, PicaSim, ClearView, Heli-X и др.
+\end{itemize}
+
+\begin{tip}
+В FPV-симуляторе задайте такие же рейты (rates), как в Betaflight на настоящем
+коптере. Тогда навыки переносятся один в один.
+\end{tip}
+
+\section{EdgeTX Companion}
+
+\textbf{Companion} --- программа для компьютера (Windows, macOS, Linux):
+\begin{itemize}
+  \item чтение и запись моделей и настроек пульта через SD-карту;
+  \item редактирование моделей в удобном оконном интерфейсе;
+  \item \textbf{симулятор пульта}: можно проверить миксеры, логические переключатели и
+        Lua-скрипты, не включая настоящий пульт;
+  \item печать и сравнение моделей, резервные копии.
+\end{itemize}
+
+Для учебной группы Companion особенно удобен: преподаватель готовит «эталонную» модель,
+а ученики загружают её себе.
+
+\begin{summary}
+\begin{itemize}
+  \item Тренер: ученик --- \menu{Slave}, учитель --- \menu{Master} + функция \menu{Trainer}
+        на кнопке без фиксации.
+  \item Симулятор: отдельная модель, USB-джойстик или Bluetooth через ELRS.
+  \item Companion --- редактор и симулятор EdgeTX на компьютере.
+\end{itemize}
+\end{summary}

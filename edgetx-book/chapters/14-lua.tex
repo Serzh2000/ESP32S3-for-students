@@ -1,0 +1,134 @@
+% =====================================================================
+\chapter{Lua-скрипты}
+\label{ch:lua}
+% =====================================================================
+\chapterintro
+  {какие бывают Lua-скрипты в EdgeTX, где они лежат и как запускаются; готовые полезные
+   скрипты (ExpressLRS, Betaflight); как написать свой экран телеметрии, микшерный и
+   функциональный скрипт}
+  {SD-карта пульта, текстовый редактор на компьютере}
+
+\section{Зачем Lua}
+
+\textbf{Lua} --- небольшой встраиваемый язык программирования. EdgeTX умеет выполнять
+Lua-скрипты с SD-карты: так работают настройщик ExpressLRS, конфигуратор Betaflight прямо
+с пульта, мастера настройки моделей, экраны телеметрии, игры. Если какой-то логики не
+хватает в стандартных меню --- её можно дописать на Lua.
+
+\section{Типы скриптов}
+
+\begin{center}\small
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\linewidth}{@{}p{28mm}p{38mm}X@{}}
+\toprule
+Тип & Папка & Как запускается \\
+\midrule
+Утилиты (Tools, one-time) & \code{SCRIPTS/TOOLS} & \mpath{SYS\sep Tools}; занимают экран,
+  пока не завершатся \\
+Экраны телеметрии & \code{SCRIPTS/TELEMETRY} & \mpath{MDL\sep Telemetry\sep Screens\sep Script};
+  показываются по \btn{TELE} \\
+Функциональные & \code{SCRIPTS/FUNCTIONS} & специальная функция \menu{Lua script}
+  работает, пока условие активно \\
+Микшерные & \code{SCRIPTS/MIXES} & \mpath{MDL\sep Custom Scripts}; выходы скрипта становятся
+  источниками для миксеров \\
+Мастера (wizards) & \code{SCRIPTS/WIZARD} & при создании модели \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+Виджеты (\code{WIDGETS}) работают только на пультах с цветным экраном и на TX12/Boxer
+не используются.
+
+\section{Полезные готовые скрипты}
+
+\begin{description}[font=\sffamily\bfseries\color{etx}]
+  \item[ExpressLRS (\code{elrsV3.lua})] настройка модуля и приёмника ELRS
+        (глава~\ref{ch:rf}). Через пункт \menu{Other Devices} можно настроить и сам
+        приёмник, а через \menu{VTX Administrator} --- канал видеопередатчика.
+  \item[Betaflight TX Lua Scripts] настройка PID, рейтов, фильтров, VTX на квадрокоптере с
+        Betaflight прямо с пульта через телеметрию CRSF/SmartPort. Скачиваются с GitHub
+        проекта Betaflight, копируются в \code{SCRIPTS}, запускаются из \menu{Tools}.
+  \item[Мастера моделей] входят в пакет SD-карты EdgeTX.
+\end{description}
+
+\section{Устройство скрипта}
+
+Любой скрипт EdgeTX --- это файл, который \emph{возвращает таблицу} с функциями:
+\begin{itemize}
+  \item \code{init()} --- вызывается один раз при загрузке;
+  \item \code{run(...)} --- вызывается многократно: для утилит и экранов --- с кодом
+        нажатой кнопки (\code{event}), для микшерных --- со значениями входов;
+  \item \code{background()} --- (для экранов телеметрии) вызывается, пока экран не показан.
+\end{itemize}
+
+Ключевые функции API:
+\begin{center}\small
+\begin{tabularx}{\linewidth}{@{}p{55mm}X@{}}
+\toprule
+\code{getValue("RxBt")} & значение источника/датчика по имени (0, если нет) \\
+\code{lcd.clear()} & очистить экран \\
+\code{lcd.drawText(x, y, s, flags)} & текст; флаги \code{INVERS}, \code{BLINK},
+  \code{SMLSIZE}, \code{MIDSIZE}, \code{DBLSIZE} \\
+\code{lcd.drawNumber(x, y, n, flags)} & число; \code{PREC1}/\code{PREC2} --- 1 или 2 знака
+  после запятой (передавайте $n \times 10$ или $n \times 100$) \\
+\code{lcd.drawRectangle}, \code{lcd.drawFilledRectangle}, \code{lcd.drawLine} & графика \\
+\code{model.getInfo()}, \code{model.getTimer(i)} & данные текущей модели \\
+\code{playNumber(n, unit, flags)}, \code{playFile(path)} & голос \\
+\code{getTime()} & время в «тиках» по 10\,мс \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+Экран монохромный, 128×64 точки: $x$ от 0 до 127 слева направо, $y$ от 0 до 63 сверху вниз.
+
+\section{Пример 1: утилита}
+
+\luafile{hello.lua}
+
+Скопируйте файл в \code{SCRIPTS/TOOLS/hello.lua}, откройте \mpath{SYS\sep Tools} и
+запустите \menu{hello}. \code{return 1} из \code{run} завершает утилиту.
+
+\section{Пример 2: экран телеметрии}
+
+\luafile{batt.lua}
+
+Файл кладётся в \code{SCRIPTS/TELEMETRY/batt.lua}. На монохромных пультах имя файла
+телеметрического скрипта должно быть коротким --- не длиннее 6 символов без расширения.
+Затем \mpath{MDL\sep Telemetry\sep Screen 1} = \menu{Script}, \menu{batt}.
+
+\section{Пример 3: микшерный скрипт}
+
+\luafile{thrlim.lua}
+
+Скрипт получает стик газа и параметр \code{Limit} и отдаёт ограниченный газ. В
+\mpath{MDL\sep Custom Scripts} выберите \menu{thrlim}, укажите источник \sw{Thr} и предел.
+В миксере канала газа используйте источник \sw{Lim}. Микшерные скрипты выполняются
+каждый цикл, поэтому они должны быть быстрыми; для управления опасными функциями
+(моторы) применяйте их с осторожностью: при ошибке в скрипте EdgeTX его отключит, и выход
+перестанет обновляться.
+
+\section{Пример 4: функциональный скрипт}
+
+\luafile{lqcall.lua}
+
+Кладётся в \code{SCRIPTS/FUNCTIONS/lqcall.lua}. Специальная функция: \menu{Switch} = \sw{SA↓},
+\menu{Lua script} = \menu{lqcall}. В арме пульт раз в 10 секунд называет качество связи.
+
+\section{Отладка скриптов}
+
+\begin{itemize}
+  \item Синтаксические ошибки EdgeTX показывает на экране при запуске (\code{Script syntax error}).
+  \item Проверяйте скрипты на компьютере: EdgeTX Companion содержит симулятор пульта с
+        поддержкой Lua и отладочным выводом \code{print()}.
+  \item Если скрипт \emph{экрана} или \emph{миксера} «съел» слишком много времени или памяти,
+        EdgeTX его остановит (\code{Script killed}). Упрощайте код, не создавайте таблицы в
+        каждом вызове \code{run}.
+\end{itemize}
+
+\begin{tasks}
+\begin{enumerate}
+  \item Запустите \code{hello.lua} и добавьте в него вывод значения таймера 1.
+  \item Настройте \code{batt.lua} под свой аккумулятор (\code{CELLS}) и выведите его по \btn{TELE}.
+  \item Измените \code{lqcall.lua}, чтобы он говорил напряжение \sw{RxBt}, а не \sw{RQly}.
+\end{enumerate}
+\end{tasks}

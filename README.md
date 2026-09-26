@@ -41,3 +41,8 @@ latexmk -xelatex main.tex
 
 `highlight.py` нужно запускать после каждого изменения в `code/*.cpp`.
 Пакет `minted` не используется: его помощник `latexminted` из TeX Live 2025 несовместим с Python 3.14.
+
+## Другие материалы
+
+- [`edgetx-book/`](edgetx-book/) — книга «EdgeTX на RadioMaster TX12 и Boxer»: настройка аппаратуры
+  управления, ExpressLRS, миксеры, телеметрия, Lua-скрипты (XeLaTeX, готовый PDF — `edgetx-book/main.pdf`).
