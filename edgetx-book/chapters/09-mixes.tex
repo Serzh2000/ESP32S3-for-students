@@ -1,0 +1,253 @@
+% =====================================================================
+\chapter{Миксеры}
+\label{ch:mixes}
+% =====================================================================
+\chapterintro
+  {как входы и переключатели попадают в каналы, как «смешать» два движения в одной серве
+   (летающее крыло, V-хвост), как сделать отсечку газа и плавное движение шасси}
+  {модель с настроенными входами}
+
+\section{Что делает миксер}
+
+\begin{simple}
+Миксер --- это «распределитель»: он решает, \textbf{какой канал} получит какой сигнал.
+В простом случае всё один-к-одному: крен → канал 1, тангаж → канал 2. Но иногда одной
+серве нужно слушаться \emph{двух} стиков сразу --- тогда миксер складывает сигналы, как
+смешивают краски.
+\end{simple}
+
+Страница \mpath{MDL\sep Mixes}. Слева --- каналы, справа --- что в них идёт:
+
+\begin{center}
+\lcdscreen{MIXES}{7/13}{\lr{CH1 I1 Ail}{100}\lr{CH2 I2 Ele}{100}\lr{CH3 I3 Thr}{100}\lr{CH4 I4 Rud}{100}\lsel{CH5}{}\lblank}
+\end{center}
+
+Чтобы добавить строку в пустой канал --- встань на него и нажми \btn{ENTER}. Чтобы добавить
+вторую строку в канал --- долгое \btn{ENTER} → \menu{Insert after}.
+
+\section{Переключатели в каналы (AUX)}
+
+Самое частое дело: отправить переключатели на каналы 5, 6, 7…
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[every node/.style={font=\sffamily\small}]
+  \foreach \y/\s/\c/\p/\v/\t in {0/SA/CH5/1/100/арм,-1.3/SB/CH6/0/0/режим полёта,-2.6/SC/CH7/-1/-100/бипер}{
+    \pic[transform shape,scale=0.8] at (0,\y) {toggle=\p};
+    \node[font=\sffamily\small\bfseries] at (0.9,\y+0.1) {\s};
+    \draw[arr] (1.5,\y+0.1) -- (3.3,\y+0.1);
+    \node[font=\sffamily\scriptsize] at (2.4,\y+0.35) {миксер};
+    \node[draw=etx,fill=etx!8,rounded corners=2pt,minimum width=12mm] at (4.0,\y+0.1) {\c};
+    \fill[black!6,draw=black!30] (5.0,\y-0.05) rectangle (8.0,\y+0.25);
+    \draw[black!40] (6.5,\y-0.1) -- (6.5,\y+0.3);
+    \pgfmathsetmacro{\w}{1.5*\v/100}
+    \fill[etx!65] (6.5,\y-0.05) rectangle ++(\w,0.3);
+    \node[anchor=west,font=\sffamily\scriptsize] at (8.2,\y+0.1) {\v\quad (\t)};}
+\end{tikzpicture}
+\caption{Переключатель как источник: вверху $-100$, посередине 0, внизу $+100$}
+\end{figure}
+
+\begin{center}\small
+\begin{tabular}{@{}llll@{}}
+\toprule
+Канал & Source & Weight & Зачем \\
+\midrule
+\sw{CH5} & \sw{SA} & 100 & арм (в ELRS --- только двухпозиционный!) \\
+\sw{CH6} & \sw{SB} & 100 & режимы полёта контроллера \\
+\sw{CH7} & \sw{SC} & 100 & бипер, «черепаха», запись видео \\
+\sw{CH8} & \sw{S1} & 100 & наклон камеры (крутилка) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{Параметры строки миксера}
+
+\begin{center}
+\lcdscreen{MIXER}{CH1}{\lr{Mix name}{}\lr{Source}{I1 Ail}\lsel{Weight}{\ledit{50}}\lr{Offset}{0}\lr{Switch}{---}\lr{Multiplex}{Add}}
+\end{center}
+
+\begin{center}\small
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\linewidth}{@{}L{30mm}Y@{}}
+\toprule
+\menu{Source} & что брать: вход (\sw{I1}…), стик, переключатель, \sw{MAX} (всегда $+100$), другой канал \\
+\menu{Weight} & вес (минус --- в обратную сторону) \\
+\menu{Offset} & сдвиг \\
+\menu{Switch} & когда строка работает \\
+\menu{Multiplex} & как объединить с верхними строками: \menu{Add} --- \textbf{сложить},
+  \menu{Multiply} --- умножить, \menu{Replace} --- \textbf{заменить} \\
+\menu{Slow up/down} & плавность: за сколько секунд значение пройдёт весь путь \\
+\menu{Delay up/down} & задержка перед началом движения \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\section{Летающее крыло: элевоны}
+
+У летающего крыла нет хвоста. Две поверхности сзади --- \textbf{элевоны} --- работают и как
+элероны, и как руль высоты:
+
+\begin{figure}[H]
+\centering
+\begin{tabular}{@{}c@{\hspace{3mm}}c@{\hspace{3mm}}c@{}}
+\begin{tikzpicture}[scale=0.62]
+  \pic[transform shape,elL/.style={surf},elR/.style={surf}] {wingtop};
+  \upmark{(-2.4,-1.35)}\upmark{(2.4,-1.35)}
+\end{tikzpicture} &
+\begin{tikzpicture}[scale=0.62]
+  \pic[transform shape,elL/.style={surf},elR/.style={surf}] {wingtop};
+  \downmark{(-2.4,-1.35)}\upmark{(2.4,-1.35)}
+\end{tikzpicture} &
+\begin{tikzpicture}[scale=0.62]
+  \pic[transform shape,elL/.style={surf},elR/.style={surf}] {wingtop};
+  \node[circle,fill=black!40,text=white,font=\sffamily\scriptsize\bfseries,inner sep=1.2pt] at (-2.4,-1.35) {0};\upmark{(2.4,-1.35)}
+\end{tikzpicture}\\
+\small стик на себя: & \small стик вправо: & \small на себя + вправо: \\
+\small оба вверх → нос вверх & \small правый вверх, левый вниз & \small правый вверх, левый почти в нуле
+\end{tabular}
+\caption{Что делают элевоны. ↑ --- поверхность вверх, ↓ --- вниз}
+\end{figure}
+
+Значит, каждому элевону нужен и крен, и тангаж --- их надо \textbf{сложить}:
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[every node/.style={font=\sffamily\small}]
+  \node[blk,fill=blkin,minimum width=20mm] (ail) at (0,1) {\sw{I1} крен};
+  \node[blk,fill=blkin,minimum width=20mm] (ele) at (0,-1) {\sw{I2} тангаж};
+  \node[circle,draw=etx,fill=blkmix,minimum size=9mm,font=\sffamily\Large\bfseries] (p1) at (4,1) {+};
+  \node[circle,draw=etx,fill=blkmix,minimum size=9mm,font=\sffamily\Large\bfseries] (p2) at (4,-1) {+};
+  \node[blk,fill=blkout,minimum width=26mm] (c1) at (7.3,1) {\sw{CH1} левый элевон};
+  \node[blk,fill=blkout,minimum width=26mm] (c2) at (7.3,-1) {\sw{CH2} правый элевон};
+  \draw[arr] (ail) -- node[above,lbl]{$\times(+50\,\%)$} (p1);
+  \draw[arr] (ele) -- node[below right,lbl,pos=0.82]{$\times(+50\,\%)$} (p1);
+  \draw[arr] (ail) -- node[above right,lbl,pos=0.82]{$\times(-50\,\%)$} (p2);
+  \draw[arr] (ele) -- node[below,lbl]{$\times(+50\,\%)$} (p2);
+  \draw[arr] (p1) -- (c1);
+  \draw[arr] (p2) -- (c2);
+\end{tikzpicture}
+\caption{Каждый элевон = половина крена + половина тангажа. У правого крен со знаком минус}
+\end{figure}
+
+\begin{recipe}{элевоны}
+\begin{center}\small
+\begin{tabular}{@{}llll@{}}
+\toprule
+Канал & Source & Weight & Multiplex \\
+\midrule
+\sw{CH1} & \sw{I1} Ail & $+50$ & Add \\
+         & \sw{I2} Ele & $+50$ & Add \\
+\sw{CH2} & \sw{I1} Ail & $-50$ & Add \\
+         & \sw{I2} Ele & $+50$ & Add \\
+\sw{CH3} & \sw{I3} Thr & 100 & Add \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{recipe}
+
+\begin{whyit}
+Посчитаем. Стик крена вправо на 40\,\% (это $+40$), стик тангажа на себя на 60\,\%
+(на себя --- это минус: $-60$).
+\begin{itemize}
+  \item \sw{CH1} (левый) $= 40\cdot0{,}5 + (-60)\cdot0{,}5 = 20 - 30 = -10$;
+  \item \sw{CH2} (правый) $= 40\cdot(-0{,}5) + (-60)\cdot0{,}5 = -20 - 30 = -50$.
+\end{itemize}
+Пусть минус у нас означает «поверхность вверх». Тогда оба элевона идут вверх --- нос
+поднимается, но правый сильно, а левый чуть-чуть --- крыло кренится вправо. Всё как надо!
+(Если у твоей сервы «вверх» --- это плюс, это исправляется реверсом на странице \menu{Outputs}.)
+Веса по 50\,\% нужны, чтобы сумма никогда не превысила 100\,\%.
+\end{whyit}
+
+Проверяй на земле: стик на себя --- оба элевона вверх; стик вправо --- правый вверх, левый вниз.
+Если какой-то ходит наоборот --- включи реверс этого канала на странице \menu{Outputs}
+(глава~\ref{ch:outputs}).
+
+\section{V-образный хвост}
+
+Тот же приём, только смешиваются тангаж и рыскание:
+
+\begin{figure}[H]
+\centering
+\begin{tabular}{@{}c@{\hspace{12mm}}c@{}}
+\begin{tikzpicture}[scale=1.1]\pic[transform shape] {vtail={45}{135}};\end{tikzpicture} &
+\begin{tikzpicture}[scale=1.1]\pic[transform shape] {vtail={45}{-45}};\end{tikzpicture}\\
+\small тангаж «нос вверх»: обе вверх & \small рыскание вправо: обе вправо
+\end{tabular}
+\caption{V-хвост, вид сзади}
+\end{figure}
+
+\sw{CH2} = Ele $+50$ и Rud $+50$; \sw{CH4} = Ele $+50$ и Rud $-50$.
+
+\section{Отсечка газа: строка «Replace»}
+
+\begin{simple}
+Строки канала работают по очереди сверху вниз. Строка с \menu{Replace} говорит: «забудь всё,
+что насчитали выше, теперь значение --- вот такое». Если её включать переключателем, получится
+надёжная «кнопка стоп» для мотора.
+\end{simple}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[every node/.style={font=\sffamily\small}]
+  \node[blk,fill=blkin,minimum width=30mm] (a) at (0,0.6) {строка 1: \sw{I3} газ};
+  \node[blk,fill=warn!15,draw=warn,minimum width=30mm] (b) at (0,-0.6) {строка 2: \sw{MAX} $-100$\\\scriptsize Replace, если \sw{SD↓}};
+  \node[blk,fill=blkout,minimum width=18mm] (c) at (5.5,0) {\sw{CH3}};
+  \draw[arr] (a.east) -- (c.west);
+  \draw[arr,warn] (b.east) -- (c.west);
+  \node[anchor=west,font=\sffamily\scriptsize,align=left] at (6.5,0.4) {\sw{SD↑}: газ от стика};
+  \node[anchor=west,font=\sffamily\scriptsize,align=left,text=warn] at (6.5,-0.4) {\sw{SD↓}: всегда $-100$ (мотор стоп)};
+\end{tikzpicture}
+\caption{Отсечка газа}
+\end{figure}
+
+\begin{recipe}{отсечка газа для самолёта}
+В канале \sw{CH3} после строки газа добавь строку: Source = \sw{MAX}, Weight = $-100$,
+Switch = \sw{SD↓}, Multiplex = \menu{Replace}. То же можно сделать специальной функцией
+\menu{Override} (глава~\ref{ch:special}).
+\end{recipe}
+
+\section{Плавность (Slow) и задержка (Delay)}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{axis}[width=11cm,height=4.6cm,xmin=0,xmax=6,ymin=-110,ymax=110,
+  xlabel={секунды},ylabel={канал},grid=major,grid style={gray!20},
+  tick label style={font=\scriptsize},label style={font=\small},legend pos=south east,legend style={font=\scriptsize}]
+\addplot[very thick,black!50,const plot] coordinates {(0,-100) (1,100) (6,100)};
+\addplot[very thick,accent] coordinates {(0,-100) (1,-100) (3,100) (6,100)};
+\addplot[very thick,etx,dashed] coordinates {(0,-100) (2,-100) (4,100) (6,100)};
+\legend{переключатель,Slow 2\,с,Delay 1\,с + Slow 2\,с}
+\end{axis}
+\end{tikzpicture}
+\caption{Щёлкнул переключатель в момент 1\,с. С \menu{Slow} канал плавно доедет за 2 секунды,
+с \menu{Delay} --- ещё и начнёт позже}
+\end{figure}
+
+Примеры: шасси и закрылки выезжают плавно, «как у настоящих» (\menu{Slow} 2--3\,с);
+у планера мотор запускается плавно (\menu{Slow up} 1\,с на газу).
+
+\section{Компенсация при выпуске закрылков}
+
+При выпуске закрылков самолёт задирает нос. Добавь в канал руля высоты строку:
+Source = переключатель закрылков, Weight = $-10$ (подбирается в полёте),
+Curve = \menu{x>0} --- поправка будет работать только при выпущенных закрылках.
+
+\begin{tryit}
+\begin{enumerate}
+  \item Отправь \sw{SA} в \sw{CH5}, \sw{SB} в \sw{CH6}. Проверь на странице каналов.
+  \item Сделай модель «летающее крыло» с элевонами. Подвигай стиками и посмотри, как меняются
+        \sw{CH1} и \sw{CH2}. Посчитай в уме, какие должны быть значения.
+  \item Добавь \menu{Slow} 3\,с на \sw{CH6} и посмотри, как медленно ползёт полоска.
+\end{enumerate}
+\end{tryit}
+
+\begin{summary}
+\begin{itemize}
+  \item Миксер решает, какой канал получает какой сигнал.
+  \item Строки одного канала выполняются сверху вниз: \menu{Add} --- сложить,
+        \menu{Replace} --- заменить.
+  \item Элевоны и V-хвост --- по две строки с весами 50\,\% и разными знаками.
+  \item \menu{Slow} --- плавность, \menu{Delay} --- задержка.
+\end{itemize}
+\end{summary}

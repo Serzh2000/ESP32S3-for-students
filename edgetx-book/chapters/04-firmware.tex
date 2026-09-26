@@ -1,0 +1,237 @@
+% =====================================================================
+\chapter{Обновление прошивки и SD-карты}
+\label{ch:firmware}
+% =====================================================================
+\chapterintro
+  {какие программы живут в пульте и в модели, как сделать резервную копию, как обновить
+   EdgeTX, содержимое SD-карты и радиомодуль ExpressLRS}
+  {компьютер с браузером Chrome или Edge, кабель USB-C \emph{с передачей данных}
+   (некоторые кабели умеют только заряжать!)}
+
+\section{Сколько «мозгов» в пульте и модели}
+
+\begin{simple}
+В твоей системе не одна программа, а несколько. Каждая живёт в своём «мозге» (микросхеме)
+и обновляется по-своему. Главное правило: \textbf{радиомодуль в пульте и приёмник в модели
+должны иметь совместимые версии}, иначе они не договорятся.
+\end{simple}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[every node/.style={font=\sffamily\scriptsize}]
+  % пульт
+  \draw[etx,dashed,rounded corners=3pt] (-1.2,-1.6) rectangle (6.6,1.9);
+  \node[font=\sffamily\small\bfseries,text=etx,anchor=west] at (-1.1,1.6) {в пульте};
+  \pic[transform shape] at (0.4,0.3) {chip={STM32}};
+  \node[align=center] at (0.4,-0.9) {\textbf{EdgeTX}\\меню, миксеры};
+  \pic[transform shape,scale=1.1] at (2.9,0.3) {sdcard};
+  \node[align=center] at (2.9,-0.9) {\textbf{SD-карта}\\модели, звуки,\\скрипты};
+  \pic[transform shape] at (5.3,0.3) {chip={ESP32}};
+  \node[align=center] at (5.3,-0.9) {\textbf{модуль ELRS}\\радиопередатчик};
+  % модель
+  \draw[okgreen!60!black,dashed,rounded corners=3pt] (8.0,-1.6) rectangle (13.4,1.9);
+  \node[font=\sffamily\small\bfseries,text=okgreen!50!black,anchor=west] at (8.1,1.6) {в модели};
+  \pic[transform shape,scale=1.3] at (9.4,0.3) {receiver};
+  \node[align=center] at (9.4,-0.9) {\textbf{приёмник ELRS}};
+  \pic[transform shape,scale=1.2] at (12.2,0.3) {fcboard};
+  \node[align=center] at (12.2,-0.9) {\textbf{полётный}\\\textbf{контроллер}\\(Betaflight…)};
+  \radiowaves{(6.6,0.3)}{0}
+  \draw[darr,accent] (5.3,1.3) to[bend left=30] node[above,font=\sffamily\scriptsize\bfseries,text=accent,fill=white,inner sep=1pt]{версии должны совпадать} (9.4,1.3);
+\end{tikzpicture}
+\caption{Программы, которые может понадобиться обновить}
+\end{figure}
+
+\begin{center}\small
+\renewcommand{\arraystretch}{1.25}
+\begin{tabularx}{\linewidth}{@{}L{32mm}L{42mm}Y@{}}
+\toprule
+\textbf{Что} & \textbf{Чем обновлять} & \textbf{Когда} \\
+\midrule
+EdgeTX (пульт) & EdgeTX Buddy или загрузчик & нужна новая функция или исправление \\
+SD-карта & EdgeTX Buddy или архив с сайта & \emph{всегда} после обновления EdgeTX \\
+Модуль ELRS & ExpressLRS Configurator, по Wi-Fi & когда обновляешь приёмники \\
+Приёмник ELRS & ExpressLRS Configurator, по Wi-Fi & вместе с модулем \\
+Полётный контроллер & Betaflight / INAV Configurator & по необходимости \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\section{Нужно ли вообще обновляться?}
+
+Пульт приходит с рабочей версией --- летать можно сразу. Обновляйся, если:
+\begin{itemize}
+  \item в новой версии есть то, что тебе нужно;
+  \item у модуля ELRS и приёмников разные версии;
+  \item в группе или кружке все пульты должны быть одинаковыми.
+\end{itemize}
+
+\begin{caution}
+Не обновляйся накануне соревнований или важного полёта. И не ставь на основной пульт
+«ночные» (\emph{nightly}) версии --- это черновики для тестировщиков.
+\end{caution}
+
+\section{Шаг 0. Узнай версию}
+
+\mpath{SYS\sep About} --- последняя страница меню пульта:
+
+\begin{center}
+\lcdscreen{ABOUT}{9/9}{\lblank\lc{EdgeTX}\lc{v2.11.2}\lc{tx12mk2}\lblank\lblank}
+\end{center}
+
+Строка \code{tx12mk2} --- это \emph{для какого пульта} собрана прошивка. У TX12, TX12 MKII и
+Boxer прошивки \textbf{разные}: \code{tx12}, \code{tx12mk2}, \code{boxer}.
+
+\section{Шаг 1. Резервная копия}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[every node/.style={font=\sffamily\small}]
+  \pic[transform shape] at (0,0) {minitx};
+  \draw[black!70,line width=1.4pt] (0,-0.55) .. controls (0,-1.4) and (2.5,-1.4) .. (2.8,-0.2);
+  \node[lbl] at (1.3,-1.5) {USB-C};
+  \pic[transform shape,scale=1.2] at (3.8,-0.4) {laptop};
+  \node[font=\sffamily\scriptsize,align=center] at (3.8,0.35) {диск\\«EDGETX»};
+  \draw[arr] (5.3,0.2) -- (6.6,0.2);
+  \node[draw=black!50,fill=yellow!20,rounded corners=2pt,align=left,font=\ttfamily\scriptsize,anchor=west] at (6.8,0.2)
+    {backup-2026-09-26/\\\ \ MODELS/\\\ \ RADIO/\\\ \ SOUNDS/ …};
+\end{tikzpicture}
+\caption{Копируем всю SD-карту в папку на компьютере}
+\end{figure}
+
+\begin{enumerate}
+  \item Включи пульт и подключи к компьютеру. На экране пульта появится вопрос ---
+        выбери \menu{USB Storage (SD)}.
+  \item На компьютере появится новый диск. Скопируй \textbf{все} папки в новую папку с датой.
+  \item Безопасно извлеки диск.
+\end{enumerate}
+
+\section{Шаг 2. Прошивка через EdgeTX Buddy}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[every node/.style={font=\sffamily\small}]
+  \foreach \i/\t/\x in {1/{Открой\\buddy.edgetx.org\\в Chrome},2/{Выбери версию\\и свой пульт},3/{Выключи пульт\\и подключи USB},4/{Нажми «Flash»,\\жди 1--2 мин}}{
+    \node[draw=etx,fill=etx!6,rounded corners=3pt,text width=30mm,minimum height=17mm,align=center] (b\i) at (\i*3.8,0) {\t};
+    \node[circle,fill=accent,text=white,font=\sffamily\small\bfseries,inner sep=1.5pt] at ($(b\i.north west)+(0.15,-0.15)$) {\i};
+  }
+  \foreach \i [evaluate=\i as \j using int(\i+1)] in {1,2,3}{\draw[arr] (b\i) -- (b\j);}
+\end{tikzpicture}
+\caption{Обновление EdgeTX за 4 шага}
+\end{figure}
+
+\begin{enumerate}
+  \item Открой \code{buddy.edgetx.org} в Chrome или Edge (другие браузеры не умеют работать с USB).
+  \item Вкладка \menu{Flash}: выбери последнюю \emph{стабильную} версию (release) и пульт ---
+        \menu{RadioMaster TX12 Mark II}, \menu{RadioMaster TX12} или \menu{RadioMaster Boxer}.
+        Можно выбрать язык меню, в том числе русский.
+  \item \textbf{Выключи} пульт и подключи его кабелем. Компьютер увидит устройство
+        \code{STM32 BOOTLOADER} (экран пульта при этом может остаться тёмным --- это нормально).
+  \item Нажми \menu{Flash}, выбери устройство в окошке браузера и жди. \textbf{Не выдёргивай кабель!}
+\end{enumerate}
+
+\begin{tip}
+Если браузер не видит пульт на Windows, нужен драйвер WinUSB --- Buddy покажет, как его
+поставить (обычно утилитой Zadig). Если кабель «только для зарядки», компьютер не увидит
+вообще ничего --- возьми другой кабель.
+\end{tip}
+
+\section{Шаг 3. Обнови SD-карту}
+
+Новой версии EdgeTX нужны новые звуки и скрипты. В Buddy вкладка \menu{SD Card}:
+\begin{enumerate}
+  \item включи пульт в режиме \menu{USB Storage (SD)};
+  \item выбери диск пульта, версию и язык голоса (например, русский);
+  \item Buddy допишет нужные файлы и \emph{не тронет} твои модели.
+\end{enumerate}
+
+Если забыть этот шаг, при включении пульт покажет предупреждение о версии SD-карты.
+
+\section{Запасной путь: загрузчик}
+
+Если Buddy не видит пульт, можно прошить со SD-карты:
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[scale=0.5]
+  \drawTXtwelve
+  \foreach \x in {-4.9,4.9}{\path[fill=accent,draw=black,rounded corners=1pt] (\x-1.1,-1.55) rectangle (\x+1.1,-1.3);}
+  \draw[motion] (-8.3,-1.42) -- (-6.1,-1.42);
+  \draw[motion] (8.3,-1.42) -- (6.1,-1.42);
+  \path[fill=accent] (0,-2.1) circle (0.3);
+  \node[font=\sffamily\small\bfseries,text=accent,anchor=east] at (-8.4,-1.42) {1. прижми};
+  \node[font=\sffamily\small\bfseries,text=accent,anchor=west] at (8.4,-1.42) {1. прижми};
+  \draw[motion] (0,-4.3) -- (0,-2.5);
+  \node[font=\sffamily\small\bfseries,text=accent,anchor=north] at (0,-4.3) {2. включи};
+\end{tikzpicture}
+\caption{Вход в загрузчик: прижми оба \emph{горизонтальных} триммера \emph{внутрь} (к центру)
+и, не отпуская, включи пульт}
+\end{figure}
+
+\begin{enumerate}
+  \item Скачай файл прошивки \code{.bin} для своего пульта и положи в папку \code{FIRMWARE}
+        на SD-карте.
+  \item Войди в загрузчик (рисунок выше).
+  \item Выбери \menu{Write Firmware} → файл → подтверди. Дождись конца и выбери \menu{Exit}.
+\end{enumerate}
+
+\begin{center}
+\lcdscreen{EdgeTX Bootloader}{}{\lblank\lsel{Write Firmware}{}\lr{Restore Firmware}{}\lr{Exit}{}\lblank\lblank}
+\end{center}
+
+\section{Обновление модуля ExpressLRS}
+\label{sec:elrs-update}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[every node/.style={font=\sffamily\small}]
+  \pic[transform shape,scale=1.3] at (0,0) {minitx};
+  \node[lbl,align=center] at (0,-1.4) {пульт:\\ExpressLRS → WiFi};
+  \foreach \r in {0.35,0.6,0.85}{\draw[etx,line width=1pt] (1.6,0.2) ++(-40:\r) arc (-40:40:\r);}
+  \node[lbl] at (2.2,1.35) {Wi-Fi «ExpressLRS TX»};
+  \pic[transform shape,scale=1.3] at (4.8,-0.3) {laptop};
+  \node[font=\ttfamily\scriptsize] at (4.8,0.6) {10.0.0.1};
+  \node[lbl,align=center] at (4.8,-1.4) {браузер: загрузи\\firmware.bin};
+  \draw[arr] (7.0,0.2) -- (8.2,0.2);
+  \node[draw=okgreen,fill=okgreen!8,rounded corners=2pt,align=center] at (9.6,0.2) {модуль\\обновлён};
+\end{tikzpicture}
+\caption{Обновление модуля ELRS по Wi-Fi}
+\end{figure}
+
+\begin{enumerate}
+  \item Установи на компьютер \textbf{ExpressLRS Configurator}. Выбери версию и свой пульт
+        (например, \menu{RadioMaster TX12 2400 TX} или \menu{RadioMaster Boxer 2400 TX}).
+  \item Придумай \textbf{фразу привязки} (binding phrase) --- любые слова. Её же потом впишешь
+        во все свои приёмники, и они будут связываться с пультом сами (глава~\ref{ch:rf}).
+  \item Способ прошивки --- \menu{WiFi}. Нажми \menu{Build} --- получишь файл \code{firmware.bin}.
+  \item На пульте: \mpath{SYS\sep Tools\sep ExpressLRS\sep WiFi Connectivity\sep Enable WiFi}.
+  \item Подключи компьютер к Wi-Fi \code{ExpressLRS TX} (пароль \code{expresslrs}),
+        открой \code{http://10.0.0.1} и загрузи файл.
+\end{enumerate}
+
+Есть и способ через USB: в Configurator выбери \menu{EdgeTX Passthrough}, а пульт подключи в
+режиме \menu{USB Serial (VCP)}.
+
+\subsection{Мультипротокольный модуль}
+
+Для пультов с модулем «4-в-1»: скачай прошивку модуля (\code{.bin}), положи в папку
+\code{FIRMWARE}, затем \mpath{SYS\sep SD card}, найди файл, долгое \btn{ENTER} →
+\menu{Flash internal Multi}.
+
+\begin{tryit}
+\begin{enumerate}
+  \item Сделай резервную копию SD-карты своего пульта.
+  \item Посмотри версию EdgeTX в \menu{About} и сравни с последней на \code{edgetx.org}.
+  \item Открой \mpath{SYS\sep Tools\sep ExpressLRS} и посмотри версию модуля
+        (в нижней строке скрипта).
+\end{enumerate}
+\end{tryit}
+
+\begin{summary}
+\begin{itemize}
+  \item Сначала --- резервная копия SD-карты.
+  \item EdgeTX обновляется через Buddy (выключенный пульт + USB) или через загрузчик
+        (триммеры внутрь + питание).
+  \item После EdgeTX обязательно обнови SD-карту.
+  \item Модуль ELRS и приёмники обновляются отдельно и должны иметь совместимые версии.
+\end{itemize}
+\end{summary}

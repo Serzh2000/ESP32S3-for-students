@@ -24,12 +24,18 @@
   \newfontfamily\cyrillicfonttt{DejaVu Sans Mono}[Scale=0.85]
 }
 
+\newfontfamily\symfont{DejaVu Sans}
+\DeclareRobustCommand{\cmark}{{\symfont ✓}}
+\DeclareRobustCommand{\xmark}{{\symfont ✗}}
+
 % ---------- Вёрстка ----------
 \RequirePackage[margin=2.2cm,top=2.4cm,bottom=2.4cm]{geometry}
 \RequirePackage{microtype}
 \setlength{\emergencystretch}{2.5em}
 \RequirePackage{amsmath}
 \RequirePackage{booktabs,tabularx,array,longtable}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
 \RequirePackage{enumitem}
 \setlist{itemsep=2pt,topsep=4pt}
 \RequirePackage{xcolor}
@@ -51,6 +57,7 @@
 \RequirePackage{siunitx}
 \sisetup{output-decimal-marker={,},range-phrase={\,--\,},range-units=single}
 \pgfplotsset{compat=1.18}
+\usepgfplotslibrary{groupplots}
 
 % ---------- Цвета ----------
 \definecolor{etx}{HTML}{1A5276}      % основной (тёмно-синий)
@@ -66,6 +73,7 @@
 \definecolor{blkout}{HTML}{D5F5E3}
 \definecolor{blkrf}{HTML}{FADBD8}
 \definecolor{blksw}{HTML}{E8DAEF}
+\colorlet{mutegray}{black!40}
 
 % ---------- Заголовки ----------
 \titleformat{\chapter}[display]
@@ -116,27 +124,34 @@
 \newtcolorbox{caution}{enhanced,colback=warn!6,colframe=warn,fonttitle=\sffamily\bfseries,
   title=Осторожно,boxrule=0.8pt,arc=2pt,left=6pt,right=6pt}
 \newtcolorbox{tip}{enhanced,colback=gray!6,colframe=gray!60,fonttitle=\sffamily\bfseries,
-  title=Совет,boxrule=0.8pt,arc=2pt,left=6pt,right=6pt}
+  title=Подсказка,boxrule=0.8pt,arc=2pt,left=6pt,right=6pt}
 \newtcolorbox{note}{enhanced,colback=accent!5,colframe=accent,fonttitle=\sffamily\bfseries,
   title=На заметку,boxrule=0.8pt,arc=2pt,left=6pt,right=6pt}
 \newtcolorbox{recipe}[1]{enhanced,colback=okgreen!4,colframe=okgreen,fonttitle=\sffamily\bfseries,
   title={Рецепт: #1},boxrule=0.8pt,arc=2pt,left=6pt,right=6pt,breakable}
 \newtcolorbox{summary}{enhanced,colback=okgreen!5,colframe=okgreen,fonttitle=\sffamily\bfseries,
-  title=Итоги главы,boxrule=0.8pt,arc=2pt,left=6pt,right=6pt}
+  title=Запомни,boxrule=0.8pt,arc=2pt,left=6pt,right=6pt}
 \newtcolorbox{tasks}{enhanced,colback=etx!4,colframe=etx,fonttitle=\sffamily\bfseries,
   title=Практикум,boxrule=0.8pt,arc=2pt,left=6pt,right=6pt}
+
+\newtcolorbox{simple}{enhanced,colback=yellow!7,colframe=yellow!55!orange,coltitle=black,
+  fonttitle=\sffamily\bfseries,title={\bulbicon\ Простыми словами},boxrule=0.8pt,arc=2pt,left=6pt,right=6pt}
+\newtcolorbox{tryit}{enhanced,colback=okgreen!4,colframe=okgreen!70!black,fonttitle=\sffamily\bfseries,
+  title={Попробуй сам},boxrule=0.8pt,arc=2pt,left=6pt,right=6pt,breakable}
+\newtcolorbox{whyit}{enhanced,colback=etx!3,colframe=etx!60,fonttitle=\sffamily\bfseries,
+  title={Как это работает},boxrule=0.8pt,arc=2pt,left=6pt,right=6pt,breakable}
 
 % ---------- Разметка интерфейса ----------
 \newcommand{\code}[1]{\texttt{#1}}
 \newcommand{\chkbox}{{\setlength{\fboxsep}{0pt}\setlength{\fboxrule}{0.8pt}\fbox{\rule{0pt}{2.2mm}\hspace{2.2mm}}}}
 % Физическая кнопка пульта
-\newcommand{\btn}[1]{\tikz[baseline=(k.base)]\node[k,draw=etx!70,fill=etx!8,rounded corners=1.5pt,
+\DeclareRobustCommand{\btn}[1]{\tikz[baseline=(k.base)]\node[k,draw=etx!70,fill=etx!8,rounded corners=1.5pt,
   inner sep=1.6pt,font=\sffamily\scriptsize\bfseries] (k) {#1};}
 % Пункт меню / параметр EdgeTX (как на экране)
 \newcommand{\menu}[1]{\textsf{\small\color{etxdark}#1}}
 % Путь по меню: \path{SYS}{Hardware}{Calibration}
 \newcommand{\mpath}[1]{\textsf{\small\color{etxdark}#1}}
-\newcommand{\sep}{\,\textcolor{accent}{$\triangleright$}\,}
+\newcommand{\sep}{\,\textcolor{accent}{$\triangleright$}\allowbreak\,}
 % Переключатель / источник
 \newcommand{\sw}[1]{\textsf{\bfseries #1}}
 
@@ -164,5 +179,7 @@
     {\large\color{accent}\MakeUppercase{Приложение} \thechapter}
     {2mm}{\Huge}[{\color{accent}\titlerule[1.4pt]}]%
 }
+
+\input{edgetx-pics}
 
 \endinput

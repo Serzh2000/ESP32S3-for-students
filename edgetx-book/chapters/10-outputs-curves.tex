@@ -1,0 +1,182 @@
+% =====================================================================
+\chapter{Выходы и кривые}
+\label{ch:outputs}
+% =====================================================================
+\chapterintro
+  {как настроить направление сервы, её крайние положения и точный центр; что такое кривые
+   и функции и где они пригождаются}
+  {модель с сервами (для практики) или полётный контроллер}
+
+\section{Выходы: подгоняем под механику}
+
+\begin{simple}
+Все сервы разные, и стоят они в модели по-разному: одна «смотрит» влево, другая вправо,
+у одной качалка чуть кривая. \textbf{Выходы} (Outputs) --- последняя остановка на фабрике:
+здесь сигнал подгоняется под конкретную серву, чтобы руль ходил куда надо и ничего
+не ломал.
+\end{simple}
+
+\begin{center}
+\lcdscreen{OUTPUTS}{8/13}{\lr{CH1\ \ \ 0.0\ \ -100\ \ 100}{---}\lsel{CH2\ \ \ 0.0\ \ -100\ \ 100}{INV}\lr{CH3\ \ \ 0.0\ \ -100\ \ 100}{---}\lr{CH4\ \ \ 2.5\ \ \ -85\ \ \ 85}{---}\lblank\lblank}
+\end{center}
+
+В каждой строке: канал, сабтрим, минимум, максимум, направление. \sw{CH2} здесь
+\emph{инвертирован} (\menu{INV}), у \sw{CH4} сдвинут центр и уменьшен ход.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[scale=1.25]
+  % недопустимые зоны
+  \fill[warn!18] (0,0) -- (160:2.2) arc (160:140:2.2) -- cycle;
+  \fill[warn!18] (0,0) -- (40:2.2) arc (40:20:2.2) -- cycle;
+  \fill[okgreen!15] (0,0) -- (140:2.2) arc (140:40:2.2) -- cycle;
+  \draw[black!40] (160:2.2) arc (160:20:2.2);
+  % пределы
+  \draw[warn,line width=1.2pt] (0,0) -- (140:2.35) node[above left,font=\sffamily\scriptsize,text=warn]{Min};
+  \draw[warn,line width=1.2pt] (0,0) -- (40:2.35) node[above right,font=\sffamily\scriptsize,text=warn]{Max};
+  % центр и сабтрим
+  \draw[black!40,dashed] (0,0) -- (90:2.4) node[above,font=\sffamily\scriptsize,text=black!60]{центр};
+  \draw[etx,line width=1.4pt] (0,0) -- (96:2.2);
+  \draw[etx,-{Latex[length=1.8mm]}] (90:1.7) arc (90:96:1.7);
+  \node[font=\sffamily\scriptsize,text=etx,anchor=east] at (97:1.55) {сабтрим};
+  \node[font=\sffamily\scriptsize,text=warn,align=center] at (165:3.3) {упор\\механики};
+  \node[font=\sffamily\scriptsize,text=warn,align=center] at (15:3.3) {упор\\механики};
+  \node[font=\sffamily\scriptsize,text=okgreen!50!black] at (90:1.0) {рабочий ход};
+  \shade[ball color=white] (0,0) circle (0.14);
+  \path[top color=etx!50,bottom color=etx!75,draw=etx!40!black,rounded corners=1pt] (-0.9,-0.1) rectangle (0.9,-0.75);
+  \node[font=\sffamily\tiny\bfseries,white] at (0,-0.43) {SERVO};
+\end{tikzpicture}
+\caption{Min и Max не пускают серву в «красные зоны», где она упрётся в механику.
+Сабтрим чуть подвигает центр}
+\end{figure}
+
+\begin{center}\small
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\linewidth}{@{}L{32mm}Y@{}}
+\toprule
+\menu{Subtrim} & маленький сдвиг центра сервы \\
+\menu{Min}, \menu{Max} & «стены»: дальше этих значений канал не уйдёт никогда, что бы ни делали
+  миксеры \\
+\menu{Direction} & \menu{INV} --- серва крутится в обратную сторону (реверс) \\
+\menu{Curve} & кривая на выходе (нужна редко) \\
+\menu{PPM Center} & центр в микросекундах (обычно 1500) \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\section{Настройка серв по шагам}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[every node/.style={font=\sffamily\small}]
+  \foreach \i/\t/\x in {1/{Механика:\\качалку ставим\\ровно},2/{Направление:\\куда пошёл руль?\\если не туда --- INV},3/{Центр:\\Subtrim\\до ровного руля},4/{Пределы:\\Min/Max, чтобы\\не упиралось}}{
+    \node[draw=etx,fill=etx!6,rounded corners=3pt,text width=31mm,minimum height=19mm,align=center] (b\i) at (\i*3.9,0) {\t};
+    \node[circle,fill=accent,text=white,font=\sffamily\small\bfseries,inner sep=1.5pt] at ($(b\i.north west)+(0.15,-0.15)$) {\i};}
+  \foreach \i [evaluate=\i as \j using int(\i+1)] in {1,2,3}{\draw[arr] (b\i) -- (b\j);}
+\end{tikzpicture}
+\caption{Четыре шага настройки сервы}
+\end{figure}
+
+\begin{enumerate}
+  \item \textbf{Механика.} Включи модель, стики в центре. Переставь качалку на шлицах сервы,
+        чтобы она стояла как можно ровнее. Сабтрим --- только для последней доводки.
+  \item \textbf{Направление.} Отклони стик --- куда пошёл руль? Не туда --- поставь \menu{INV}.
+        Реверс делай \emph{здесь}, а не минусом во входах: так не запутаются миксеры.
+  \item \textbf{Центр.} Подкрути \menu{Subtrim}, пока руль не встанет ровно.
+  \item \textbf{Пределы.} Отклони стик до упора и уменьшай \menu{Min} или \menu{Max}, пока
+        руль не перестанет упираться. Серва не должна жужжать в крайнем положении ---
+        это значит, она упёрлась и греется.
+\end{enumerate}
+
+\begin{tip}
+После первых полётов самолёта можно перенести значения триммеров в сабтримы: долгое
+\btn{ENTER} на странице \menu{Outputs} → \menu{Trims to subtrims}. Триммеры обнулятся,
+а самолёт полетит так же ровно.
+\end{tip}
+
+\begin{caution}
+Для квадрокоптера (Betaflight, INAV) на каналах \sw{CH1}--\sw{CH4} ничего не меняй: ни
+сабтримов, ни пределов. Контроллеру нужны «честные» 1000--2000\,мкс. Проверяй на вкладке
+\menu{Receiver} в конфигураторе.
+\end{caution}
+
+\section{Кривые}
+
+\begin{simple}
+Кривая --- это «правило превращения»: какое число получится на выходе, если на входе
+такое-то. Ты сам рисуешь это правило точками. Пульт соединяет точки линией.
+\end{simple}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{groupplot}[group style={group size=3 by 1,horizontal sep=12mm},
+  width=5.6cm,height=5cm,xmin=-100,xmax=100,ymin=-100,ymax=100,
+  grid=major,grid style={gray!20},tick label style={font=\tiny},title style={font=\sffamily\small}]
+\nextgroupplot[title={прямая (без кривой)}]
+  \addplot[very thick,gray] coordinates {(-100,-100) (100,100)};
+\nextgroupplot[title={5 точек}]
+  \addplot[very thick,etx,mark=*,mark options={fill=white}] coordinates {(-100,-100) (-50,-70) (0,-25) (50,35) (100,100)};
+\nextgroupplot[title={5 точек + Smooth}]
+  \addplot[very thick,accent,smooth,mark=*,mark options={fill=white}] coordinates {(-100,-100) (-50,-70) (0,-25) (50,35) (100,100)};
+\end{groupplot}
+\end{tikzpicture}
+\caption{Кривая газа из пяти точек: $-100, -70, -25, 35, 100$. Внизу газ растёт медленно,
+вверху --- быстро}
+\end{figure}
+
+Кривые хранятся в \mpath{MDL\sep Curves} (до 32 штук). У каждой:
+\begin{itemize}
+  \item \menu{Count} --- сколько точек (от 2 до 17);
+  \item \menu{Type}: \menu{Standard} --- точки на равных расстояниях по горизонтали,
+        \menu{Custom} --- можно двигать точки в любую сторону;
+  \item \menu{Smooth} --- сгладить углы.
+\end{itemize}
+
+Кривую выбирают в поле \menu{Curve} у входа, миксера или выхода.
+
+\subsection{Готовые функции}
+
+Иногда своя кривая не нужна --- есть готовые формы:
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{groupplot}[group style={group size=4 by 1,horizontal sep=8mm},
+  width=4.3cm,height=3.9cm,xmin=-100,xmax=100,ymin=-100,ymax=100,xtick=\empty,ytick=\empty,
+  axis lines=middle,title style={font=\sffamily\small}]
+\nextgroupplot[title={x>0}]
+  \addplot[very thick,etx] coordinates {(-100,0) (0,0) (100,100)};
+\nextgroupplot[title={x<0}]
+  \addplot[very thick,etx] coordinates {(-100,-100) (0,0) (100,0)};
+\nextgroupplot[title={|x|}]
+  \addplot[very thick,etx] coordinates {(-100,100) (0,0) (100,100)};
+\nextgroupplot[title={f>0}]
+  \addplot[very thick,etx] coordinates {(-100,0) (0,0) (0.01,100) (100,100)};
+\end{groupplot}
+\end{tikzpicture}
+\caption{Функции: \menu{x>0} пропускает только «плюс», \menu{x<0} --- только «минус»,
+\menu{|x|} превращает минус в плюс, \menu{f>0} --- «вкл/выкл» по знаку}
+\end{figure}
+
+Например, \menu{x>0} на переключателе закрылков даёт поправку только при выпущенных
+закрылках (глава~\ref{ch:mixes}).
+
+\begin{tryit}
+\begin{enumerate}
+  \item Подключи серву к приёмнику на \sw{CH1}. Поставь \menu{Max} = 50 и отклони стик до
+        упора. Докуда дошла серва?
+  \item Включи \menu{INV} у \sw{CH1}. Что поменялось?
+  \item Создай кривую из 5 точек и поставь её во вход газа. Посмотри на странице каналов,
+        как меняется \sw{CH3}.
+\end{enumerate}
+\end{tryit}
+
+\begin{summary}
+\begin{itemize}
+  \item Выходы --- механика: реверс (\menu{INV}), центр (\menu{Subtrim}), пределы (\menu{Min}/\menu{Max}).
+  \item Порядок: механика → направление → центр → пределы.
+  \item Кривая --- правило «вход → выход», нарисованное точками.
+  \item Квадрокоптеру выходы не трогаем.
+\end{itemize}
+\end{summary}

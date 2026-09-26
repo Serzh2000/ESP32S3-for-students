@@ -1,0 +1,160 @@
+% =====================================================================
+\chapter{Специальные функции и голос}
+\label{ch:special}
+% =====================================================================
+\chapterintro
+  {как научить пульт делать что-то по условию: говорить, вибрировать, остановить мотор,
+   записывать полёт в файл; как добавить свои голосовые фразы}
+  {модель; для голоса --- голосовой пакет на SD-карте}
+
+\section{«Если… то…»}
+
+\begin{simple}
+Логический переключатель --- это «\emph{если}». Специальная функция --- это «\emph{то}».
+Каждая строка на странице \menu{Special Functions} читается как предложение:
+\textbf{«Если переключатель такой-то включён, то сделай вот это»}.
+\end{simple}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[every node/.style={font=\sffamily\small}]
+  \foreach \y/\c/\a [count=\k] in {1.6/{\sw{SA↓}}/{сказать «armed»},0/{\sw{L1} (батарея села)}/{сказать «батарея» каждые 10\,с},-1.6/{\sw{SD↓}}/{газ = $-100$ (мотор стоп)}}{
+    \node[draw=etx,fill=blksw,rounded corners=3pt,minimum width=42mm,minimum height=10mm] (if\k) at (0,\y) {\textbf{ЕСЛИ} \c};
+    \node[draw=accent,fill=accent!8,rounded corners=3pt,minimum width=62mm,minimum height=10mm] (th\k) at (6.6,\y) {\textbf{ТО} \a};
+    \draw[arr,line width=1.2pt] (if\k) -- (th\k);}
+\end{tikzpicture}
+\caption{Специальные функции --- это правила «если → то»}
+\end{figure}
+
+\section{Страница Special Functions}
+
+\begin{center}
+\lcdscreen{SPECIAL FUNCTIONS}{12/13}{\lsel{SF1\ SD↓\ \ Override CH3}{-100 ☑}\lr{SF2\ SA↓\ \ Play track}{armed}\lr{SF3\ L1\ \ \ Play track}{batlow 10s}\lr{SF4\ SA↓\ \ SD logs}{0.2s}\lr{SF5\ SF↓\ \ Play value}{RxBt}\lblank}
+\end{center}
+
+У каждой строки:
+\begin{itemize}
+  \item \menu{Switch} --- условие: переключатель, логический переключатель, \sw{ON}
+        (всегда) или \sw{One} (один раз при выборе модели);
+  \item \menu{Function} --- что делать;
+  \item параметры (какой канал, какой звук…);
+  \item \menu{Repeat} --- для звуков: один раз или повторять каждые N секунд;
+  \item флажок \menu{Enable} --- включить/выключить строку, не удаляя её.
+\end{itemize}
+
+Такие же правила, но общие для \emph{всех} моделей, живут в \mpath{SYS\sep Global Functions}.
+
+\section{Что умеют специальные функции}
+
+\begin{center}\small
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\linewidth}{@{}L{34mm}Y@{}}
+\toprule
+\textbf{Функция} & \textbf{Что делает} \\
+\midrule
+\menu{Override CHx} & ставит канал в заданное значение (отсечка газа) \\
+\menu{Play track} & проигрывает звуковой файл («armed», «батарея») \\
+\menu{Play value} & называет голосом значение: напряжение, таймер, качество связи \\
+\menu{Play sound} & короткий системный звук \\
+\menu{Haptic} & вибрация \\
+\menu{Reset} & сбрасывает таймер или телеметрию \\
+\menu{Set timer} & ставит таймер на заданное время \\
+\menu{Adjust GVx} & меняет глобальную переменную (глава~\ref{ch:fm}) \\
+\menu{Volume} & регулирует громкость крутилкой \\
+\menu{SD logs} & записывает полёт в файл на SD-карте \\
+\menu{Trainer} & передаёт управление ученику (глава~\ref{ch:trainer}) \\
+\menu{Vario} & «пищалка» набора высоты для планеров \\
+\menu{Backlight} & яркость подсветки \\
+\menu{Screenshot} & снимок экрана пульта в папку \code{SCREENSHOTS} \\
+\menu{Lua script} & запускает скрипт (глава~\ref{ch:lua}) \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\section{Отсечка газа через Override}
+
+\begin{recipe}{отсечка газа для самолёта}
+\menu{Switch} = \sw{SD↓}, \menu{Function} = \menu{Override CH3}, значение $-100$,
+\menu{Enable} включён. Пока \sw{SD} внизу, газ всегда $-100$, что бы ни делал стик. Добавь
+\sw{SD↓} в предполётные проверки --- и модель не запустит мотор при включении.
+\end{recipe}
+
+\begin{caution}
+Квадрокоптер так не останавливают! Полётный контроллер в арме держит моторы крутящимися даже
+при нулевом газе. Для коптера «стоп» --- это \emph{дизарм} переключателем арма.
+\end{caution}
+
+\section{Голос}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[every node/.style={font=\sffamily\small}]
+  \node[draw=etx,fill=blksw,rounded corners=3pt,align=center] (e) at (0,0) {нажали \sw{SF}};
+  \node[draw=accent,fill=accent!8,rounded corners=3pt,align=center] (f) at (4,0) {\menu{Play value}\\\sw{RxBt}};
+  \pic[transform shape,scale=1.3] at (7.2,0) {speaker};
+  \node[draw=black!40,fill=white,rounded corners=8pt,align=center,font=\sffamily\small\itshape] at (10,0.3) {«пятнадцать и\\две десятых вольта»};
+  \draw[arr] (e) -- (f);
+  \draw[arr] (f) -- (6.6,0);
+\end{tikzpicture}
+\caption{Нажал кнопку --- пульт сказал напряжение батареи модели}
+\end{figure}
+
+\begin{itemize}
+  \item \menu{Play value} с \sw{Tmr1} --- «три минуты двадцать секунд»;
+  \item \menu{Play value} с \sw{RQly} --- «девяносто восемь процентов» (качество связи);
+  \item \menu{Play track} на положения переключателей: \sw{SA↓} → \code{armed},
+        \sw{SA↑} → \code{disarm}; каждое положение \sw{SB} → название режима.
+\end{itemize}
+
+\subsection{Свои голосовые фразы}
+
+\begin{enumerate}
+  \item Запиши фразу (или сделай её в любом сервисе «текст в речь»).
+  \item Сохрани как \textbf{WAV, моно, 16 бит}, частота 32\,кГц (подойдут и 16 или 8\,кГц).
+        Удобно конвертировать в бесплатной программе Audacity.
+  \item Назови коротко, латиницей, без пробелов: \code{batlow.wav}, \code{land.wav}.
+  \item Положи в \code{SOUNDS/ru} на SD-карте (или в папку своего языка).
+  \item В специальной функции выбери \menu{Play track} → \code{batlow}.
+\end{enumerate}
+
+\section{Чёрный ящик: логи полёта}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[every node/.style={font=\sffamily\small}]
+  \pic[transform shape] at (0,0) {minitx};
+  \draw[arr] (1.3,0) -- (2.3,0);
+  \pic[transform shape,scale=1.1] at (2.9,0) {sdcard};
+  \node[lbl] at (2.9,-0.9) {\code{LOGS/}};
+  \draw[arr] (3.6,0) -- (4.6,0);
+  \node[draw=black!40,fill=white,font=\ttfamily\tiny,align=left,anchor=west] at (4.7,0) {Date,Time,RxBt,RQly,Thr\\2026-09-26,14:02:01,16.4,100,-100\\2026-09-26,14:02:02,16.1,100,12\\2026-09-26,14:02:03,15.3,98,64\\…};
+  \begin{axis}[at={(9.8cm,-1.1cm)},width=5.5cm,height=3.6cm,xmin=0,xmax=240,ymin=13,ymax=17,
+    tick label style={font=\tiny},xlabel={с},ylabel={В},label style={font=\scriptsize},title={RxBt},title style={font=\sffamily\scriptsize}]
+    \addplot[etx,thick,smooth] coordinates {(0,16.6) (10,16.3) (30,15.9) (60,15.6) (90,15.3) (120,15.1) (150,14.9) (180,14.6) (210,14.3) (240,14.0)};
+  \end{axis}
+\end{tikzpicture}
+\caption{Функция \menu{SD logs} пишет всё в таблицу --- потом можно построить график}
+\end{figure}
+
+\begin{recipe}{логи полёта}
+\menu{Switch} = \sw{SA↓} (арм), \menu{Function} = \menu{SD logs}, период 0,2\,с. В полёте
+в папку \code{LOGS} пишется файл \code{ИмяМодели-дата.csv}: время, все датчики телеметрии, стики,
+переключатели. Открой его в таблице (Excel, LibreOffice) или в EdgeTX Companion.
+\end{recipe}
+
+\begin{tryit}
+\begin{enumerate}
+  \item Сделай так, чтобы при переводе \sw{SA} вниз пульт говорил «armed».
+  \item Назначь на кнопку \menu{Play value} \sw{Tmr1} --- пусть пульт говорит время по нажатию.
+  \item Запиши свою фразу, положи на SD-карту и проиграй её переключателем.
+\end{enumerate}
+\end{tryit}
+
+\begin{summary}
+\begin{itemize}
+  \item Специальная функция = «если переключатель → то действие».
+  \item \menu{Override} --- канал в заданное значение, \menu{Play track/value} --- голос,
+        \menu{SD logs} --- запись полёта.
+  \item Свои звуки --- WAV моно 16 бит в папке \code{SOUNDS/ru}.
+\end{itemize}
+\end{summary}

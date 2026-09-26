@@ -1,0 +1,291 @@
+% =====================================================================
+\chapter{EdgeTX --- мозг пульта}
+\label{ch:edgetx}
+% =====================================================================
+\chapterintro
+  {что такое EdgeTX, как сигнал от стика проходит «фабрику» из входов, миксеров и выходов,
+   что показывает главный экран, как ходить по меню и менять настройки}
+  {включённый пульт}
+
+\section{Что такое EdgeTX}
+
+\textbf{EdgeTX} --- это программа (прошивка), которая работает внутри пульта. Её пишут
+энтузиасты со всего мира, она бесплатная и открытая. Раньше похожая прошивка называлась
+OpenTX; EdgeTX --- её продолжение. Сейчас почти все пульты RadioMaster продаются сразу с EdgeTX.
+
+\begin{itemize}
+  \item сайт и документация: \code{edgetx.org};
+  \item \textbf{EdgeTX Buddy} --- страница в браузере для обновления прошивки;
+  \item \textbf{EdgeTX Companion} --- программа для компьютера: редактор моделей и симулятор пульта.
+\end{itemize}
+
+\section{Фабрика сигналов}
+
+\begin{simple}
+Представь фабрику с конвейером. На вход приходит «сырьё» --- положение стика. Дальше
+три цеха по очереди его обрабатывают:
+\begin{itemize}
+  \item \textbf{Входы} (Inputs) --- решают, \emph{насколько сильно} будет реагировать модель
+        (это «вкус пилота»: мягче или резче);
+  \item \textbf{Миксеры} (Mixes) --- решают, \emph{в какой канал} отправить сигнал и с чем его
+        смешать (это «конструкция модели»);
+  \item \textbf{Выходы} (Outputs) --- подгоняют сигнал под \emph{конкретную серву}:
+        в какую сторону крутиться и где остановиться (это «механика»).
+\end{itemize}
+Готовые числа уходят в радиомодуль и летят к модели.
+\end{simple}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[scale=0.93,every node/.style={font=\sffamily\small}]
+  % стик
+  \pic[transform shape,scale=0.75] at (0,0) {stickto={0.5}{0}};
+  \node[lbl,align=center] at (0,-1.1) {стик крена\\вправо на 50\,\%};
+  % входы
+  \node[draw=etx,fill=blkin,rounded corners=2pt,minimum width=26mm,minimum height=22mm] (in) at (3.3,0) {};
+  \node[font=\sffamily\small\bfseries,text=etxdark] at (3.3,0.75) {Входы};
+  \begin{scope}[shift={(3.3,-0.25)},scale=0.55]
+    \draw[black!30] (-1,0) -- (1,0) (0,-0.8) -- (0,0.8);
+    \draw[etx,thick,domain=-1:1,samples=20] plot (\x,{0.7*\x*(0.3*\x*\x+0.7)});
+  \end{scope}
+  \node[lbl] at (3.3,-0.85) {расход 70\,\%};
+  % миксеры
+  \node[draw=etx,fill=blkmix,rounded corners=2pt,minimum width=26mm,minimum height=22mm] (mx) at (6.7,0) {};
+  \node[font=\sffamily\small\bfseries,text=etxdark] at (6.7,0.75) {Миксеры};
+  \draw[arr,black!60] (5.9,0.15) -- (6.5,-0.1);
+  \draw[arr,black!60] (5.9,-0.45) -- (6.5,-0.2);
+  \draw[arr,black!60] (6.6,-0.15) -- (7.4,-0.15);
+  \node[lbl] at (6.7,-0.85) {крен → \sw{CH1}};
+  % выходы
+  \node[draw=etx,fill=blkout,rounded corners=2pt,minimum width=26mm,minimum height=22mm] (out) at (10.1,0) {};
+  \node[font=\sffamily\small\bfseries,text=etxdark] at (10.1,0.75) {Выходы};
+  \pic[transform shape,scale=0.42] at (10.0,-0.15) {servo=20};
+  \node[lbl] at (10.1,-0.85) {реверс, пределы};
+  % радио
+  \pic[transform shape,scale=0.8] at (13.0,0) {receiver};
+  \node[lbl] at (13.0,-0.75) {к модели};
+  \radiowaves{(11.5,0)}{0}
+  \draw[arr] (0.9,0) -- (in.west);
+  \draw[arr] (in.east) -- (mx.west);
+  \draw[arr] (mx.east) -- (out.west);
+  % числа
+  \foreach \x/\t in {1.25/50,5.0/35,8.4/35,11.75/35}{
+    \node[font=\sffamily\bfseries\small,text=white,fill=accent,rounded corners=2pt,inner sep=2pt] at (\x,1.45) {\t};}
+\end{tikzpicture}
+\caption{«Фабрика»: стик вправо на 50\,\% → вход уменьшил до 35\,\% → миксер отправил
+в канал 1 → выход подогнал под серву → радио}
+\label{fig:pipeline}
+\end{figure}
+
+Главная хитрость EdgeTX: \textbf{любую из этих ступеней можно включать и выключать
+переключателями}. Например, во входах могут быть две строки --- «мягко» и «резко», а переключатель
+выбирает, какая работает. Над конвейером стоят «начальники»:
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=4mm and 5mm,every node/.style={font=\sffamily\small}]
+  \node[blk,fill=blkin,minimum width=24mm] (inp) {Входы};
+  \node[blk,fill=blkmix,right=12mm of inp,minimum width=24mm] (mix) {Миксеры};
+  \node[blk,fill=blkout,right=12mm of mix,minimum width=24mm] (out) {Выходы};
+  \draw[arr] (inp) -- (mix);
+  \draw[arr] (mix) -- (out);
+  \node[blk,fill=blksw,above=11mm of inp,text width=30mm] (fm) {Полётные режимы\\\scriptsize наборы настроек};
+  \node[blk,fill=blksw,above=11mm of mix,text width=30mm] (ls) {Логические\\переключатели\\\scriptsize «если…»};
+  \node[blk,fill=blksw,above=11mm of out,text width=30mm] (sf) {Специальные\\функции\\\scriptsize «…то сделай»};
+  \node[blk,fill=blksw,below=9mm of mix,text width=58mm] (cv) {Кривые и глобальные переменные\\\scriptsize формы и числа, которые можно использовать везде};
+  \draw[arr,dashed] (fm) -- (inp);
+  \draw[arr,dashed] (fm) -- (mix);
+  \draw[arr,dashed] (ls) -- (mix);
+  \draw[arr,dashed] (ls) -- (sf);
+  \draw[arr,dashed] (sf) -- (out);
+  \draw[arr,dashed] (cv) -- (inp);
+  \draw[arr,dashed] (cv) -- (mix);
+  \draw[arr,dashed] (cv) -- (out);
+\end{tikzpicture}
+\caption{Кто управляет конвейером}
+\end{figure}
+
+\begin{note}
+Внутри EdgeTX все значения --- в процентах, от $-100\,\%$ до $+100\,\%$. На выходе $\pm100\,\%$
+превращаются в импульсы примерно 988--2012\,мкс (1500 --- центр). Если нужно больше хода,
+в настройках модели включают \menu{Extended limits} --- тогда можно до $\pm150\,\%$.
+\end{note}
+
+\section{Главный экран}
+
+После включения ты видишь главный экран. На нём много полезного:
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  \node (s) at (0,0) {\lcdscreen{Quad-5in}{7.9V}{%
+    \lr{TX 250mW}{14:22}%
+    \lblank
+    \lr{\hspace{12mm}\fontsize{15}{15}\selectfont\bfseries 02:37}{\linv{FM0}}%
+    \lblank
+    \lr{SA↑ SB- SC↓ SD↑}{RSSI ▮▮▮▮}}};
+  \callout{(-2.3,1.45)}{(-4.6,1.8)}{east}{имя модели}
+  \callout{(2.6,1.45)}{(4.6,1.8)}{west}{батарея пульта}
+  \callout{(-2.3,1.1)}{(-4.6,0.7)}{east}{мощность\\передатчика}
+  \callout{(-0.8,0.3)}{(-4.6,-0.4)}{east}{таймер}
+  \callout{(2.8,0.3)}{(4.6,0.3)}{west}{полётный режим}
+  \callout{(-1.7,-0.3)}{(-4.6,-1.4)}{east}{положения\\переключателей}
+  \callout{(2.3,-0.3)}{(4.6,-1.1)}{west}{качество связи}
+\end{tikzpicture}
+\caption{Главный экран (упрощённо; расположение зависит от версии и настроек)}
+\end{figure}
+
+Крути колесо (или жми \btn{PAGE>}) --- главный экран покажет другие страницы: положения стиков
+и триммеров, значения всех каналов, логические переключатели. Страница с каналами ---
+\textbf{самый полезный инструмент} при настройке: на ней видно, что именно пульт отправляет
+модели.
+
+\section{Кнопки: как ходить по меню}
+
+\begin{center}\small
+\renewcommand{\arraystretch}{1.25}
+\begin{tabularx}{\linewidth}{@{}L{40mm}Y@{}}
+\toprule
+\textbf{Кнопка} & \textbf{Что делает} \\
+\midrule
+\btn{SYS} & настройки \emph{пульта} (общие для всех моделей) \\
+\btn{MDL} & настройки \emph{текущей модели} \\
+\btn{TELE} & экраны телеметрии \\
+\btn{PAGE>} / \btn{PAGE<} & следующая / предыдущая страница меню \\
+колесо & двигать курсор по строкам, менять значение \\
+\btn{ENTER} (нажать колесо) & войти / начать редактирование / подтвердить \\
+\emph{долгое} \btn{ENTER} & контекстное меню: вставить, скопировать, удалить … \\
+\btn{RTN} & назад, выход, отмена \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\subsection{Путешествие по меню модели}
+
+\begin{figure}[H]
+\centering
+\begin{tabular}{@{}c@{}c@{}c@{}}
+\lcdscreen{MODEL SELECT}{1/13}{\lsel{01 Quad-5in}{}\lr{02 Wing-900}{}\lr{03 Cessna}{}\lr{04 ---}{}\lblank\lblank} &
+\goesto{\textsf{\bfseries PAGE>}} &
+\lcdscreen{SETUP}{2/13}{\lr{Model name}{Quad-5in}\lr{Timer1}{ON SA↓ 4:00}\lr{Timer2}{OFF}\lr{Extended limits}{☐}\lr{Internal RF}{CRSF}\lblank}
+\end{tabular}
+
+\smallskip
+\begin{tabular}{@{}c@{}c@{}c@{}}
+\lcdscreen{INPUTS}{6/13}{\lsel{I1 Ail}{Ail 100}\lr{I2 Ele}{Ele 100}\lr{I3 Thr}{Thr 100}\lr{I4 Rud}{Rud 100}\lblank\lblank} &
+\goesto{\textsf{\bfseries PAGE>}} &
+\lcdscreen{MIXES}{7/13}{\lsel{CH1 I1 Ail}{100}\lr{CH2 I2 Ele}{100}\lr{CH3 I3 Thr}{100}\lr{CH4 I4 Rud}{100}\lr{CH5 SA}{100}\lblank}
+\end{tabular}
+\caption{Нажми \btn{MDL} --- откроется первая страница меню модели (список моделей).
+\btn{PAGE>} листает дальше: Setup, …, Inputs, Mixes, … Номер страницы --- справа вверху}
+\end{figure}
+
+\subsection{Как поменять число}
+
+\begin{figure}[H]
+\centering
+\begin{tabular}{@{}c@{}c@{}c@{}}
+\lcdscreen{INPUT I1}{}{\lr{Input name}{Ail}\lr{Source}{Ail}\lsel{Weight}{100}\lr{Offset}{0}\lr{Curve}{Expo 0}\lblank} &
+\goesto{\textsf{\bfseries ENTER}} &
+\lcdscreen{INPUT I1}{}{\lr{Input name}{Ail}\lr{Source}{Ail}\lr{Weight}{\ledit{100}}\lr{Offset}{0}\lr{Curve}{Expo 0}\lblank}
+\end{tabular}
+
+\smallskip
+\begin{tabular}{@{}c@{}c@{}c@{}}
+\goesto{\textsf{\bfseries колесо}} &
+\lcdscreen{INPUT I1}{}{\lr{Input name}{Ail}\lr{Source}{Ail}\lr{Weight}{\ledit{70}}\lr{Offset}{0}\lr{Curve}{Expo 0}\lblank} &
+\goesto{\textsf{\bfseries ENTER}} \quad \textsf{\small готово!}
+\end{tabular}
+\caption{Три шага: выбери строку колесом (она станет тёмной), нажми \btn{ENTER} (значение
+начнёт мигать), покрути колесо и нажми \btn{ENTER} ещё раз. Передумал --- жми \btn{RTN}}
+\end{figure}
+
+\subsection{Полезные приёмы}
+
+\begin{itemize}
+  \item \textbf{Выбор движением.} Когда редактируешь поле «источник» (\menu{Source}) или
+        «переключатель» (\menu{Switch}), просто пошевели нужным стиком, крутилкой или
+        переключателем --- EdgeTX подставит его сам.
+  \item \textbf{Долгое \btn{ENTER} на строке списка} открывает меню действий:
+\end{itemize}
+
+\begin{center}
+\lcdpopup{MIXES}{7/13}{\lr{CH1 I1 Ail}{100}\lr{CH2 I2 Ele}{100}\lr{CH3 I3 Thr}{100}\lr{CH4 I4 Rud}{100}\lr{CH5 SA}{100}\lblank}%
+{\linv{Edit}\\Insert before\\Insert after\\Copy\\Move\\Delete}
+\end{center}
+
+\begin{itemize}
+  \item \textbf{Долгое \btn{ENTER} на числе} --- сбросить к значению по умолчанию, поменять знак
+        или вставить вместо числа глобальную переменную \sw{GV}.
+  \item \textbf{Восклицательный знак.} Переключатель можно выбрать «наоборот»: \sw{!SA↑} значит
+        «SA \emph{не} вверху».
+\end{itemize}
+
+\section{Карта меню}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+  every node/.style={font=\sffamily\scriptsize},
+  box/.style={draw,rounded corners=2pt,fill=#1,inner sep=4pt,align=left,text width=42mm,anchor=north},
+]
+\node[box=blkrf,text width=14mm,align=center,anchor=center] (root) at (0,0) {EdgeTX};
+\node[box=blkin] (sys) at (-5.2,-1.1) {\textbf{\btn{SYS} --- пульт}\\[3pt]
+Tools --- утилиты (ExpressLRS…)\\
+SD card --- файлы на карте\\
+Radio Setup --- звук, время, режим\\
+Global Functions --- для всех моделей\\
+Trainer --- учитель/ученик\\
+Hardware --- калибровка, тумблеры\\
+About --- версия прошивки};
+\node[box=blkmix] (mdl) at (0,-1.1) {\textbf{\btn{MDL} --- модель}\\[3pt]
+Model Select --- список моделей\\
+Setup --- имя, таймеры, радио\\
+Heli --- для вертолётов\\
+Flight Modes --- полётные режимы\\
+Inputs --- входы\\
+Mixes --- миксеры\\
+Outputs --- выходы\\
+Curves --- кривые\\
+Global Variables --- переменные\\
+Logical Switches --- «если»\\
+Special Functions --- «то сделай»\\
+Custom Scripts --- Lua\\
+Telemetry --- датчики};
+\node[box=blkout] (tele) at (5.2,-1.1) {\textbf{\btn{TELE} --- телеметрия}\\[3pt]
+экраны 1--4: числа,\\шкалы, Lua-экраны};
+\draw[arr] (root.south) -- (mdl.north);
+\draw[arr] (root.west) -| (sys.north);
+\draw[arr] (root.east) -| (tele.north);
+\end{tikzpicture}
+\caption{Все главные разделы меню}
+\end{figure}
+
+\section{Где хранятся настройки}
+
+Все настройки лежат на SD-карте пульта в текстовых файлах:
+\begin{itemize}
+  \item \code{RADIO/radio.yml} --- настройки пульта;
+  \item \code{MODELS/model01.yml}, \code{model02.yml} … --- по файлу на каждую модель.
+\end{itemize}
+Скопировал SD-карту на компьютер --- сохранил весь пульт. Это называется
+\textbf{резервная копия}, и о ней мы поговорим в следующей главе.
+
+\begin{tryit}
+\begin{enumerate}
+  \item Включи пульт и пролистай главный экран колесом. Найди страницу, где видны каналы.
+        Пошевели стиками и переключателями --- какие полоски двигаются?
+  \item Нажми \btn{MDL} и пролистай все страницы кнопкой \btn{PAGE>}. Сколько их?
+  \item Нажми \btn{SYS} и найди страницу \menu{About}. Какая у тебя версия EdgeTX?
+\end{enumerate}
+\end{tryit}
+
+\begin{summary}
+\begin{itemize}
+  \item EdgeTX --- программа внутри пульта.
+  \item Сигнал идёт по «фабрике»: входы → миксеры → выходы → радио.
+  \item \btn{SYS} --- пульт, \btn{MDL} --- модель, \btn{TELE} --- телеметрия.
+  \item Выбрать --- колесо, изменить --- \btn{ENTER}, выйти --- \btn{RTN},
+        меню действий --- долгое \btn{ENTER}.
+\end{itemize}
+\end{summary}

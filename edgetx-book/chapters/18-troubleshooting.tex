@@ -1,0 +1,93 @@
+% =====================================================================
+\chapter{Что-то не работает?}
+\label{ch:trouble}
+% =====================================================================
+\chapterintro
+  {как по шагам найти, где «теряется» сигнал; частые проблемы и их решения}
+  {терпение и эта глава}
+
+\section{Ищем, где потерялся сигнал}
+
+\begin{simple}
+Сигнал идёт по цепочке: стик → EdgeTX → радиомодуль → приёмник → полётный контроллер → моторы.
+Если модель не слушается, надо найти \textbf{первое звено}, где сигнал пропал. Иди по цепочке
+с начала и на каждом шаге задавай вопрос «да или нет?».
+\end{simple}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+  q/.style={draw=etx,fill=etx!6,rounded corners=3pt,text width=62mm,align=center,minimum height=10mm,font=\sffamily\small},
+  a/.style={draw=warn,fill=warn!6,rounded corners=3pt,text width=52mm,align=left,font=\sffamily\scriptsize},
+  ok/.style={draw=okgreen,fill=okgreen!8,rounded corners=3pt,text width=62mm,align=center,font=\sffamily\small},
+  yes/.style={font=\sffamily\scriptsize\bfseries,text=okgreen!50!black},
+  no/.style={font=\sffamily\scriptsize\bfseries,text=warn}]
+  \node[draw=black,fill=black!8,rounded corners=3pt,font=\sffamily\small\bfseries] (s) at (0,0) {Модель не слушается стиков};
+  \node[q] (q1) at (0,-1.5) {1. На странице каналов пульта полоски двигаются от стиков?};
+  \node[a,anchor=west] (a1) at (4.0,-1.5) {калибровка (гл.~\ref{ch:radio}); выключенная строка во входе или миксере; выбрана не та модель};
+  \node[q] (q2) at (0,-3.3) {2. Светодиод приёмника горит постоянно? В скрипте ELRS растёт счётчик пакетов?};
+  \node[a,anchor=west] (a2) at (4.0,-3.3) {привязка: фраза, версия ELRS, \menu{Internal RF} = \menu{CRSF}, Model Match (гл.~\ref{ch:rf})};
+  \node[q] (q3) at (0,-5.1) {3. В Betaflight на вкладке Receiver полоски двигаются?};
+  \node[a,anchor=west] (a3) at (4.0,-5.1) {провода RX--FC (TX↔RX), UART и протокол CRSF в Betaflight};
+  \node[q] (q4) at (0,-6.9) {4. Двигаются \emph{правильные} полоски (газ = Throttle)?};
+  \node[a,anchor=west] (a4) at (4.0,-6.9) {\menu{Channel map} = AETR1234 в Betaflight и порядок каналов в пульте};
+  \node[q] (q5) at (0,-8.7) {5. Коптер армится?};
+  \node[a,anchor=west] (a5) at (4.0,-8.7) {диапазон ARM на вкладке Modes; газ не на нуле; в CLI команда \code{status} покажет причину};
+  \node[ok] (e) at (0,-10.3) {Всё работает --- можно лететь!};
+  \draw[arr] (s) -- (q1);
+  \foreach \i [evaluate=\i as \j using int(\i+1)] in {1,2,3,4}{\draw[arr] (q\i) -- node[right,yes]{да} (q\j);}
+  \draw[arr] (q5) -- node[right,yes]{да} (e);
+  \foreach \i in {1,...,5}{\draw[arr,warn] (q\i.east) -- node[above,no]{нет} (a\i.west);}
+\end{tikzpicture}
+\caption{Пошаговый поиск неисправности}
+\end{figure}
+
+\section{Частые проблемы}
+
+\begin{small}
+\renewcommand{\arraystretch}{1.25}
+\begin{longtable}{@{}L{50mm}L{110mm}@{}}
+\toprule
+\textbf{Что случилось} & \textbf{Почему и что делать} \\
+\midrule
+\endhead
+Пульт не включается & аккумуляторы сели или вставлены неправильно; держи кнопку питания
+  дольше; у 18650 проверь, достают ли они до контактов \\
+При включении «SD card warning» & версия файлов на SD-карте не та: обнови SD через Buddy
+  (гл.~\ref{ch:firmware}) \\
+Застрял на «Throttle / Switch warning» & опусти газ, переведи переключатели в стартовое
+  положение; если требуемое положение невозможно --- исправь \menu{Preflight checks} \\
+Стик в центре не 0, по краям не 100 & повтори калибровку (гл.~\ref{ch:radio}) \\
+Среднее положение тумблера не работает & в \menu{Hardware} стоит \menu{2POS} --- поставь \menu{3POS} \\
+В скрипте ExpressLRS «\texttt{-{}-}» или «Loading…» & \menu{Internal RF} выключен или не \menu{CRSF};
+  попробуй \menu{Baudrate} 400K \\
+ELRS не привязывается & разные фразы; разные основные версии ELRS; разная частота (2,4\,ГГц и
+  900\,МГц); включён Model Match с другим номером \\
+FrSky не привязывается & не совпадает подтип (D8/D16/LBT/FCC) или версия (v1/v2);
+  попробуй \menu{RF Freq. fine tune} \\
+Газом крутится коптер & перепутан порядок каналов: AETR в пульте и \code{AETR1234} в Betaflight \\
+Коптер не армится & \sw{CH5} не попадает в диапазон ARM; газ не на нуле; коптер стоит криво;
+  в CLI \code{status} покажет причину \\
+Нет телеметрии & \menu{Telem Ratio} = \menu{Off}; повтори \menu{Discover new sensors} \\
+Связь рвётся рядом с пультом & повреждена антенна приёмника или она закрыта карбоном; на
+  большой мощности вплотную приёмник «глохнет» --- отойди на 2--3\,м \\
+Пульт молчит & \menu{Sound mode} без голоса; громкость 0; нет папки \code{SOUNDS/ru} или в
+  \menu{Voice language} другой язык \\
+Компьютер не видит пульт & кабель «только для зарядки»; не выбран режим USB; для прошивки на
+  Windows --- драйвер WinUSB (Zadig) \\
+Lua-скрипт не запускается & не та папка, длинное имя файла, ошибка в коде \\
+Boxer: вентилятор шумит всё время & большая мощность ELRS; уменьши мощность или подними \menu{Fan Thresh} \\
+Быстро садится батарея пульта & мощность 500--1000\,мВт, яркая подсветка; включи динамическую мощность \\
+\bottomrule
+\end{longtable}
+\end{small}
+
+\section{Хорошие привычки}
+
+\begin{itemize}
+  \item Раз в месяц --- резервная копия SD-карты.
+  \item Перед сезоном --- проверка калибровки и failsafe.
+  \item Одна настоящая модель --- одна модель в пульте; подпиши имя и на самой модели.
+  \item Заряжай пульт перед каждым выездом, а не «вроде ещё хватит».
+  \item Любые проверки моторов --- \textbf{только без пропеллеров}.
+\end{itemize}

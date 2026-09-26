@@ -1,0 +1,484 @@
+% =====================================================================
+%  Библиотека иллюстраций: пульты, модели, стики, сервы, экран 128×64
+%  Подключается из edgetx-book.sty
+% =====================================================================
+
+\tikzset{
+  % корпус пульта
+  plastic/.style={top color=black!55,bottom color=black!80,draw=black!90,line width=0.7pt},
+  plastic2/.style={top color=black!45,bottom color=black!70,draw=black!90,line width=0.5pt},
+  % выноски
+  callout/.style={draw=black!55,line width=0.45pt},
+  cdot/.style={fill=accent,draw=white,line width=0.4pt,circle,inner sep=0pt,minimum size=4pt},
+  ctext/.style={font=\sffamily\footnotesize,inner sep=2pt,text=black,align=left},
+  % движение
+  motion/.style={-{Latex[length=2.8mm,width=2.4mm]},line width=1.4pt,draw=accent},
+  motionb/.style={-{Latex[length=2.8mm,width=2.4mm]},line width=1.4pt,draw=etx},
+  axisline/.style={dashed,line width=0.6pt,draw=etx!70},
+  % рулевые поверхности
+  surf/.style={fill=accent,draw=accent!60!black,line width=0.4pt},
+  surfoff/.style={fill=white,draw=black!60,line width=0.4pt},
+  airframe/.style={fill=white,draw=black!75,line width=0.7pt},
+  airframe2/.style={fill=gray!12,draw=black!75,line width=0.7pt},
+}
+
+% ---------------------------------------------------------------------
+% Экран 128×64 (пропорции 2:1).  \lcdscreen{Заголовок}{Справа}{строки}
+% Строки: \lr{слева}{справа}  \lsel{слева}{справа} (выделена)  \lc{по центру}
+% ---------------------------------------------------------------------
+\newlength{\lcdw}\setlength{\lcdw}{60mm}
+\newcommand{\lcdfont}{\fontsize{7.6}{10.6}\ttfamily}
+\newcommand{\lr}[2]{\makebox[\lcdw][l]{\hspace{1mm}#1\hfill #2\hspace{1mm}}\par}
+\newcommand{\lsel}[2]{{\setlength{\fboxsep}{0pt}\colorbox{lcdfg}{\makebox[\lcdw][l]{\color{lcdbg}\hspace{1mm}#1\hfill #2\hspace{1mm}}}}\par}
+\newcommand{\lc}[1]{\makebox[\lcdw][c]{#1}\par}
+\newcommand{\lblank}{\makebox[\lcdw]{\strut}\par}
+\newcommand{\lcdscreen}[3]{%
+\begin{tikzpicture}[baseline=(scr.center)]
+  \fill[black!80,rounded corners=3mm] (-3.5mm,-3.5mm) rectangle (\lcdw+3.5mm,30mm+3.5mm);
+  \fill[black!65,rounded corners=1.5mm] (-1.6mm,-1.6mm) rectangle (\lcdw+1.6mm,30mm+1.6mm);
+  \fill[lcdbg] (0,0) rectangle (\lcdw,30mm);
+  \shade[top color=black!18,bottom color=lcdbg,opacity=0.35] (0,27mm) rectangle (\lcdw,30mm);
+  \node[anchor=north west,inner sep=0pt,text width=\lcdw,align=left,font=\lcdfont,text=lcdfg] (scr) at (0,30mm)
+  {\setlength{\parindent}{0pt}{\setlength{\fboxsep}{0pt}\colorbox{lcdfg}{\makebox[\lcdw][l]{\color{lcdbg}\hspace{1mm}\bfseries #1\hfill #2\hspace{1mm}}}}\par #3};
+\end{tikzpicture}}
+
+% ---------------------------------------------------------------------
+% Стик (вид сверху на гимбал):  \pic[transform shape]{gimbal};
+% ---------------------------------------------------------------------
+\tikzset{pics/gimbal/.style={code={
+  \shade[inner color=black!60,outer color=black!88] (0,0) circle (1.3);
+  \draw[black!35,line width=0.5pt] (0,0) circle (1.3);
+  \draw[black!55,line width=0.4pt] (0,0) circle (1.05);
+  \foreach \a in {0,90,180,270}{\draw[black!50,line width=0.4pt] (\a:0.55) -- (\a:1.0);}
+  \shade[ball color=black!45] (0,0) circle (0.46);
+  \fill[black!80] (0,0) circle (0.24);
+  \fill[white,opacity=0.25] (-0.13,0.13) circle (0.09);
+}}}
+
+% Стик для схем движения (светлый квадрат с шаром):  \pic[transform shape]{stickbox={dx}{dy}};
+% dx,dy — куда отклонён стик (в долях от -1 до 1); стрелка показывает движение
+\tikzset{pics/stickbox/.style 2 args={code={
+  \fill[black!8,draw=black!40,rounded corners=1.2mm,line width=0.5pt] (-1,-1) rectangle (1,1);
+  \draw[black!25,line width=0.4pt] (-0.9,0) -- (0.9,0) (0,-0.9) -- (0,0.9);
+  \fill[black!18] (0,0) circle (0.12);
+  \ifdim #1pt=0pt \ifdim #2pt=0pt \else
+     \draw[motion] (0,0) -- (0,#2*0.82);
+     \draw[motion,{Latex[length=2.8mm,width=2.4mm]}-] (0,0) -- (0,-#2*0.82);
+  \fi \else
+     \draw[motion] (0,0) -- (#1*0.82,0);
+     \draw[motion,{Latex[length=2.8mm,width=2.4mm]}-] (0,0) -- (-#1*0.82,0);
+  \fi
+  \shade[ball color=black!55] (0,0) circle (0.24);
+}}}
+% Стик в центре (без стрелки)
+\tikzset{pics/stickidle/.style={code={
+  \fill[black!8,draw=black!40,rounded corners=1.2mm,line width=0.5pt] (-1,-1) rectangle (1,1);
+  \draw[black!25,line width=0.4pt] (-0.9,0) -- (0.9,0) (0,-0.9) -- (0,0.9);
+  \shade[ball color=black!40] (0,0) circle (0.24);
+}}}
+\tikzset{fastm/.style={fill=okgreen!55},slowm/.style={fill=warn!30}}
+% Одиночное отклонение (одна стрелка):  \pic[transform shape]{stickto={dx}{dy}};
+\tikzset{pics/stickto/.style 2 args={code={
+  \fill[black!8,draw=black!40,rounded corners=1.2mm,line width=0.5pt] (-1,-1) rectangle (1,1);
+  \draw[black!25,line width=0.4pt] (-0.9,0) -- (0.9,0) (0,-0.9) -- (0,0.9);
+  \fill[black!15] (0,0) circle (0.2);
+  \draw[motion] (0,0) -- (#1*0.75,#2*0.75);
+  \shade[ball color=black!55] (#1*0.75,#2*0.75) circle (0.24);
+}}}
+
+% ---------------------------------------------------------------------
+% Самолёт, вид сверху (нос вверх).  Стили поверхностей:
+%   ailL, ailR, ele, rud — можно переопределить в опциях \pic
+% ---------------------------------------------------------------------
+\tikzset{ailL/.style={surfoff},ailR/.style={surfoff},ele/.style={surfoff},rud/.style={surfoff},
+         flpL/.style={surfoff},flpR/.style={surfoff}}
+\tikzset{pics/planetop/.style={code={
+  % крыло
+  \path[airframe] (-0.3,0.85) -- (-3.3,0.62) -- (-3.35,0.12) -- (-0.3,-0.05) -- cycle;
+  \path[airframe] (0.3,0.85) -- (3.3,0.62) -- (3.35,0.12) -- (0.3,-0.05) -- cycle;
+  % элероны и закрылки
+  \path[ailL] (-3.3,0.12) -- (-1.75,0.03) -- (-1.75,0.28) -- (-3.3,0.36) -- cycle;
+  \path[ailR] (3.3,0.12) -- (1.75,0.03) -- (1.75,0.28) -- (3.3,0.36) -- cycle;
+  \path[flpL] (-1.7,0.03) -- (-0.32,-0.04) -- (-0.32,0.2) -- (-1.7,0.27) -- cycle;
+  \path[flpR] (1.7,0.03) -- (0.32,-0.04) -- (0.32,0.2) -- (1.7,0.27) -- cycle;
+  % стабилизатор
+  \path[airframe] (-0.15,-2.05) -- (-1.35,-2.15) -- (-1.35,-2.55) -- (-0.15,-2.6) -- cycle;
+  \path[airframe] (0.15,-2.05) -- (1.35,-2.15) -- (1.35,-2.55) -- (0.15,-2.6) -- cycle;
+  \path[ele] (-1.35,-2.42) -- (-0.15,-2.45) -- (-0.15,-2.6) -- (-1.35,-2.55) -- cycle;
+  \path[ele] (1.35,-2.42) -- (0.15,-2.45) -- (0.15,-2.6) -- (1.35,-2.55) -- cycle;
+  % фюзеляж
+  \path[airframe2] (0,2.05) .. controls (0.32,1.95) and (0.34,1.2) .. (0.3,0.2)
+        -- (0.12,-2.45) -- (0.08,-2.75) -- (-0.08,-2.75) -- (-0.12,-2.45) -- (-0.3,0.2)
+        .. controls (-0.34,1.2) and (-0.32,1.95) .. (0,2.05);
+  % киль (сверху — узкая полоска) и руль направления
+  \fill[black!70] (-0.05,-1.95) rectangle (0.05,-2.5);
+  \begin{scope}[shift={(0,-2.5)},rotate=#1]
+    \path[rud] (-0.07,0) rectangle (0.07,-0.45);
+  \end{scope}
+  % кабина
+  \fill[etx!45,draw=etx!70!black,line width=0.4pt] (0,1.45) ellipse (0.14 and 0.35);
+  % винт
+  \fill[black!70] (0,2.1) circle (0.07);
+  \draw[black!65,line width=1.2pt] (-0.75,2.13) -- (0.75,2.13);
+}}, pics/planetop/.default=0}
+
+% Самолёт сбоку (нос вправо). #1 — угол руля высоты (+ вверх)
+\tikzset{pics/planeside/.style={code={
+  % стабилизатор и руль высоты
+  \fill[black!60] (-2.45,0.12) rectangle (-1.75,0.19);
+  \begin{scope}[shift={(-2.45,0.155)},rotate=-#1]
+    \path[ele] (0,-0.04) -- (-0.45,-0.02) -- (-0.45,0.02) -- (0,0.04) -- cycle;
+  \end{scope}
+  % киль и руль направления
+  \path[airframe] (-1.7,0.25) -- (-2.2,0.95) -- (-2.5,0.95) -- (-2.45,0.25) -- cycle;
+  \path[rud] (-2.45,0.25) -- (-2.5,0.95) -- (-2.72,0.95) -- (-2.72,0.25) -- cycle;
+  % фюзеляж
+  \path[airframe2] (2.3,0.1) .. controls (2.25,0.45) and (1.6,0.52) .. (0.8,0.5)
+       -- (-2.45,0.25) -- (-2.5,0.08) -- (0.8,-0.18) .. controls (1.6,-0.2) and (2.25,-0.2) .. (2.3,0.1);
+  % кабина
+  \path[fill=etx!45,draw=etx!70!black,line width=0.4pt] (1.4,0.48) .. controls (1.2,0.8) and (0.4,0.8) .. (0.2,0.48);
+  % крыло (профиль)
+  \path[fill=gray!35,draw=black!70,line width=0.5pt] (0.9,0.28) .. controls (0.75,0.4) and (-0.2,0.38) .. (-0.45,0.26)
+       .. controls (-0.1,0.22) and (0.6,0.2) .. (0.9,0.28);
+  % винт
+  \fill[black!70] (2.3,0.1) circle (0.07);
+  \draw[black!65,line width=1.2pt] (2.36,-0.55) -- (2.36,0.75);
+}}, pics/planeside/.default=0}
+
+% Самолёт сзади. #1 — отклонение элеронов (правый вверх при +)
+\tikzset{pics/planerear/.style={code={
+  % крыло с поперечным V
+  \path[airframe] (-3,0.22) -- (-0.2,0.02) -- (0.2,0.02) -- (3,0.22) -- (3,0.32) -- (0.2,0.14) -- (-0.2,0.14) -- (-3,0.32) -- cycle;
+  % элероны
+  \begin{scope}[shift={(2.25,0.22)},rotate=#1*0.8]
+    \path[ailR] (0,-0.05) rectangle (0.7,0.05);
+  \end{scope}
+  \begin{scope}[shift={(-2.25,0.22)},rotate=#1*0.8]
+    \path[ailL] (0,-0.05) rectangle (-0.7,0.05);
+  \end{scope}
+  % стабилизатор и киль
+  \fill[black!55] (-1.1,0.55) rectangle (1.1,0.62);
+  \path[airframe] (-0.05,0.6) -- (-0.03,1.45) -- (0.03,1.45) -- (0.05,0.6) -- cycle;
+  % фюзеляж
+  \path[airframe2] (0,0.15) circle (0.33);
+  \fill[black!70] (0,0.15) circle (0.08);
+}}, pics/planerear/.default=0}
+
+% ---------------------------------------------------------------------
+% Квадрокоптер, вид сверху (нос вверх). Стили моторов: mFL, mFR, mRL, mRR
+% ---------------------------------------------------------------------
+\tikzset{mFL/.style={fill=gray!20},mFR/.style={fill=gray!20},mRL/.style={fill=gray!20},mRR/.style={fill=gray!20}}
+\tikzset{pics/quadtop/.style={code={
+  \foreach \p in {(45:1.6),(135:1.6),(225:1.6),(315:1.6)}{
+    \draw[black!80,line width=3.2pt,line cap=round] (0,0) -- \p;
+    \draw[black!50,line width=1.6pt,line cap=round] (0,0) -- \p;
+  }
+  \path[mFR,draw=black!45,line width=0.4pt,opacity=0.85] (45:1.6) circle (0.78);
+  \path[mFL,draw=black!45,line width=0.4pt,opacity=0.85] (135:1.6) circle (0.78);
+  \path[mRL,draw=black!45,line width=0.4pt,opacity=0.85] (225:1.6) circle (0.78);
+  \path[mRR,draw=black!45,line width=0.4pt,opacity=0.85] (315:1.6) circle (0.78);
+  \foreach \p in {(45:1.6),(135:1.6),(225:1.6),(315:1.6)}{
+    \shade[ball color=black!55] \p circle (0.2);
+  }
+  \path[fill=black!75,draw=black,rounded corners=1.5pt] (-0.42,-0.75) rectangle (0.42,0.75);
+  \path[fill=black!55,rounded corners=1pt] (-0.3,-0.55) rectangle (0.3,0.4);
+  % камера (перед)
+  \path[fill=etx!55,draw=black,line width=0.4pt] (0,0.62) circle (0.17);
+  \fill[white,opacity=0.5] (-0.05,0.67) circle (0.05);
+}}}
+% Направления вращения винтов (props-in): FL и RR — по часовой, FR и RL — против
+\newcommand{\proprot}[1]{% #1 = масштаб/позиция уже заданы снаружи
+  \draw[-{Stealth[length=1.6mm]},black!60,line width=0.6pt] ($(135:1.6)+(60:0.55)$) arc (60:-200:0.55);
+  \draw[-{Stealth[length=1.6mm]},black!60,line width=0.6pt] ($(315:1.6)+(60:0.55)$) arc (60:-200:0.55);
+  \draw[-{Stealth[length=1.6mm]},black!60,line width=0.6pt] ($(45:1.6)+(120:0.55)$) arc (120:380:0.55);
+  \draw[-{Stealth[length=1.6mm]},black!60,line width=0.6pt] ($(225:1.6)+(120:0.55)$) arc (120:380:0.55);}
+
+% Квадрокоптер сбоку (нос вправо) и сзади
+\tikzset{pics/quadside/.style={code={
+  \draw[black!80,line width=2.6pt,line cap=round] (-1.35,0.05) -- (1.35,0.05);
+  \foreach \x in {-1.35,1.35}{
+    \fill[black!70] (\x-0.14,0.05) rectangle (\x+0.14,0.3);
+    \fill[gray!35,opacity=0.9] (\x,0.36) ellipse (0.8 and 0.06);
+    \draw[black!40,line width=0.4pt] (\x,0.36) ellipse (0.8 and 0.06);
+  }
+  \path[fill=black!75,draw=black,rounded corners=1.5pt] (-0.55,-0.02) rectangle (0.55,0.36);
+  \path[fill=etx!55,draw=black,line width=0.4pt] (0.62,0.17) circle (0.13);
+  \fill[black!55] (-0.4,-0.18) rectangle (0.4,-0.02);
+}}}
+\tikzset{pics/quadrear/.style={code={
+  \draw[black!80,line width=2.6pt,line cap=round] (-1.35,0.05) -- (1.35,0.05);
+  \foreach \x in {-1.35,1.35}{
+    \fill[black!70] (\x-0.14,0.05) rectangle (\x+0.14,0.3);
+    \fill[gray!35,opacity=0.9] (\x,0.36) ellipse (0.8 and 0.06);
+    \draw[black!40,line width=0.4pt] (\x,0.36) ellipse (0.8 and 0.06);
+  }
+  \path[fill=black!75,draw=black,rounded corners=1.5pt] (-0.4,-0.02) rectangle (0.4,0.4);
+  \fill[black!55] (-0.35,-0.18) rectangle (0.35,-0.02);
+  \path[fill=gray!60,draw=black!70,line width=0.3pt] (-0.1,0.4) rectangle (0.1,0.62);
+}}}
+
+% ---------------------------------------------------------------------
+% Сервомашинка с качалкой.  \pic[transform shape]{servo={угол}};  0 — нейтраль
+% ---------------------------------------------------------------------
+\tikzset{pics/servo/.style={code={
+  \path[top color=etx!50,bottom color=etx!75,draw=etx!40!black,rounded corners=1pt,line width=0.5pt] (-1.1,-0.55) rectangle (1.1,0.55);
+  \path[fill=etx!60,draw=etx!40!black,line width=0.5pt] (-1.45,-0.12) rectangle (-1.1,0.12);
+  \path[fill=etx!60,draw=etx!40!black,line width=0.5pt] (1.1,-0.12) rectangle (1.45,0.12);
+  \fill[white] (-1.3,0) circle (0.05) (1.3,0) circle (0.05);
+  \begin{scope}[shift={(0.5,0)},rotate=#1]
+    \path[fill=white,draw=black!80,line width=0.6pt,rounded corners=0.8pt] (-0.12,-0.1) -- (-0.07,1.1) -- (0.07,1.1) -- (0.12,-0.1) -- cycle;
+    \fill[black!70] (0,0.8) circle (0.035) (0,0.95) circle (0.035);
+  \end{scope}
+  \shade[ball color=white] (0.5,0) circle (0.17);
+  \node[font=\sffamily\tiny\bfseries,white] at (-0.45,0) {SERVO};
+}}, pics/servo/.default=0}
+
+% ---------------------------------------------------------------------
+% Переключатели крупно (вид сбоку): \pic[transform shape]{toggle={положение}}; -1,0,1
+% ---------------------------------------------------------------------
+\tikzset{pics/toggle/.style={code={
+  \path[fill=black!75,draw=black,rounded corners=1pt] (-0.35,-0.25) rectangle (0.35,0.05);
+  \draw[black!60,line width=2.6pt,line cap=round] (0,0.05) -- ++(90-#1*35:0.75);
+  \shade[ball color=gray!60] ($(0,0.05)+(90-#1*35:0.78)$) circle (0.1);
+}}, pics/toggle/.default=0}
+
+% Приёмник
+\tikzset{pics/receiver/.style={code={
+  \path[top color=gray!30,bottom color=gray!55,draw=black!70,rounded corners=1pt] (-0.6,-0.35) rectangle (0.6,0.35);
+  \node[font=\sffamily\tiny\bfseries] at (0,0) {RX};
+  \draw[black!70,line width=0.7pt] (0.6,0.2) -- (1.1,0.55) (0.6,0.2) -- (1.15,0.05);
+  \fill[white,draw=black!70] (1.1,0.55) circle (0.03) (1.15,0.05) circle (0.03);
+  \fill[okgreen] (-0.42,0.2) circle (0.06);
+}}}
+
+% Антенна-волны
+\newcommand{\radiowaves}[2]{% #1 = точка, #2 = угол направления
+  \foreach \r in {0.25,0.45,0.65}{\draw[etx!70,line width=0.8pt] ($#1+(#2-35:\r)$) arc (#2-35:#2+35:\r);}}
+
+% ---------------------------------------------------------------------
+% Пульт TX12 (вид спереди), ~ 16 × 10 единиц; использовать со scale
+% ---------------------------------------------------------------------
+\newcommand{\drawTXtwelve}{%
+  % антенна
+  \path[fill=black!70,draw=black,rounded corners=2pt] (7.05,3.3) rectangle (7.5,5.7);
+  % корпус
+  \path[plastic,rounded corners=6mm] (-7.8,3.6) -- (7.8,3.6) -- (8.1,-1.2)
+     .. controls (8.3,-3.8) and (7.6,-6.2) .. (5.8,-6.3)
+     .. controls (4.4,-6.3) and (3.8,-5.2) .. (3.3,-3.9)
+     .. controls (2.2,-3.2) and (-2.2,-3.2) .. (-3.3,-3.9)
+     .. controls (-3.8,-5.2) and (-4.4,-6.3) .. (-5.8,-6.3)
+     .. controls (-7.6,-6.2) and (-8.3,-3.8) .. (-8.1,-1.2) -- cycle;
+  % верхняя панель
+  \path[fill=black!60,rounded corners=4mm] (-7.3,3.35) rectangle (7.3,2.55);
+  % тумблеры (вид спереди — торчат вверх)
+  \foreach \x/\h in {-6.55/1.1,-5.6/1.1,-4.55/0.8,4.55/0.8,5.6/1.1,6.55/1.1}{
+    \path[fill=black!80] (\x-0.25,3.55) rectangle (\x+0.25,3.85);
+    \draw[gray!65,line width=2.4pt,line cap=round] (\x,3.8) -- (\x,3.8+\h);
+    \shade[ball color=gray!70] (\x,3.85+\h) circle (0.14);}
+  % крутилки
+  \foreach \x in {-3.1,3.1}{
+    \path[top color=gray!55,bottom color=gray!80,draw=black] (\x-0.75,3.55) rectangle (\x+0.75,3.95);
+    \foreach \k in {-0.6,-0.4,...,0.61}{\draw[black!60,line width=0.3pt] (\x+\k,3.58) -- (\x+\k,3.92);}}
+  % гимбалы
+  \pic[transform shape] at (-4.9,0.35) {gimbal};
+  \pic[transform shape] at (4.9,0.35) {gimbal};
+  % триммеры
+  \foreach \x in {-4.9,4.9}{\path[fill=black!45,draw=black,rounded corners=1pt] (\x-1.1,-1.55) rectangle (\x+1.1,-1.3);}
+  \foreach \x in {-3.12,3.12}{\path[fill=black!45,draw=black,rounded corners=1pt] (\x-0.13,-0.75) rectangle (\x+0.13,1.45);}
+  % экран
+  \path[fill=black!85,rounded corners=1.5mm] (-2.25,-0.05) rectangle (2.25,2.35);
+  \path[fill=lcdbg] (-2.0,0.2) rectangle (2.0,2.1);
+  \node[font=\ttfamily\tiny,text=lcdfg,align=left,anchor=north west,inner sep=1pt] at (-1.95,2.05)
+       {TX12 \ \ \ \ \ \ 7.9V\\[-2pt]\ \ \ \ \ 02:37\\[-2pt]ELRS 250mW};
+  % кнопки слева и справа от экрана (SYS/MDL/TELE и PAGE/RTN)
+  \foreach \y in {1.75,1.05,0.35}{
+    \path[fill=black!40,draw=black,rounded corners=1pt] (-2.72,\y-0.2) rectangle (-2.4,\y+0.2);
+    \path[fill=black!40,draw=black,rounded corners=1pt] (2.4,\y-0.2) rectangle (2.72,\y+0.2);}
+  % колесо и кнопка питания
+  \shade[ball color=black!40] (0,-1.0) circle (0.5);
+  \draw[black!70,line width=0.3pt] (0,-1.0) circle (0.42);
+  \path[fill=black!45,draw=black] (0,-2.1) circle (0.28);
+  \draw[white,line width=0.6pt] (0,-2.0) -- (0,-2.15) (-0.11,-2.03) arc (130:410:0.13);
+  % логотип
+  \node[font=\sffamily\bfseries\tiny,text=white] at (0,2.85) {RADIOMASTER};
+}
+
+% ---------------------------------------------------------------------
+% Пульт Boxer (вид спереди)
+% ---------------------------------------------------------------------
+\newcommand{\drawBoxer}{%
+  \path[fill=black!70,draw=black,rounded corners=2pt] (7.55,3.5) rectangle (8.0,5.8);
+  \path[plastic,rounded corners=8mm] (-8.4,3.8) -- (8.4,3.8) -- (8.8,-1.0)
+     .. controls (9.2,-4.5) and (8.2,-7.0) .. (6.2,-7.0)
+     .. controls (4.6,-7.0) and (4.0,-5.7) .. (3.6,-4.4)
+     .. controls (2.3,-3.6) and (-2.3,-3.6) .. (-3.6,-4.4)
+     .. controls (-4.0,-5.7) and (-4.6,-7.0) .. (-6.2,-7.0)
+     .. controls (-8.2,-7.0) and (-9.2,-4.5) .. (-8.8,-1.0) -- cycle;
+  \path[fill=black!60,rounded corners=4mm] (-7.9,3.55) rectangle (7.9,2.75);
+  % SA SB SC SD
+  \foreach \x/\h in {-6.9/1.0,-5.95/1.2,5.95/1.2,6.9/1.0}{
+    \path[fill=black!80] (\x-0.25,3.75) rectangle (\x+0.25,4.05);
+    \draw[gray!65,line width=2.4pt,line cap=round] (\x,4.0) -- (\x,4.0+\h);
+    \shade[ball color=gray!70] (\x,4.05+\h) circle (0.14);}
+  % SE SF — низкие кнопки
+  \foreach \x in {-4.8,4.8}{\path[top color=gray!50,bottom color=gray!75,draw=black,rounded corners=1pt] (\x-0.45,3.75) rectangle (\x+0.45,4.1);}
+  % колёса S1 S2
+  \foreach \x in {-3.2,3.2}{
+    \path[top color=gray!55,bottom color=gray!80,draw=black] (\x-0.8,3.75) rectangle (\x+0.8,4.15);
+    \foreach \k in {-0.65,-0.45,...,0.66}{\draw[black!60,line width=0.3pt] (\x+\k,3.78) -- (\x+\k,4.12);}}
+  \pic[transform shape,scale=1.12] at (-5.3,0.1) {gimbal};
+  \pic[transform shape,scale=1.12] at (5.3,0.1) {gimbal};
+  \foreach \x in {-5.3,5.3}{\path[fill=black!45,draw=black,rounded corners=1pt] (\x-1.2,-1.95) rectangle (\x+1.2,-1.7);}
+  \foreach \x in {-3.4,3.4}{\path[fill=black!45,draw=black,rounded corners=1pt] (\x-0.13,-1.0) rectangle (\x+0.13,1.35);}
+  % экран
+  \path[fill=black!85,rounded corners=1.5mm] (-2.3,0.75) rectangle (2.3,3.0);
+  \path[fill=lcdbg] (-2.05,0.95) rectangle (2.05,2.8);
+  \node[font=\ttfamily\tiny,text=lcdfg,align=left,anchor=north west,inner sep=1pt] at (-2.0,2.75)
+       {BOXER \ \ \ \ \ 8.1V\\[-2pt]\ \ \ \ \ 04:00\\[-2pt]ELRS 500mW};
+  % 6 кнопок
+  \foreach \i in {0,...,5}{
+    \path[top color=gray!40,bottom color=gray!65,draw=black,rounded corners=1pt] (-2.2+\i*0.76,0.05) rectangle ++(0.6,0.42);
+    \node[font=\sffamily\tiny\bfseries,text=white] at (-1.9+\i*0.76,-0.2) {\the\numexpr\i+1\relax};}
+  % кнопки SYS/MDL/TELE и PAGE/RTN
+  \foreach \y in {2.45,1.8,1.15}{
+    \path[fill=black!40,draw=black,rounded corners=1pt] (-2.95,\y-0.2) rectangle (-2.6,\y+0.2);
+    \path[fill=black!40,draw=black,rounded corners=1pt] (2.6,\y-0.2) rectangle (2.95,\y+0.2);}
+  \shade[ball color=black!40] (0,-1.1) circle (0.5);
+  \draw[black!70,line width=0.3pt] (0,-1.1) circle (0.42);
+  \path[fill=black!45,draw=black] (0,-2.25) circle (0.28);
+  \draw[white,line width=0.6pt] (0,-2.15) -- (0,-2.3) (-0.11,-2.18) arc (130:410:0.13);
+  \node[font=\sffamily\bfseries\tiny,text=white] at (0,3.15) {BOXER};
+}
+
+% Выноска: \callout{точка}{позиция текста}{anchor}{текст}
+\newcommand{\callout}[4]{%
+  \draw[callout] #1 -- #2;
+  \node[cdot] at #1 {};
+  \node[ctext,anchor=#3] at #2 {#4};}
+
+% Иконка-лампочка для «Простыми словами»
+\newcommand{\bulbicon}{\tikz[baseline=-0.6ex,scale=0.28]{%
+  \fill[yellow!80!orange] (0,0.35) circle (0.55);
+  \fill[gray!70] (-0.28,-0.35) rectangle (0.28,-0.05);
+  \draw[white,line width=0.4pt] (-0.12,0.2) -- (0,0.45) -- (0.12,0.2);}}
+
+% ---------------------------------------------------------------------
+% Маленькие значки для схем
+% ---------------------------------------------------------------------
+% Мини-пульт (≈2.2 × 1.5)
+\tikzset{pics/minitx/.style={code={
+  \path[top color=black!55,bottom color=black!80,draw=black,rounded corners=2.5pt]
+     (-1.1,0.55) -- (1.1,0.55) -- (1.15,-0.2) .. controls (1.2,-0.75) and (0.75,-0.95) .. (0.5,-0.6)
+     .. controls (0.2,-0.45) and (-0.2,-0.45) .. (-0.5,-0.6) .. controls (-0.75,-0.95) and (-1.2,-0.75) .. (-1.15,-0.2) -- cycle;
+  \fill[black!75] (0.85,0.5) rectangle (0.95,0.95);
+  \foreach \x in {-0.65,0.65}{\shade[inner color=black!55,outer color=black!85] (\x,0.02) circle (0.3);
+     \shade[ball color=black!45] (\x,0.02) circle (0.1);}
+  \fill[lcdbg] (-0.25,0.12) rectangle (0.25,0.42);
+}}}
+% Полётный контроллер (плата 30×30)
+\tikzset{pics/fcboard/.style={code={
+  \path[fill=black!80,draw=black,rounded corners=1.5pt] (-0.6,-0.6) rectangle (0.6,0.6);
+  \foreach \x in {-0.48,0.48}\foreach \y in {-0.48,0.48}{\fill[gray!40] (\x,\y) circle (0.07);}
+  \path[fill=black!55,draw=gray!50,line width=0.3pt] (-0.22,-0.22) rectangle (0.22,0.22);
+  \node[font=\sffamily\tiny,text=white] at (0,0) {FC};
+  \foreach \k in {-0.15,0,0.15}{\draw[gray!60,line width=0.4pt] (\k,0.22) -- (\k,0.3) (\k,-0.22) -- (\k,-0.3) (0.22,\k) -- (0.3,\k) (-0.22,\k) -- (-0.3,\k);}
+  \draw[-{Stealth[length=1.2mm]},white,line width=0.5pt] (0,0.35) -- (0,0.55);
+}}}
+% Мотор (вид сверху)
+\tikzset{pics/motor/.style={code={
+  \shade[inner color=gray!50,outer color=black!75] (0,0) circle (0.32);
+  \draw[black!80,line width=0.4pt] (0,0) circle (0.32);
+  \foreach \a in {0,60,...,300}{\fill[black!70] (\a:0.2) circle (0.035);}
+  \fill[gray!70] (0,0) circle (0.07);
+}}}
+% Микросхема с подписью: \pic{chip={STM32}};
+\tikzset{pics/chip/.style={code={
+  \foreach \k in {-0.45,-0.27,...,0.46}{
+    \draw[gray!60,line width=0.9pt] (\k,0.62) -- (\k,0.78) (\k,-0.62) -- (\k,-0.78)
+          (0.62,\k) -- (0.78,\k) (-0.62,\k) -- (-0.78,\k);}
+  \path[top color=black!65,bottom color=black!85,draw=black,rounded corners=1pt] (-0.62,-0.62) rectangle (0.62,0.62);
+  \fill[black!50] (-0.45,0.45) circle (0.06);
+  \node[font=\sffamily\tiny\bfseries,text=white] at (0,0) {#1};
+}}}
+% SD-карта
+\tikzset{pics/sdcard/.style={code={
+  \path[fill=etx!70,draw=etx!40!black,line width=0.5pt] (-0.4,-0.55) -- (0.4,-0.55) -- (0.4,0.4) -- (0.22,0.55) -- (-0.4,0.55) -- cycle;
+  \foreach \x in {-0.28,-0.14,0,0.14}{\fill[yellow!70!orange] (\x-0.04,0.28) rectangle (\x+0.04,0.46);}
+  \node[font=\sffamily\tiny\bfseries,text=white] at (0,-0.15) {SD};
+}}}
+% Аккумулятор
+\tikzset{pics/battery/.style={code={
+  \path[top color=gray!30,bottom color=gray!55,draw=black!70,rounded corners=1pt] (-0.7,-0.3) rectangle (0.7,0.3);
+  \fill[black!60] (0.7,-0.1) rectangle (0.8,0.1);
+  \fill[okgreen!70] (-0.62,-0.22) rectangle (0.25,0.22);
+}}}
+% Регулятор оборотов (ESC)
+\tikzset{pics/esc/.style={code={
+  \path[fill=blue!40!black!70,draw=black,rounded corners=1pt] (-0.5,-0.25) rectangle (0.5,0.25);
+  \node[font=\sffamily\tiny\bfseries,text=white] at (0,0) {ESC};
+}}}
+% Компьютер (ноутбук)
+\tikzset{pics/laptop/.style={code={
+  \path[fill=black!75,draw=black,rounded corners=1.5pt] (-0.9,-0.05) rectangle (0.9,1.1);
+  \path[fill=etx!20] (-0.8,0.05) rectangle (0.8,1.0);
+  \path[fill=black!55,draw=black] (-1.1,-0.05) -- (1.1,-0.05) -- (1.25,-0.25) -- (-1.25,-0.25) -- cycle;
+}}}
+% Динамик / звук
+\tikzset{pics/speaker/.style={code={
+  \path[fill=black!70] (-0.3,-0.15) rectangle (-0.1,0.15) (-0.1,0.15) -- (0.15,0.35) -- (0.15,-0.35) -- (-0.1,-0.15) -- cycle;
+  \foreach \r in {0.3,0.5}{\draw[black!70,line width=0.7pt] (0.15,0) ++(-35:\r) arc (-35:35:\r);}
+}}}
+
+% Крутилка (вид сверху) со стрелкой: \pic{knob={угол}};  0 — середина
+\tikzset{pics/knob/.style={code={
+  \foreach \a in {-135,-90,...,135}{\draw[black!40,line width=0.5pt] (90-\a:0.62) -- (90-\a:0.75);}
+  \shade[inner color=gray!40,outer color=black!75] (0,0) circle (0.55);
+  \draw[black!80] (0,0) circle (0.55);
+  \draw[white,line width=1.2pt,line cap=round] (0,0) -- (90-#1:0.45);
+}}, pics/knob/.default=0}
+% Кнопка (сбоку): \pic{pushbtn={0|1}};  1 — нажата
+\tikzset{pics/pushbtn/.style={code={
+  \path[fill=black!75,draw=black,rounded corners=1pt] (-0.4,-0.3) rectangle (0.4,0.05);
+  \path[top color=gray!45,bottom color=gray!70,draw=black!80,rounded corners=1.5pt] (-0.28,0.05) rectangle (0.28,0.45-#1*0.25);
+}}, pics/pushbtn/.default=0}
+
+% Экран со всплывающим меню: \lcdpopup{Заголовок}{Справа}{строки}{пункты меню}
+\newcommand{\lcdpopup}[4]{%
+\begin{tikzpicture}[baseline=(scr.center)]
+  \fill[black!80,rounded corners=3mm] (-3.5mm,-3.5mm) rectangle (\lcdw+3.5mm,30mm+3.5mm);
+  \fill[black!65,rounded corners=1.5mm] (-1.6mm,-1.6mm) rectangle (\lcdw+1.6mm,30mm+1.6mm);
+  \fill[lcdbg] (0,0) rectangle (\lcdw,30mm);
+  \node[anchor=north west,inner sep=0pt,text width=\lcdw,align=left,font=\lcdfont,text=lcdfg] (scr) at (0,30mm)
+  {\setlength{\parindent}{0pt}{\setlength{\fboxsep}{0pt}\colorbox{lcdfg}{\makebox[\lcdw][l]{\color{lcdbg}\hspace{1mm}\bfseries #1\hfill #2\hspace{1mm}}}}\par #3};
+  \fill[lcdbg,opacity=0.55] (0,0) rectangle (\lcdw,26mm);
+  \node[fill=lcdbg,draw=lcdfg,line width=0.8pt,inner sep=1.2mm,font=\lcdfont,text=lcdfg,align=left] at (0.5\lcdw,13mm) {#4};
+\end{tikzpicture}}
+% значение в режиме редактирования (мигает)
+\newcommand{\ledit}[1]{{\setlength{\fboxsep}{0.6pt}\setlength{\fboxrule}{0.7pt}\fcolorbox{lcdbg}{lcdbg}{\color{lcdfg}\underline{#1}}}}
+\newcommand{\linv}[1]{{\setlength{\fboxsep}{0.6pt}\colorbox{lcdfg}{\color{lcdbg}#1}}}
+% Подпись-кнопка под стрелкой перехода между экранами
+\newcommand{\goesto}[1]{\begin{tikzpicture}[baseline=-0.5ex]\draw[arr,etx,line width=1.2pt] (0,0) -- (1.2,0) node[midway,above,font=\sffamily\scriptsize]{#1};\end{tikzpicture}}
+
+% Летающее крыло, вид сверху (нос вверх). Стили элевонов: elL, elR
+\tikzset{elL/.style={surfoff},elR/.style={surfoff}}
+\tikzset{pics/wingtop/.style={code={
+  \path[airframe] (0,1.3) .. controls (0.5,1.3) and (0.8,1.0) .. (1.0,0.8) -- (3.4,-0.6) -- (3.4,-1.1)
+       -- (0.6,-0.7) -- (0,-0.9) -- (-0.6,-0.7) -- (-3.4,-1.1) -- (-3.4,-0.6) -- (-1.0,0.8) .. controls (-0.8,1.0) and (-0.5,1.3) .. (0,1.3);
+  \path[elR] (3.4,-1.1) -- (1.3,-0.8) -- (1.3,-0.55) -- (3.4,-0.85) -- cycle;
+  \path[elL] (-3.4,-1.1) -- (-1.3,-0.8) -- (-1.3,-0.55) -- (-3.4,-0.85) -- cycle;
+  \fill[etx!45,draw=etx!70!black,line width=0.4pt] (0,0.6) ellipse (0.18 and 0.4);
+  \fill[black!70] (0,-0.9) circle (0.07);
+  \draw[black!65,line width=1.2pt] (-0.6,-0.95) -- (0.6,-0.95);
+}}}
+% Хвост «V», вид сзади. #1, #2 — куда смотрит отклонённая поверхность (угол) у левой и правой половины
+\tikzset{pics/vtail/.style 2 args={code={
+  \path[airframe2] (0,0) circle (0.3);
+  \path[airframe] (-0.15,0.15) -- (-1.6,1.5) -- (-1.75,1.35) -- (-0.25,-0.05) -- cycle;
+  \path[airframe] (0.15,0.15) -- (1.6,1.5) -- (1.75,1.35) -- (0.25,-0.05) -- cycle;
+  \draw[accent,line width=2.2pt,line cap=round] (-1.0,0.72) -- ++(#1:0.55);
+  \draw[accent,line width=2.2pt,line cap=round] (1.0,0.72) -- ++(#2:0.55);
+  \fill[black!70] (-1.0,0.72) circle (0.05) (1.0,0.72) circle (0.05);
+}}}
+% Стрелки «вверх/вниз» у поверхности на виде сверху
+\newcommand{\upmark}[1]{\node[circle,fill=okgreen!70!black,text=white,font=\sffamily\scriptsize\bfseries,inner sep=0.8pt] at #1 {↑};}
+\newcommand{\downmark}[1]{\node[circle,fill=warn,text=white,font=\sffamily\scriptsize\bfseries,inner sep=0.8pt] at #1 {↓};}

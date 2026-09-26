@@ -1,0 +1,189 @@
+% =====================================================================
+\chapter{Lua-скрипты: программируем пульт}
+\label{ch:lua}
+% =====================================================================
+\chapterintro
+  {что такое Lua-скрипты, какие они бывают и где лежат; полезные готовые скрипты;
+   как написать свою программу для экрана пульта}
+  {SD-карта пульта, компьютер с текстовым редактором}
+
+\section{Пульт, который можно программировать}
+
+\begin{simple}
+\textbf{Lua} --- простой язык программирования. EdgeTX умеет запускать Lua-программы
+(скрипты) с SD-карты. Так сделаны меню настройки ExpressLRS, настройка Betaflight прямо с пульта,
+разные мастера и даже игры. А ещё ты можешь написать свой скрипт --- например, красивый экран
+с батареей.
+\end{simple}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[every node/.style={font=\sffamily\small}]
+  \foreach \x/\t/\f/\r in {0/Утилиты/TOOLS/{\btn{SYS} → Tools},3.9/Экраны/TELEMETRY/{кнопка \btn{TELE}},7.8/Функции/FUNCTIONS/{спецфункция\\«Lua script»},11.7/Миксеры/MIXES/{\btn{MDL} → Custom\\Scripts}}{
+    \node[draw=etx,fill=etx!6,rounded corners=3pt,text width=32mm,minimum height=24mm,align=center] at (\x,0) {};
+    \node[font=\sffamily\small\bfseries,text=etxdark] at (\x,0.75) {\t};
+    \node[font=\ttfamily\scriptsize] at (\x,0.25) {SCRIPTS/\f};
+    \node[font=\sffamily\scriptsize,align=center] at (\x,-0.5) {\r};}
+\end{tikzpicture}
+\caption{Четыре вида скриптов, их папки на SD-карте и как они запускаются}
+\end{figure}
+
+\begin{center}\small
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\linewidth}{@{}L{26mm}Y@{}}
+\toprule
+Утилиты & запускаются из \mpath{SYS\sep Tools}, занимают весь экран, пока не выйдешь \\
+Экраны телеметрии & показываются по кнопке \btn{TELE} \\
+Функции & работают, пока включён переключатель в специальной функции \\
+Миксеры & считают своё значение, которое можно использовать в миксерах \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\section{Готовые полезные скрипты}
+
+\begin{description}[font=\sffamily\bfseries\color{etx}]
+  \item[ExpressLRS] настройка модуля и приёмника (глава~\ref{ch:rf}).
+  \item[Betaflight TX Lua Scripts] настройка PID, рейтов, видеопередатчика квадрокоптера
+        прямо с пульта. Скачиваются с GitHub проекта Betaflight, копируются в папку
+        \code{SCRIPTS}, запускаются из \menu{Tools}.
+  \item[Мастера моделей] входят в пакет SD-карты EdgeTX.
+\end{description}
+
+\section{Экран пульта --- это клетчатый лист}
+
+Экран TX12 и Boxer --- 128 точек в ширину и 64 в высоту. Координата $x$ растёт вправо,
+$y$ --- \textbf{вниз} (не вверх, как в школе!). Точка $(0,0)$ --- левый верхний угол.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[x=0.78mm,y=0.78mm]
+  \fill[lcdbg] (0,0) rectangle (128,-64);
+  \foreach \x in {0,16,...,128}{\draw[lcdfg!25] (\x,0) -- (\x,-64);}
+  \foreach \y in {0,-16,...,-64}{\draw[lcdfg!25] (0,\y) -- (128,\y);}
+  \draw[lcdfg,line width=0.8pt] (0,0) rectangle (128,-64);
+  \foreach \x in {0,32,64,96,128}{\node[font=\sffamily\scriptsize,above] at (\x,0) {\x};}
+  \foreach \y in {0,16,32,48,64}{\node[font=\sffamily\scriptsize,left] at (0,-\y) {\y};}
+  \draw[->,accent,thick] (0,6) -- (20,6) node[right,font=\sffamily\scriptsize]{$x$};
+  \draw[->,accent,thick] (-9,0) -- (-9,-16) node[below,font=\sffamily\scriptsize]{$y$};
+  % пример
+  \fill[lcdfg] (0,0) rectangle (60,-8);
+  \node[anchor=north west,font=\ttfamily\scriptsize,text=lcdbg,inner sep=1pt] at (1,-0.5) {Quad-5in};
+  \node[anchor=north west,font=\ttfamily\bfseries\LARGE,text=lcdfg,inner sep=0pt] at (0,-12) {3.95};
+  \draw[lcdfg,line width=0.6pt] (0,-32) rectangle (80,-42);
+  \fill[lcdfg] (1,-33) rectangle (60,-41);
+  \node[anchor=north west,font=\ttfamily\scriptsize,text=lcdfg,inner sep=0pt] at (86,-12) {LQ 100};
+  \fill[accent] (0,0) circle (1.3);
+  \node[font=\sffamily\scriptsize,text=accent,anchor=west] at (131,-1) {(0,0) --- начало};
+  \node[font=\sffamily\scriptsize,anchor=west] at (131,-14) {\code{drawNumber(0, 12, …)}};
+  \node[font=\sffamily\scriptsize,anchor=west] at (131,-26) {\code{drawText(86, 12, "LQ")}};
+  \node[font=\sffamily\scriptsize,anchor=west] at (131,-38) {\code{drawRectangle(0, 32, 80, 10)}};
+\end{tikzpicture}
+\caption{Координаты экрана и что рисуют команды}
+\end{figure}
+
+\section{Как устроен скрипт}
+
+Скрипт --- это файл \code{.lua}, который в конце \emph{возвращает таблицу} с функциями:
+\begin{itemize}
+  \item \code{init()} --- выполняется один раз при запуске;
+  \item \code{run(...)} --- выполняется снова и снова, много раз в секунду: тут рисуем экран.
+\end{itemize}
+
+Самые нужные команды:
+\begin{center}\small
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\linewidth}{@{}L{58mm}Y@{}}
+\toprule
+\code{getValue("RxBt")} & узнать значение датчика или источника \\
+\code{lcd.clear()} & очистить экран \\
+\code{lcd.drawText(x, y, "текст", флаги)} & написать текст; флаги: \code{INVERS} (инверсия),
+  \code{BLINK} (мигать), \code{SMLSIZE}, \code{MIDSIZE}, \code{DBLSIZE} (размер) \\
+\code{lcd.drawNumber(x, y, число, флаги)} & написать число; \code{PREC1}/\code{PREC2} ---
+  1 или 2 знака после запятой \\
+\code{lcd.drawRectangle(x, y, w, h)} & рамка \\
+\code{lcd.drawFilledRectangle(x, y, w, h)} & закрашенный прямоугольник \\
+\code{playNumber(n, единица)} & сказать число голосом \\
+\code{getTime()} & текущее время в «тиках» по 10\,мс \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\section{Пример 1: «Привет, EdgeTX!»}
+
+\luafile{hello.lua}
+
+Сохрани как \code{SCRIPTS/TOOLS/hello.lua}, открой \mpath{SYS\sep Tools} и запусти
+\menu{hello}. Нажимай \btn{ENTER} --- счётчик растёт; \btn{RTN} --- выход.
+
+\begin{center}
+\lcdscreen{Hello, EdgeTX!}{}{\lblank\lr{Model: Quad-5in}{}\lr{ENTER pressed:}{3\hspace{12mm}}\lblank\lr{Tx batt: 7.9V}{}}
+\end{center}
+
+\section{Пример 2: экран батареи}
+
+\luafile{batt.lua}
+
+Файл кладётся в \code{SCRIPTS/TELEMETRY/batt.lua} (имя --- не длиннее 6 букв). Затем
+\mpath{MDL\sep Telemetry\sep Screen 1} = \menu{Script} → \menu{batt}. Нажми \btn{TELE}:
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[x=0.55mm,y=0.55mm]
+  \fill[black!80,rounded corners=3mm] (-7,7) rectangle (135,-71);
+  \fill[lcdbg] (0,0) rectangle (128,-64);
+  \fill[lcdfg] (0,0) rectangle (42,-8);
+  \node[anchor=north west,font=\ttfamily\scriptsize,text=lcdbg,inner sep=1pt] at (1,-0.5) {Quad-5in};
+  \node[anchor=north west,font=\ttfamily\bfseries\Large,text=lcdfg,inner sep=0pt] at (0,-12) {3.95};
+  \node[anchor=north west,font=\ttfamily\tiny,text=lcdfg,inner sep=0pt] at (38,-19) {V/cell};
+  \draw[lcdfg,line width=0.5pt] (0,-32) rectangle (80,-42);
+  \fill[lcdfg] (1,-33) rectangle (56,-41);
+  \node[anchor=north west,font=\ttfamily\tiny,text=lcdfg,inner sep=0pt] at (86,-12) {LQ  100};
+  \node[anchor=north west,font=\ttfamily\tiny,text=lcdfg,inner sep=0pt] at (86,-24) {RSSI -54};
+  \node[anchor=north west,font=\ttfamily\tiny,text=lcdfg,inner sep=0pt] at (0,-48) {Pack 15.8};
+  \node[anchor=north west,font=\ttfamily\tiny,text=lcdfg,inner sep=0pt] at (86,-48) {02:37};
+\end{tikzpicture}
+\caption{Так выглядит экран, нарисованный скриптом \code{batt.lua}}
+\end{figure}
+
+\section{Пример 3: скрипт-миксер}
+
+\luafile{thrlim.lua}
+
+Скрипт берёт стик газа и ограничивает его. \mpath{MDL\sep Custom Scripts} → \menu{thrlim},
+укажи источник \sw{Thr} и предел. В миксере газа используй источник \sw{Lim}. Удобно для
+новичков: «не больше 60\,\% газа».
+
+\section{Пример 4: говорящий скрипт}
+
+\luafile{lqcall.lua}
+
+Кладётся в \code{SCRIPTS/FUNCTIONS/lqcall.lua}. В специальных функциях: \menu{Switch} =
+\sw{SA↓}, \menu{Lua script} = \menu{lqcall}. В арме пульт каждые 10 секунд называет
+качество связи.
+
+\section{Если что-то не работает}
+
+\begin{itemize}
+  \item \code{Script syntax error} --- ошибка в тексте программы (забытая скобка, \code{end}).
+  \item Скрипта нет в списке --- проверь папку и длину имени файла.
+  \item Проверяй скрипты на компьютере: в EdgeTX Companion есть симулятор пульта, который
+        запускает Lua и показывает сообщения \code{print()}.
+\end{itemize}
+
+\begin{tryit}
+\begin{enumerate}
+  \item Запусти \code{hello.lua}. Поменяй текст приветствия на своё имя.
+  \item В \code{batt.lua} поменяй \code{CELLS} под свою батарею и выведи экран по \btn{TELE}.
+  \item Переделай \code{lqcall.lua}, чтобы он говорил напряжение \sw{RxBt}.
+\end{enumerate}
+\end{tryit}
+
+\begin{summary}
+\begin{itemize}
+  \item Скрипты лежат в папке \code{SCRIPTS} на SD-карте: \code{TOOLS}, \code{TELEMETRY},
+        \code{FUNCTIONS}, \code{MIXES}.
+  \item Экран 128×64: $x$ вправо, $y$ вниз, $(0,0)$ --- левый верхний угол.
+  \item \code{getValue()} --- прочитать датчик, \code{lcd.draw…()} --- нарисовать.
+\end{itemize}
+\end{summary}

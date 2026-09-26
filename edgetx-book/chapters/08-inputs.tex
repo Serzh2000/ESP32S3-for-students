@@ -1,0 +1,189 @@
+% =====================================================================
+\chapter{Входы: расходы и экспонента}
+\label{ch:inputs}
+% =====================================================================
+\chapterintro
+  {как настроить «чувствительность» стиков: расходы (dual rates), экспоненту,
+   переключение «мягко/резко» тумблером; что делать с триммерами}
+  {модель с привязанным приёмником}
+
+\section{Зачем нужны входы}
+
+\begin{simple}
+Представь, что ты учишься ездить на велосипеде. Сначала руль лучше поворачивать осторожно,
+по чуть-чуть. Когда научишься --- можно резче. \textbf{Входы} позволяют сделать стики
+«спокойнее» для учёбы или «острее» для трюков --- не трогая саму модель.
+\end{simple}
+
+Страница \mpath{MDL\sep Inputs}. У новой модели там четыре входа --- по одному на каждую ось
+стиков:
+
+\begin{center}
+\lcdscreen{INPUTS}{6/13}{\lsel{I1 Ail}{Ail 100}\lr{I2 Ele}{Ele 100}\lr{I3 Thr}{Thr 100}\lr{I4 Rud}{Rud 100}\lblank\lblank}
+\end{center}
+
+\sw{I1} --- вход крена (от стика \sw{Ail}), \sw{I2} --- тангажа, \sw{I3} --- газа,
+\sw{I4} --- рыскания. Число 100 --- это \textbf{вес}, о нём дальше.
+
+\section{Расход (Weight)}
+
+\textbf{Вес} (Weight) --- на сколько процентов «работает» стик. 100\,\% --- стик до упора даёт
+полный ход руля. 50\,\% --- стик до упора даёт только половину.
+
+\begin{figure}[H]
+\centering
+\begin{tabular}{@{}c@{\hspace{6mm}}c@{}}
+\begin{tikzpicture}[scale=1.22]
+  \pic[transform shape] at (0,0) {planeside=30};
+  \draw[black!30,dashed] (-2.45,0.155) -- (-3.4,0.155);
+  \draw[accent,thick] (-3.1,0.155) arc (180:150:0.65);
+  \node[font=\sffamily\scriptsize,text=accent] at (-3.5,0.55) {30°};
+\end{tikzpicture} &
+\begin{tikzpicture}[scale=1.22]
+  \pic[transform shape] at (0,0) {planeside=15};
+  \draw[black!30,dashed] (-2.45,0.155) -- (-3.4,0.155);
+  \draw[accent,thick] (-3.1,0.155) arc (180:165:0.65);
+  \node[font=\sffamily\scriptsize,text=accent] at (-3.5,0.45) {15°};
+\end{tikzpicture}\\[2pt]
+\small вес 100\,\%: стик до упора → руль на 30° & \small вес 50\,\%: стик до упора → руль на 15°
+\end{tabular}
+\caption{Один и тот же стик до упора, разный вес --- разное отклонение руля}
+\end{figure}
+
+\begin{itemize}
+  \item маленький расход (50--70\,\%) --- для первых полётов и точной работы;
+  \item большой расход (100\,\%) --- для трюков.
+\end{itemize}
+
+\section{Экспонента (Expo)}
+
+У маленького расхода есть минус: и на краю стика модель становится вялой. Экспонента
+решает это хитрее: \textbf{у центра стика --- мягко, по краям --- полный ход}.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{axis}[width=10cm,height=7cm,xmin=-100,xmax=100,ymin=-100,ymax=100,
+  xlabel={насколько сдвинут стик, \%},ylabel={насколько отклонён руль, \%},grid=major,grid style={gray!20},
+  legend pos=north west,legend style={font=\scriptsize},tick label style={font=\scriptsize},
+  label style={font=\small}]
+\addplot[domain=-100:100,samples=60,very thick,gray] {x};
+\addplot[domain=-100:100,samples=60,very thick,etx] {x*(0.3*(x/100)^2+0.7)};
+\addplot[domain=-100:100,samples=60,very thick,accent] {x*(0.6*(x/100)^2+0.4)};
+\addplot[domain=-100:100,samples=60,very thick,okgreen,dashed] {0.5*x};
+\legend{без изменений,expo 30\,\%,expo 60\,\%,просто вес 50\,\%}
+\fill[yellow!40,opacity=0.35] (axis cs:-30,-100) rectangle (axis cs:30,100);
+\node[font=\sffamily\scriptsize,align=center] at (axis cs:0,-80) {у центра\\мягче};
+\end{axis}
+\end{tikzpicture}
+\caption{Экспонента: у центра стика (жёлтая зона) кривая пологая --- модель реагирует мягко.
+А на краях доходит до 100\,\%}
+\end{figure}
+
+\begin{whyit}
+Посмотри на оранжевую линию (expo 60\,\%). Сдвинул стик на 30\,\% --- руль отклонился всего
+примерно на 14\,\%. А при стике на 100\,\% --- руль тоже на 100\,\%. Получается, для точной
+работы у центра у тебя «много места», а для резкого манёвра --- полный ход.
+Формула для любопытных: $y = x\,(k x^2 + (1-k))$, где $k$ --- expo в долях.
+\end{whyit}
+
+Хорошие начальные значения для самолёта: экспонента 20--40\,\% на элеронах и руле высоты.
+
+\begin{note}
+Для квадрокоптера с Betaflight чувствительность настраивают в самом полётном контроллере
+(вкладка \menu{Rates}). В пульте оставь вес 100\,\% и экспоненту 0.
+\end{note}
+
+\section{Как настроить строку входа}
+
+Выбери вход и нажми \btn{ENTER}:
+
+\begin{center}
+\lcdscreen{INPUT I1}{}{\lr{Input name}{Ail}\lr{Line name}{High}\lr{Source}{Ail}\lsel{Weight}{\ledit{100}}\lr{Curve}{Expo 25}\lr{Switch}{SB↑}}
+\end{center}
+
+\begin{center}\small
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\linewidth}{@{}L{30mm}Y@{}}
+\toprule
+\menu{Source} & откуда брать сигнал (стик, крутилка, переключатель) \\
+\menu{Weight} & вес --- расход, в процентах \\
+\menu{Offset} & сдвиг --- прибавить число после умножения \\
+\menu{Curve} & форма: \menu{Expo} --- экспонента, \menu{Diff} --- разный ход в две стороны,
+  \menu{Func} --- функции, \menu{Curve} --- своя кривая (глава~\ref{ch:outputs}) \\
+\menu{Trim} & учитывать ли триммер \\
+\menu{Switch} & когда эта строка работает \\
+\menu{Flight modes} & в каких полётных режимах работает \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\section{Переключаемые расходы}
+
+\begin{simple}
+Один вход может состоять из нескольких строк. Пульт читает строки \textbf{сверху вниз} и
+берёт \textbf{первую}, у которой включён её переключатель. Строка без переключателя внизу ---
+«на все остальные случаи».
+\end{simple}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[every node/.style={font=\sffamily\small}]
+  \pic[transform shape,scale=0.8] at (0,0) {stickto={0.7}{0}};
+  \node[lbl] at (0,-1.1) {стик крена};
+  \foreach \y/\n/\w/\sw/\hl in {1.4/High/100/{SB↑}/0,0/Mid/75/{SB-}/1,-1.4/Low/50/{иначе}/0}{
+    \ifnum\hl=1
+      \node[draw=accent,line width=1.2pt,fill=accent!10,rounded corners=2pt,minimum width=36mm,minimum height=8mm] (r\n) at (4,\y) {\n: вес \w\,\%};
+    \else
+      \node[draw=black!40,fill=black!4,rounded corners=2pt,minimum width=36mm,minimum height=8mm,text=black!55] (r\n) at (4,\y) {\n: вес \w\,\%};
+    \fi
+    \node[anchor=west,font=\sffamily\scriptsize] at (6.1,\y) {если \sw};
+    \draw[arr,black!40] (1.0,0) -- (r\n.west);}
+  \draw[arr,accent,line width=1.4pt] (rMid.east) ++(1.3,0) -- ++(1.0,0) node[right,text=accent,font=\sffamily\small\bfseries] {\sw{I1} = 75\,\% хода};
+  \pic[transform shape,scale=0.8] at (5.4,-2.7) {toggle=0};
+  \node[lbl,anchor=west] at (5.9,-2.6) {\sw{SB} посередине};
+\end{tikzpicture}
+\caption{Переключатель \sw{SB} в среднем положении --- работает строка Mid}
+\end{figure}
+
+\begin{recipe}{три расхода на переключателе SB}
+Во входе \sw{I1} (Ail) сделай три строки (долгое \btn{ENTER} → \menu{Insert after}):
+\begin{center}\small
+\begin{tabular}{@{}lllll@{}}
+\toprule
+Строка & Source & Weight & Curve & Switch \\
+\midrule
+High & Ail & 100 & Expo 25 & \sw{SB↑} \\
+Mid  & Ail & 75  & Expo 30 & \sw{SB-} \\
+Low  & Ail & 50  & Expo 35 & --- (пусто) \\
+\bottomrule
+\end{tabular}
+\end{center}
+То же самое сделай для \sw{I2} (Ele) на том же переключателе. Проверь на странице каналов:
+переключаешь \sw{SB} --- меняется максимум.
+\end{recipe}
+
+\section{Триммеры во входах}
+
+Параметр \menu{Trim} = \menu{ON} добавляет к стику значение триммера. Для самолётов это
+нужно. \textbf{Для квадрокоптеров выключи} (\menu{OFF}): случайно нажатая качелька сдвинет
+«ноль», и коптер будет всё время куда-то тянуть.
+
+\begin{tryit}
+\begin{enumerate}
+  \item Поставь у \sw{I1} вес 50\,\%. Посмотри на странице каналов, до скольки доходит \sw{CH1}
+        при стике до упора. Верни 100.
+  \item Поставь экспоненту 60\,\% и медленно веди стик. Заметил, что у центра канал
+        меняется медленно, а у края --- быстро?
+  \item Сделай два расхода на переключателе \sw{SC}: 100\,\% и 60\,\%.
+\end{enumerate}
+\end{tryit}
+
+\begin{summary}
+\begin{itemize}
+  \item Вход --- это «чувствительность» стика.
+  \item Вес = расход, экспонента = мягко у центра, резко по краям.
+  \item Строки входа проверяются сверху вниз, работает первая подходящая.
+  \item Квадрокоптеру --- вес 100, экспо 0, триммер выключен.
+\end{itemize}
+\end{summary}

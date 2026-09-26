@@ -1,73 +1,39 @@
 % ================= Титул =================
 \begin{titlepage}
 \centering
-\vspace*{1.5cm}
+\vspace*{0.6cm}
 {\sffamily\Huge\bfseries\color{etxdark} EdgeTX\par}
 \vspace{3mm}
 {\sffamily\LARGE на RadioMaster TX12 и Boxer\par}
 \vspace{2mm}
-{\sffamily\large Практическое руководство по настройке аппаратуры управления\par}
-\vspace{1.4cm}
+{\sffamily\large Понятная книжка о настройке пульта радиоуправления\par}
+\vspace{1.0cm}
 
-\begin{tikzpicture}[scale=1.0]
-  % корпус
-  \fill[black!80,rounded corners=18pt] (-4.6,-2.2) rectangle (4.6,1.9);
-  \fill[black!65,rounded corners=10pt] (-4.3,-3.6) rectangle (-2.3,-1.5);
-  \fill[black!65,rounded corners=10pt] (2.3,-3.6) rectangle (4.3,-1.5);
-  % антенна
-  \fill[black!70,rounded corners=2pt] (3.6,1.8) rectangle (3.9,3.3);
-  % экран
-  \fill[lcdbg,rounded corners=2pt] (-1.25,-0.55) rectangle (1.25,0.85);
-  \node[font=\ttfamily\tiny,text=lcdfg,align=left] at (0,0.15) {Quad-5in\quad 7.9V\\[-1pt]\hphantom{x}\\[-1pt]TX 250mW\;\; T1 02:37};
-  % стики
-  \foreach \x in {-3.0,3.0}{
-    \fill[black!55] (\x,-0.2) circle (1.05);
-    \draw[black!40,line width=0.6pt] (\x,-0.2) circle (0.9);
-    \fill[black!90] (\x,-0.2) circle (0.3);
-    \fill[black!60] (\x+0.05,-0.15) circle (0.18);
-  }
-  % переключатели
-  \foreach \x/\l in {-3.9/SE,-3.1/SB,3.1/SC,3.9/SF}{
-    \fill[gray!70] (\x-0.08,1.85) rectangle (\x+0.08,2.35);
-    \fill[gray!40] (\x,2.38) circle (0.1);
-    \node[font=\sffamily\tiny,white] at (\x,1.65) {\l};
-  }
-  \foreach \x/\l in {-2.1/S1,2.1/S2}{
-    \fill[gray!55] (\x,1.95) ellipse (0.35 and 0.14);
-    \node[font=\sffamily\tiny,white] at (\x,1.65) {\l};
-  }
-  % кнопки
-  \foreach \y/\l in {0.6/SYS,0.2/MDL,-0.2/TELE}{
-    \fill[gray!45,rounded corners=1pt] (-1.85,\y-0.12) rectangle (-1.45,\y+0.12);
-    \node[font=\sffamily\tiny,white,left] at (-1.85,\y) {};
-  }
-  \foreach \y in {0.6,0.2,-0.2}{
-    \fill[gray!45,rounded corners=1pt] (1.45,\y-0.12) rectangle (1.85,\y+0.12);
-  }
-  \fill[gray!55] (0,-1.15) circle (0.28);
-  \draw[gray!30] (0,-1.15) circle (0.2);
-  % триммеры
-  \foreach \x in {-3.0,3.0}{\fill[gray!40,rounded corners=1pt] (\x-0.55,-1.52) rectangle (\x+0.55,-1.4);}
-  \foreach \x in {-1.75,1.75}{\fill[gray!40,rounded corners=1pt] (\x-0.06,-1.3) rectangle (\x+0.06,-0.55);}
-  % логотип
-  \node[font=\sffamily\bfseries\scriptsize,white] at (0,1.25) {RADIOMASTER};
+\begin{tikzpicture}[scale=0.52]
+  \drawTXtwelve
 \end{tikzpicture}
 
-\vspace{1.4cm}
-\begin{minipage}{0.84\textwidth}
-\sffamily\large
+\vspace{6mm}
+\begin{tikzpicture}
+  \begin{scope}[scale=0.55]\pic[transform shape,ailL/.style={surf},ailR/.style={surf}] {planetop};\end{scope}
+  \begin{scope}[shift={(4.5,0.2)},scale=0.65]\pic[transform shape,mFL/.style={fastm},mRL/.style={fastm}] {quadtop};\end{scope}
+  \begin{scope}[shift={(9.0,0)},scale=0.5]\pic[transform shape,elL/.style={surf},elR/.style={surf}] {wingtop};\end{scope}
+\end{tikzpicture}
+
+\vspace{0.9cm}
+\begin{minipage}{0.86\textwidth}
+\sffamily
 \begin{enumerate}[label=\arabic*.,itemsep=0pt]
-  \item Знакомство с пультами и прошивкой
-  \item Обновление, первое включение, системные настройки
-  \item Модели, радиомодули, ExpressLRS и мультипротокол
+  \item Пульт, стики и как они управляют самолётом и квадрокоптером
+  \item EdgeTX: фабрика сигналов, меню и кнопки
+  \item Прошивка, настройки пульта, модели, привязка ExpressLRS
   \item Входы, миксеры, выходы, кривые, полётные режимы
-  \item Логические переключатели и специальные функции
-  \item Телеметрия, голосовые оповещения, Lua-скрипты
-  \item Тренер и симуляторы, готовые рецепты, диагностика
+  \item Логические переключатели, голос, телеметрия
+  \item Lua-скрипты, тренер и симуляторы, рецепты, неполадки
 \end{enumerate}
 \end{minipage}
 
 \vfill
-{\small Описание соответствует EdgeTX 2.10--2.12 и ExpressLRS 3.x/4.x.\\
-Пульты: RadioMaster TX12 (MKI и MKII) и RadioMaster Boxer.\par}
+{\small EdgeTX 2.10--2.12 \quad·\quad ExpressLRS 3.x/4.x \quad·\quad
+RadioMaster TX12 (MKI, MKII) и Boxer\par}
 \end{titlepage}

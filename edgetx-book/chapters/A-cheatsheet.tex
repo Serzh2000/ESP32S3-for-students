@@ -2,11 +2,44 @@
 \chapter{Шпаргалка}
 % =====================================================================
 
+\section{Стики и названия осей}
+
+\begin{center}
+\begin{tikzpicture}[scale=0.8]
+  \foreach \x/\v/\h/\vn/\hn in {0/ГАЗ/РЫСКАНИЕ/Throttle · Thr/Yaw · Rudder · Rud,6.4/ТАНГАЖ/КРЕН/Pitch · Elevator · Ele/Roll · Aileron · Ail}{
+    \fill[black!8,draw=black!40,rounded corners=2mm] (\x-1.4,-1.4) rectangle (\x+1.4,1.4);
+    \draw[motion,{Latex[length=2.4mm]}-{Latex[length=2.4mm]}] (\x,-1.15) -- (\x,1.15);
+    \draw[motionb,{Latex[length=2.4mm]}-{Latex[length=2.4mm]}] (\x-1.15,0) -- (\x+1.15,0);
+    \shade[ball color=black!55] (\x,0) circle (0.26);
+    \node[font=\sffamily\small\bfseries,text=accent] at (\x,1.95) {\v};
+    \node[font=\sffamily\scriptsize,text=accent] at (\x,1.6) {\vn};
+    \node[font=\sffamily\small\bfseries,text=etx] at (\x,-1.7) {\h};
+    \node[font=\sffamily\scriptsize,text=etx] at (\x,-2.05) {\hn};}
+  \node[font=\sffamily\small] at (3.2,0) {Mode 2};
+\end{tikzpicture}
+\end{center}
+
+\begin{center}\small
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{@{}lllll@{}}
+\toprule
+\textbf{Движение} & \textbf{Самолёт} & \textbf{Коптер} & \textbf{EdgeTX} & \textbf{Канал} \\
+\midrule
+крен & Aileron & Roll & \sw{Ail} & \sw{CH1} \\
+тангаж & Elevator & Pitch & \sw{Ele} & \sw{CH2} \\
+газ & Throttle & Throttle & \sw{Thr} & \sw{CH3} \\
+рыскание & Rudder & Yaw & \sw{Rud} & \sw{CH4} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Переключатели: вверху $-100$, посередине 0, внизу $+100$.
+
 \section{Кнопки}
 
 \begin{center}\small
 \renewcommand{\arraystretch}{1.2}
-\begin{tabularx}{\linewidth}{@{}p{50mm}X@{}}
+\begin{tabularx}{\linewidth}{@{}L{50mm}Y@{}}
 \toprule
 \btn{SYS} & настройки пульта \\
 \btn{MDL} & настройки модели (первая страница --- список моделей) \\
@@ -25,7 +58,7 @@
 
 \begin{center}\small
 \renewcommand{\arraystretch}{1.15}
-\begin{tabularx}{\linewidth}{@{}p{58mm}X@{}}
+\begin{tabularx}{\linewidth}{@{}L{58mm}Y@{}}
 \toprule
 Задача & Место \\
 \midrule

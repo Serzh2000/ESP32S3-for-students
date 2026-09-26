@@ -1,0 +1,145 @@
+% =====================================================================
+\chapter{Учитель и ученик, симуляторы}
+\label{ch:trainer}
+% =====================================================================
+\chapterintro
+  {как соединить два пульта, чтобы учитель мог забрать управление у ученика; как летать
+   в компьютерном симуляторе с настоящим пультом}
+  {второй пульт и кабель (для тренерского режима), компьютер (для симулятора)}
+
+\section{Режим «учитель--ученик»}
+
+\begin{simple}
+Как в автошколе: у инструктора есть свои педали. Ученик рулит, пока учитель держит нажатой
+кнопку. Что-то пошло не так --- учитель отпускает кнопку и сразу управляет сам.
+Модель слушает \emph{только} пульт учителя, а пульт ученика подключён к нему кабелем.
+\end{simple}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[every node/.style={font=\sffamily\small}]
+  \pic[transform shape,scale=1.3] at (0,0) {minitx};
+  \node[lbl,align=center] at (0,-2.0) {пульт ученика\\(\menu{Slave})};
+  \pic[transform shape,scale=1.3] at (5.5,0) {minitx};
+  \node[lbl,align=center] at (5.5,-2.0) {пульт учителя\\(\menu{Master})};
+  \draw[black!70,line width=1.6pt] (1.3,-0.5) .. controls (2.2,-1.6) and (3.3,-1.6) .. (4.2,-0.5);
+  \node[lbl] at (2.75,-1.55) {кабель / радио};
+  \radiowaves{(7.0,0)}{0}
+  \begin{scope}[shift={(9.2,0)}]\pic[transform shape,scale=0.45] {planetop};\end{scope}
+  \node[draw=accent,fill=accent!10,rounded corners=3pt,align=center,font=\sffamily\scriptsize] at (5.5,1.5) {кнопка \sw{Trainer}:\\нажата --- рулит ученик\\отпущена --- учитель};
+\end{tikzpicture}
+\caption{Тренерский режим}
+\end{figure}
+
+\subsection{Как соединить пульты}
+
+\begin{itemize}
+  \item \textbf{Кабелем} через гнёзда тренера 3,5\,мм (если на твоей ревизии пульта есть
+        такое гнездо --- проверь инструкцию). Режимы \menu{Master/Jack} и \menu{Slave/Jack}.
+  \item \textbf{По радио} через модуль «4-в-1» учителя (\menu{Master/Multi}): пульт ученика
+        работает как обычный передатчик.
+  \item \textbf{Через последовательный порт} (\menu{Master/Serial}) --- с беспроводными
+        модулями тренера.
+\end{itemize}
+
+\subsection{Настройка пульта ученика}
+
+\begin{enumerate}
+  \item Создай модель \code{Trainee}.
+  \item \menu{Internal RF} = \menu{OFF} (радио ученику не нужно).
+  \item \menu{Trainer mode} = \menu{Slave/Jack}.
+  \item Порядок каналов --- как у учителя (AETR). Никаких миксеров --- только «чистые» стики.
+\end{enumerate}
+
+\subsection{Настройка пульта учителя}
+
+\begin{enumerate}
+  \item В модели: \menu{Trainer mode} = \menu{Master/Jack}.
+  \item \mpath{SYS\sep Trainer}: для каждой оси --- режим \menu{:=} (ученик \emph{заменяет}
+        учителя) или \menu{+=} (ученик \emph{добавляется} к учителю), вес и номер канала.
+  \item Там же --- калибровка: стики ученика в центр → \menu{Cal}.
+  \item Специальная функция: \menu{Switch} = кнопка без фиксации (например, \sw{SF} на Boxer),
+        \menu{Function} = \menu{Trainer}.
+\end{enumerate}
+
+\begin{center}
+\lcdscreen{TRAINER}{5/9}{\lr{Ail}{:=\ \ 100\%\ \ ch1}\lr{Ele}{:=\ \ 100\%\ \ ch2}\lr{Thr}{:=\ \ \ 70\%\ \ ch3}\lr{Rud}{:=\ \ 100\%\ \ ch4}\lr{Multiplier}{1.0}\lsel{Cal}{}}
+\end{center}
+
+\begin{caution}
+Перед полётом проверь на земле: кнопка нажата --- модель слушает ученика, отпущена --- учителя.
+Проверь все четыре оси и газ.
+\end{caution}
+
+\section{Симулятор}
+
+\begin{simple}
+Симулятор --- компьютерная игра, где модель летает как настоящая, а управляешь ты своим
+пультом. Разбить виртуальный коптер не жалко! Час в симуляторе перед первым полётом
+сохраняет много сломанных пропеллеров.
+\end{simple}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[every node/.style={font=\sffamily\small}]
+  \pic[transform shape,scale=1.3] at (0,0) {minitx};
+  \draw[black!70,line width=1.4pt] (0,-0.6) .. controls (0,-1.6) and (3,-1.6) .. (3.5,-0.3);
+  \node[lbl] at (1.5,-1.55) {USB-C};
+  \pic[transform shape,scale=1.9] at (5.3,-0.6) {laptop};
+  \begin{scope}[shift={(5.3,0.45)}]
+    \fill[etx!35] (-1.5,-0.8) rectangle (1.5,0.9);
+    \fill[okgreen!40] (-1.5,-0.8) rectangle (1.5,-0.2);
+    \pic[transform shape,scale=0.28] at (0.2,0.3) {quadtop};
+  \end{scope}
+  \node[lbl] at (5.3,-1.3) {симулятор видит пульт как джойстик};
+\end{tikzpicture}
+\caption{Пульт по USB работает как игровой джойстик}
+\end{figure}
+
+\begin{enumerate}
+  \item Создай модель \code{Sim}: радиомодуль \menu{OFF}, в \sw{CH1}--\sw{CH4} --- стики,
+        в \sw{CH5}--\sw{CH8} --- переключатели.
+  \item Подключи пульт к компьютеру и выбери \menu{USB Joystick (HID)}.
+  \item Запусти симулятор, откалибруй в нём оси и назначь кнопки.
+\end{enumerate}
+
+Без проводов: модуль ExpressLRS умеет притворяться Bluetooth-геймпадом ---
+\mpath{SYS\sep Tools\sep ExpressLRS}, пункт \menu{BLE Joystick}.
+
+\begin{center}\small
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\linewidth}{@{}L{36mm}Y@{}}
+\toprule
+FPV-квадрокоптеры & Liftoff, VelociDrone, Uncrashed, TRYP FPV, DRL Simulator \\
+Самолёты, планеры, вертолёты & RealFlight, PicaSim, ClearView, Heli-X \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\begin{tip}
+В FPV-симуляторе поставь такие же рейты, как в Betaflight на настоящем коптере --- тогда
+навыки перенесутся один в один.
+\end{tip}
+
+\section{EdgeTX Companion}
+
+Программа для компьютера (Windows, macOS, Linux): редактировать модели мышкой, хранить
+резервные копии и --- главное --- \textbf{симулятор пульта}: можно проверить миксеры,
+логические переключатели и Lua-скрипты, не включая настоящий пульт. В кружке удобно:
+преподаватель делает «эталонную» модель, ученики загружают её себе.
+
+\begin{tryit}
+\begin{enumerate}
+  \item Подключи пульт к компьютеру как джойстик и открой любой симулятор.
+  \item Пролетай круг вокруг дерева --- сначала в режиме Angle, потом в Acro.
+  \item Если есть второй пульт --- настрой учитель--ученик и проверь кнопку \sw{Trainer}.
+\end{enumerate}
+\end{tryit}
+
+\begin{summary}
+\begin{itemize}
+  \item Ученик --- \menu{Slave}, учитель --- \menu{Master} + функция \menu{Trainer} на кнопке.
+  \item Симулятор: отдельная модель \code{Sim}, USB-джойстик или Bluetooth через ELRS.
+  \item Companion --- редактор моделей и симулятор пульта на компьютере.
+\end{itemize}
+\end{summary}

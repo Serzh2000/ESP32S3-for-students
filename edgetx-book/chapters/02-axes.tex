@@ -1,0 +1,495 @@
+% =====================================================================
+\chapter{Как управляется модель}
+\label{ch:axes}
+% =====================================================================
+\chapterintro
+  {какие движения умеет делать модель, как они называются у самолёта и у квадрокоптера,
+   какой стик за что отвечает, что такое «канал» и как сигнал доходит до моторов и рулей}
+  {только эта глава и немного воображения. Пульт пока можно не включать}
+
+% --------- вспомогательные макросы главы ---------
+\newcommand{\stickpair}[4]{%
+\begin{tikzpicture}[scale=0.6,baseline=(c.base)]
+  \node (c) at (1.4,0) {};
+  \ifdim#1pt=0pt\ifdim#2pt=0pt\pic[transform shape] at (0,0) {stickidle};\else\pic[transform shape] at (0,0) {stickto={#1}{#2}};\fi\else\pic[transform shape] at (0,0) {stickto={#1}{#2}};\fi
+  \ifdim#3pt=0pt\ifdim#4pt=0pt\pic[transform shape] at (2.8,0) {stickidle};\else\pic[transform shape] at (2.8,0) {stickto={#3}{#4}};\fi\else\pic[transform shape] at (2.8,0) {stickto={#3}{#4}};\fi
+  \node[font=\sffamily\scriptsize,text=black!60] at (0,-1.3) {левый};
+  \node[font=\sffamily\scriptsize,text=black!60] at (2.8,-1.3) {правый};
+\end{tikzpicture}}
+
+\section{Представь модель на трёх спицах}
+
+\begin{simple}
+Возьми игрушечный самолётик и мысленно проткни его тремя спицами: одной --- от носа к хвосту,
+второй --- от одного конца крыла к другому, третьей --- сверху вниз, через середину.
+Модель может вращаться вокруг каждой из этих спиц. Эти три вращения плюс «быстрее/медленнее»
+--- вот и всё, чем ты управляешь с пульта. Четыре движения --- четыре направления двух стиков.
+\end{simple}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  % ----- самолёт с осями -----
+  \begin{scope}[scale=0.82]
+    \draw[axisline] (0,-3.6) -- (0,3.4);
+    \draw[axisline] (-4.2,0.35) -- (4.2,0.35);
+    \pic[transform shape] at (0,0) {planetop};
+    \node[circle,draw=etx,fill=white,line width=0.8pt,inner sep=1.6pt] at (0,0.35) {};
+    \fill[etx] (0,0.35) circle (0.05);
+    % крен
+    \draw[motionb] (0.55,2.95) arc (0:300:0.55 and 0.18);
+    \node[font=\sffamily\small\bfseries,text=etx,anchor=west] at (0.7,3.2) {крен};
+    % тангаж
+    \draw[motionb] (4.35,0.9) arc (90:390:0.2 and 0.55);
+    \node[font=\sffamily\small\bfseries,text=etx,anchor=south] at (4.35,1.0) {тангаж};
+    % рыскание
+    \draw[motionb] (-1.5,0.9) arc (160:215:1.6);
+    \node[font=\sffamily\small\bfseries,text=etx,anchor=east] at (-1.75,-0.35) {рыскание};
+    \node[font=\sffamily\footnotesize,text=black!60,anchor=north] at (0,-3.6) {самолёт, вид сверху};
+  \end{scope}
+  % ----- квадрокоптер с осями -----
+  \begin{scope}[shift={(8.6,0.3)},scale=0.95]
+    \draw[axisline] (0,-3.1) -- (0,3.0);
+    \draw[axisline] (-3.1,0) -- (3.1,0);
+    \pic[transform shape] at (0,0) {quadtop};
+    \node[circle,draw=etx,fill=white,line width=0.8pt,inner sep=1.6pt] at (0,0) {};
+    \fill[etx] (0,0) circle (0.05);
+    \draw[motionb] (0.5,2.55) arc (0:300:0.5 and 0.16);
+    \node[font=\sffamily\small\bfseries,text=etx,anchor=west] at (0.6,2.8) {крен};
+    \draw[motionb] (3.2,0.5) arc (90:390:0.18 and 0.5);
+    \node[font=\sffamily\small\bfseries,text=etx,anchor=south] at (3.2,0.6) {тангаж};
+    \draw[motionb] (-2.2,-2.2) arc (225:315:3.1);
+    \node[font=\sffamily\small\bfseries,text=etx,anchor=north] at (0,-3.2) {рыскание};
+    \node[font=\sffamily\footnotesize,text=black!60,anchor=north] at (0,-3.7) {квадрокоптер, вид сверху};
+    \callout{(0,0.62)}{(-2.6,2.5)}{east}{камера --- перед}
+  \end{scope}
+\end{tikzpicture}
+\caption{Три оси вращения. Штриховые линии --- «спицы», кружок в центре --- вертикальная спица,
+она смотрит прямо на тебя}
+\label{fig:axes}
+\end{figure}
+
+\begin{center}\small
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{26mm}>{\raggedright\arraybackslash}p{40mm}X@{}}
+\toprule
+\textbf{Движение} & \textbf{Вокруг какой оси} & \textbf{Как выглядит} \\
+\midrule
+\textbf{Крен} (roll) & продольной, «нос--хвост» & модель наклоняется на бок: одно крыло вниз, другое вверх \\
+\textbf{Тангаж} (pitch) & поперечной, «крыло--крыло» & нос поднимается или опускается \\
+\textbf{Рыскание} (yaw) & вертикальной & нос поворачивается влево или вправо, как стрелка компаса \\
+\textbf{Газ} (throttle) & --- (это не вращение) & моторы крутятся быстрее или медленнее \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\section{Два стика --- четыре движения}
+
+У каждого стика два направления: вверх--вниз и влево--вправо. Два стика --- четыре направления,
+ровно по одному на каждое движение модели. Почти все пилоты в мире (и в FPV тоже) используют
+раскладку \textbf{Mode 2}:
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[scale=0.9]
+  \begin{scope}[shift={(-3.4,0)},scale=1.3]
+    \fill[black!8,draw=black!40,rounded corners=2mm,line width=0.6pt] (-1.4,-1.4) rectangle (1.4,1.4);
+    \draw[black!25] (-1.25,0) -- (1.25,0) (0,-1.25) -- (0,1.25);
+    \draw[motion,{Latex[length=2.8mm,width=2.4mm]}-{Latex[length=2.8mm,width=2.4mm]}] (0,-1.15) -- (0,1.15);
+    \draw[motionb,{Latex[length=2.8mm,width=2.4mm]}-{Latex[length=2.8mm,width=2.4mm]}] (-1.15,0) -- (1.15,0);
+    \shade[ball color=black!55] (0,0) circle (0.28);
+    \node[font=\sffamily\small\bfseries,text=accent,anchor=south] at (0,1.45) {ГАЗ};
+    \node[font=\sffamily\scriptsize,text=accent,anchor=south] at (0,1.85) {Throttle};
+    \node[font=\sffamily\small\bfseries,text=etx,anchor=east] at (-1.5,0.12) {РЫСКАНИЕ};
+    \node[font=\sffamily\scriptsize,text=etx,anchor=east] at (-1.5,-0.28) {Yaw / Rudder};
+    \node[font=\sffamily\footnotesize,text=black!60] at (0,-1.75) {левый стик};
+    \node[font=\sffamily\scriptsize,text=black!60,align=center] at (0,-2.35) {не пружинит вверх-вниз:\\остаётся, где отпустил};
+  \end{scope}
+  \begin{scope}[shift={(3.4,0)},scale=1.3]
+    \fill[black!8,draw=black!40,rounded corners=2mm,line width=0.6pt] (-1.4,-1.4) rectangle (1.4,1.4);
+    \draw[black!25] (-1.25,0) -- (1.25,0) (0,-1.25) -- (0,1.25);
+    \draw[motion,{Latex[length=2.8mm,width=2.4mm]}-{Latex[length=2.8mm,width=2.4mm]}] (0,-1.15) -- (0,1.15);
+    \draw[motionb,{Latex[length=2.8mm,width=2.4mm]}-{Latex[length=2.8mm,width=2.4mm]}] (-1.15,0) -- (1.15,0);
+    \shade[ball color=black!55] (0,0) circle (0.28);
+    \node[font=\sffamily\small\bfseries,text=accent,anchor=south] at (0,1.45) {ТАНГАЖ};
+    \node[font=\sffamily\scriptsize,text=accent,anchor=south] at (0,1.85) {Pitch / Elevator};
+    \node[font=\sffamily\small\bfseries,text=etx,anchor=west] at (1.5,0.12) {КРЕН};
+    \node[font=\sffamily\scriptsize,text=etx,anchor=west] at (1.5,-0.28) {Roll / Aileron};
+    \node[font=\sffamily\footnotesize,text=black!60] at (0,-1.75) {правый стик};
+    \node[font=\sffamily\scriptsize,text=black!60,align=center] at (0,-2.35) {пружинит в центр\\по обеим осям};
+  \end{scope}
+\end{tikzpicture}
+\caption{Раскладка стиков Mode 2}
+\label{fig:mode2}
+\end{figure}
+
+\begin{simple}
+\textbf{Левый стик} --- «сколько сил и куда смотрит нос»: вверх-вниз --- газ,
+влево-вправо --- поворот носа (рыскание).\\
+\textbf{Правый стик} --- «куда наклониться»: вверх-вниз --- наклон носа (тангаж),
+влево-вправо --- наклон на бок (крен).
+\end{simple}
+
+\section{Что делают самолёт и квадрокоптер}
+
+Главная картинка этой главы. Слева --- какой стик ты двигаешь, в середине --- что делает
+самолёт, справа --- что делает квадрокоптер.
+
+\newcommand{\rowhead}[2]{\multicolumn{3}{@{}l@{}}{\colorbox{etx!10}{\makebox[\dimexpr\linewidth-2\fboxsep][l]{\sffamily\bfseries\color{etxdark}#1\hfill\mdseries\small #2}}}\\[2pt]}
+
+\begin{figure}[H]
+\centering
+\renewcommand{\arraystretch}{1.0}
+\begin{tabular}{@{}>{\centering\arraybackslash}m{30mm}>{\centering\arraybackslash}m{68mm}>{\centering\arraybackslash}m{52mm}@{}}
+\textsf{\small\bfseries Стики} & \textsf{\small\bfseries Самолёт} & \textsf{\small\bfseries Квадрокоптер}\\[2pt]
+\rowhead{1. Газ}{левый стик вверх}
+\stickpair{0}{1}{0}{0} &
+\begin{tikzpicture}[scale=0.82]
+  \pic[transform shape] at (0,0) {planeside};
+  \foreach \y in {-0.2,0.15,0.5}{\draw[etx!50,line width=0.8pt] (-4.2,\y) -- (-3.1,\y);}
+  \draw[motion] (2.7,0.1) -- (3.9,0.1);
+  \node[font=\sffamily\scriptsize,anchor=north] at (3.1,-0.3) {быстрее};
+\end{tikzpicture} &
+\begin{tikzpicture}[scale=0.82]
+  \pic[transform shape] at (0,0) {quadside};
+  \draw[motion] (0,0.75) -- (0,1.95);
+  \node[font=\sffamily\scriptsize,anchor=west] at (0.2,1.5) {вверх};
+  \foreach \x in {-1.2,-0.4,0.4,1.2}{\draw[etx!40,line width=0.7pt] (\x,-0.35) -- (\x,-0.9);}
+\end{tikzpicture}\\
+\multicolumn{1}{c}{} & \scriptsize мотор крутится быстрее, самолёт разгоняется & \scriptsize все 4 мотора быстрее, коптер поднимается\\[6pt]
+
+\rowhead{2. Тангаж}{правый стик вверх («от себя»)}
+\stickpair{0}{0}{0}{1} &
+\begin{tikzpicture}[scale=0.82]
+  \begin{scope}[rotate=-14]\pic[transform shape] at (0,0) {planeside=-25};\end{scope}
+  \draw[motion] (1.9,1.2) arc (60:5:1.4);
+  \node[font=\sffamily\scriptsize,anchor=west] at (2.4,1.2) {нос вниз};
+\end{tikzpicture} &
+\begin{tikzpicture}[scale=0.82]
+  \begin{scope}[rotate=-18]\pic[transform shape] at (0,0) {quadside};\end{scope}
+  \draw[motion] (1.3,-0.9) -- (2.6,-0.9);
+  \node[font=\sffamily\scriptsize,anchor=north] at (1.95,-1.0) {летит вперёд};
+\end{tikzpicture}\\
+\multicolumn{1}{c}{} & \scriptsize руль высоты вниз, нос опускается & \scriptsize наклоняется вперёд и летит вперёд\\[6pt]
+
+\rowhead{3. Крен}{правый стик вправо}
+\stickpair{0}{0}{1}{0} &
+\begin{tikzpicture}[scale=0.82]
+  \begin{scope}[rotate=-20]\pic[transform shape] at (0,0) {planerear=30};\end{scope}
+  \draw[motion] (-2.2,1.6) arc (130:60:2.6);
+  \node[font=\sffamily\scriptsize,anchor=south] at (-1.3,1.9) {наклон вправо};
+\end{tikzpicture} &
+\begin{tikzpicture}[scale=0.82]
+  \begin{scope}[rotate=-20]\pic[transform shape] at (0,0) {quadrear};\end{scope}
+  \draw[motion] (1.4,-1.1) -- (2.7,-1.1);
+  \node[font=\sffamily\scriptsize,anchor=north] at (2.0,-1.2) {летит вправо};
+\end{tikzpicture}\\
+\multicolumn{1}{c}{} & \scriptsize вид сзади: правый элерон вверх, левый вниз & \scriptsize вид сзади: наклоняется вправо и смещается вправо\\[6pt]
+
+\rowhead{4. Рыскание}{левый стик вправо}
+\stickpair{1}{0}{0}{0} &
+\begin{tikzpicture}[scale=0.56]
+  \begin{scope}[rotate=-22]\pic[transform shape] at (0,0) {planetop=30};\end{scope}
+  \draw[motion] (-1.2,3.0) arc (120:60:2.8);
+  \node[font=\sffamily\scriptsize,anchor=west] at (1.9,3.0) {нос вправо};
+\end{tikzpicture} &
+\begin{tikzpicture}[scale=0.72]
+  \begin{scope}[rotate=-25]\pic[transform shape] at (0,0) {quadtop};\end{scope}
+  \draw[motion] (-1.4,2.6) arc (120:60:2.8);
+  \node[font=\sffamily\scriptsize,anchor=west] at (1.6,2.8) {поворот вправо};
+\end{tikzpicture}\\
+\multicolumn{1}{c}{} & \scriptsize вид сверху: руль направления вправо & \scriptsize вид сверху: разворачивается на месте\\
+\end{tabular}
+\caption{Одни и те же движения стиков у самолёта и у квадрокоптера}
+\label{fig:stick-vs-model}
+\end{figure}
+
+\begin{caution}
+\textbf{Стик «на себя» и «от себя» --- частая путаница.} У самолёта правый стик
+\emph{на себя} (вниз, к тебе) --- это «нос вверх», самолёт набирает высоту. У квадрокоптера
+тот же стик на себя --- это наклон \emph{назад}, и коптер летит к тебе, назад.
+Высоту квадрокоптера меняет только \textbf{газ}.
+\end{caution}
+
+\section{Таблица названий}
+
+Одно и то же движение называют по-разному: в самолётах --- по названию руля, в квадрокоптерах ---
+по названию движения, в EdgeTX --- короткими сокращениями. Вот полный «словарик»:
+
+\begin{center}\small
+\renewcommand{\arraystretch}{1.35}
+\begin{tabularx}{\linewidth}{@{}L{18mm}L{16mm}YL{15mm}L{13mm}L{11mm}L{16mm}@{}}
+\toprule
+\textbf{По-русски} & \textbf{Стик (Mode 2)} & \textbf{Самолёт: руль} & \textbf{Коптер} & \textbf{EdgeTX} & \textbf{Канал} & \textbf{Betaflight} \\
+\midrule
+Крен & правый ↔ & \textbf{Aileron} --- элероны & \textbf{Roll} & \sw{Ail} & \sw{CH1} & Roll \\
+Тангаж & правый ↕ & \textbf{Elevator} --- руль высоты & \textbf{Pitch} & \sw{Ele} & \sw{CH2} & Pitch \\
+Газ & левый ↕ & \textbf{Throttle} --- мотор & \textbf{Throttle} & \sw{Thr} & \sw{CH3} & Throttle \\
+Рыскание & левый ↔ & \textbf{Rudder} --- руль направления & \textbf{Yaw} & \sw{Rud} & \sw{CH4} & Yaw \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+Первые буквы английских названий самолётных рулей дают знаменитое сочетание
+\textbf{AETR} (\textbf{A}ileron, \textbf{E}levator, \textbf{T}hrottle, \textbf{R}udder) ---
+порядок каналов, который ты встретишь в настройках. Для квадрокоптера говорят
+то же самое, просто держат в голове: Aileron = Roll, Elevator = Pitch, Rudder = Yaw.
+
+\section{Как рулит самолёт}
+
+У самолёта есть подвижные части --- \textbf{рулевые поверхности}. Каждую двигает маленький
+моторчик с рычагом --- \textbf{сервомашинка} (серва).
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[scale=0.95]
+  \pic[transform shape,ailL/.style={surf},ailR/.style={surf},ele/.style={fill=etx!70,draw=etx!50!black},
+       rud/.style={fill=okgreen!70,draw=okgreen!50!black},flpL/.style={fill=gray!45},flpR/.style={fill=gray!45}] at (0,0) {planetop};
+  \callout{(2.6,0.25)}{(3.9,1.4)}{west}{\textbf{элерон}\\(Aileron) --- крен}
+  \callout{(-2.6,0.25)}{(-3.9,1.4)}{east}{\textbf{элерон} --- работают\\в паре, в разные стороны}
+  \callout{(1.0,0.12)}{(3.9,-0.5)}{west}{закрылок (Flap) ---\\для посадки}
+  \callout{(0.8,-2.5)}{(3.9,-2.1)}{west}{\textbf{руль высоты}\\(Elevator) --- тангаж}
+  \callout{(0,-2.8)}{(-3.9,-2.7)}{east}{\textbf{руль направления}\\(Rudder) --- рыскание}
+  \callout{(0,2.13)}{(-3.9,2.4)}{east}{винт и мотор\\(Throttle) --- газ}
+\end{tikzpicture}
+\caption{Рулевые поверхности самолёта}
+\end{figure}
+
+\begin{whyit}
+Самолёт летит, и воздух обтекает его с огромной скоростью. Если отогнуть кусочек крыла
+вниз, воздух начнёт давить на него сильнее и поднимет это место вверх. Отогнул вверх ---
+воздух прижмёт вниз. Так и работают все рули: они не двигают самолёт сами, они
+«подставляют» воздуху маленький щиток.
+\begin{itemize}
+  \item \textbf{Элероны} двигаются \emph{в разные стороны}: правый вверх, левый вниз ---
+        правое крыло опускается, самолёт кренится вправо.
+  \item \textbf{Руль высоты} вверх --- хвост прижимается вниз, нос задирается вверх.
+  \item \textbf{Руль направления} вправо --- хвост уходит влево, нос поворачивается вправо.
+\end{itemize}
+\end{whyit}
+
+\begin{figure}[H]
+\centering
+\begin{tabular}{@{}c@{\hspace{2mm}}c@{\hspace{2mm}}c@{}}
+\begin{tikzpicture}[scale=0.9]
+  \pic[transform shape] at (0,0) {planerear=35};
+  \draw[motion,-{Latex[length=2mm]}] (2.6,0.55) -- (2.6,1.05);
+  \draw[motion,-{Latex[length=2mm]}] (-2.6,-0.05) -- (-2.6,-0.55);
+  \node[font=\sffamily\scriptsize] at (0,-0.8) {вид сзади, стик вправо};
+\end{tikzpicture} &
+\begin{tikzpicture}[scale=0.95]
+  \pic[transform shape] at (0,0) {planeside=25};
+  \draw[motion,-{Latex[length=2mm]}] (-2.75,0.35) -- (-2.75,0.85);
+  \node[font=\sffamily\scriptsize] at (0,-0.8) {сбоку, стик на себя};
+\end{tikzpicture} &
+\begin{tikzpicture}[scale=0.62]
+  \pic[transform shape] at (0,0) {planetop=35};
+  \node[font=\sffamily\scriptsize] at (0,-3.4) {сверху, левый стик вправо};
+\end{tikzpicture}\\
+\small элероны: крен вправо & \small руль высоты вверх: нос вверх & \small руль направления вправо
+\end{tabular}
+\caption{Как отклоняются рули}
+\end{figure}
+
+\section{Как рулит квадрокоптер}
+
+У квадрокоптера нет рулей --- только четыре мотора с винтами. Всё управление --- это
+\emph{разная скорость} моторов. Считает, какой мотор ускорить, а какой замедлить,
+маленький компьютер на борту --- \textbf{полётный контроллер} (например, с прошивкой Betaflight).
+
+\begin{figure}[H]
+\centering
+\begin{tabular}{@{}cccc@{}}
+\begin{tikzpicture}[scale=0.72]
+  \pic[transform shape,mFL/.style={fastm},mFR/.style={fastm},mRL/.style={fastm},mRR/.style={fastm}] {quadtop};
+  \proprot{}
+\end{tikzpicture} &
+\begin{tikzpicture}[scale=0.72]
+  \pic[transform shape,mFL/.style={fastm},mRL/.style={fastm},mFR/.style={slowm},mRR/.style={slowm}] {quadtop};
+  \proprot{}
+\end{tikzpicture} &
+\begin{tikzpicture}[scale=0.72]
+  \pic[transform shape,mRL/.style={fastm},mRR/.style={fastm},mFL/.style={slowm},mFR/.style={slowm}] {quadtop};
+  \proprot{}
+\end{tikzpicture} &
+\begin{tikzpicture}[scale=0.72]
+  \pic[transform shape,mFR/.style={fastm},mRL/.style={fastm},mFL/.style={slowm},mRR/.style={slowm}] {quadtop};
+  \proprot{}
+\end{tikzpicture}\\[2pt]
+\small\bfseries газ вверх & \small\bfseries крен вправо & \small\bfseries тангаж вперёд & \small\bfseries рыскание вправо\\
+\scriptsize все быстрее & \scriptsize левые быстрее & \scriptsize задние быстрее & \scriptsize «против часовой» быстрее
+\end{tabular}
+
+\smallskip
+\tikz\fill[okgreen!55] (0,0) circle (0.12); \small быстрее \quad
+\tikz\fill[warn!30] (0,0) circle (0.12); \small медленнее \quad
+стрелки --- направление вращения винтов; камера --- спереди (сверху на рисунке)
+\caption{Как квадрокоптер управляет собой, меняя скорость моторов}
+\end{figure}
+
+\begin{whyit}
+\begin{itemize}
+  \item \textbf{Крен}: левые моторы тянут сильнее --- левая сторона поднимается,
+        коптер наклоняется вправо и смещается вправо.
+  \item \textbf{Тангаж}: задние моторы тянут сильнее --- хвост поднимается, нос опускается,
+        коптер летит вперёд.
+  \item \textbf{Рыскание}: винты крутятся в разные стороны --- два по часовой стрелке и два
+        против. Каждый винт немножко «закручивает» корпус в обратную сторону. Пока все
+        крутятся одинаково, закрутки уравновешены. Если ускорить винты, вращающиеся против
+        часовой, корпус повернётся по часовой --- вправо.
+\end{itemize}
+\end{whyit}
+
+\section{Что такое канал}
+
+Пульт не передаёт на модель «стик сдвинули вправо». Он передаёт \textbf{числа}. Каждое
+число --- это \textbf{канал}. Канал --- как отдельный «ползунок» от $-100$ до $+100$.
+Пульт отправляет весь набор ползунков сотни раз в секунду.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[x=6mm,y=6mm]
+  \foreach \v [count=\i] in {0.35,-0.2,-1,0,-1,1,0,0.6}{
+    \draw[fill=black!6,draw=black!35,rounded corners=1pt] (\i*1.9-0.35,-2.2) rectangle (\i*1.9+0.35,2.2);
+    \draw[black!30] (\i*1.9-0.45,0) -- (\i*1.9+0.45,0);
+    \fill[etx!70,rounded corners=1pt] (\i*1.9-0.35,0) rectangle (\i*1.9+0.35,\v*2.2);
+    \node[font=\sffamily\scriptsize\bfseries] at (\i*1.9,-2.7) {CH\i};
+    \pgfmathsetmacro{\pv}{int(\v*100)}
+    \node[font=\sffamily\scriptsize] at (\i*1.9,2.65) {\pv};
+  }
+  \node[font=\sffamily\scriptsize,text=black!60,anchor=east] at (1,2.2) {$+100$};
+  \node[font=\sffamily\scriptsize,text=black!60,anchor=east] at (1,0) {0};
+  \node[font=\sffamily\scriptsize,text=black!60,anchor=east] at (1,-2.2) {$-100$};
+  \node[font=\sffamily\scriptsize,text=black!60,align=center] at (1.9,-3.5) {крен};
+  \node[font=\sffamily\scriptsize,text=black!60] at (3.8,-3.5) {тангаж};
+  \node[font=\sffamily\scriptsize,text=black!60] at (5.7,-3.5) {газ};
+  \node[font=\sffamily\scriptsize,text=black!60] at (7.6,-3.5) {рыскание};
+  \node[font=\sffamily\scriptsize,text=black!60] at (9.5,-3.5) {арм};
+  \node[font=\sffamily\scriptsize,text=black!60] at (11.4,-3.5) {режим};
+  \node[font=\sffamily\scriptsize,text=black!60] at (13.3,-3.5) {бипер};
+  \node[font=\sffamily\scriptsize,text=black!60] at (15.2,-3.5) {камера};
+\end{tikzpicture}
+\caption{Каналы --- это числа от $-100$ до $+100$. Здесь стик крена чуть вправо, газ на нуле,
+переключатель арма включён}
+\end{figure}
+
+\begin{itemize}
+  \item Первые четыре канала обычно заняты стиками (в порядке AETR).
+  \item Остальные (\sw{CH5}, \sw{CH6}, …) --- переключатели и крутилки: арм, режимы полёта,
+        свет, камера, закрылки, шасси.
+  \item Пульты TX12 и Boxer умеют передавать до 16 каналов (сколько дойдёт до модели,
+        зависит от приёмника).
+\end{itemize}
+
+\subsection{Канал и серва}
+
+Сервомашинка понимает канал буквально: $-100$ --- качалка в одном крайнем положении,
+0 --- посередине, $+100$ --- в другом крайнем. По проводу к серве число передаётся
+длительностью импульса: примерно 1000, 1500 и 2000 микросекунд.
+
+\begin{figure}[H]
+\centering
+\begin{tabular}{@{}ccc@{}}
+\begin{tikzpicture}[scale=1.25]\pic[transform shape] {servo=50};\end{tikzpicture} &
+\begin{tikzpicture}[scale=1.25]\pic[transform shape] {servo=0};\end{tikzpicture} &
+\begin{tikzpicture}[scale=1.25]\pic[transform shape] {servo=-50};\end{tikzpicture}\\
+\small $-100$ → 1000\,мкс & \small 0 → 1500\,мкс & \small $+100$ → 2000\,мкс
+\end{tabular}
+\caption{Значение канала превращается в положение качалки сервы}
+\end{figure}
+
+\section{От пульта до моторов}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[every node/.style={font=\sffamily\small}]
+  % ---- самолёт ----
+  \node[font=\sffamily\small\bfseries,text=etx,anchor=west] at (-1.3,2.2) {Самолёт};
+  \pic[transform shape,scale=0.8] at (0,0.9) {minitx};
+  \node[lbl] at (0,-0.05) {пульт};
+  \radiowaves{(1.1,0.9)}{0}
+  \pic[transform shape,scale=1.3] at (3.2,0.9) {receiver};
+  \node[lbl] at (3.2,0.2) {приёмник};
+  \draw[arr] (4.9,1.1) -- (6.0,1.6);
+  \draw[arr] (4.9,0.7) -- (6.0,0.2);
+  \pic[transform shape,scale=0.7] at (7.1,1.75) {servo=20};
+  \node[lbl,anchor=west] at (8.3,1.75) {сервы → рули};
+  \pic[transform shape] at (6.6,0.2) {esc};
+  \draw[black!60,line width=0.8pt] (7.1,0.2) -- (7.6,0.2);
+  \pic[transform shape] at (7.95,0.2) {motor};
+  \node[lbl,anchor=west] at (8.4,0.2) {регулятор → мотор};
+  % ---- коптер ----
+  \node[font=\sffamily\small\bfseries,text=etx,anchor=west] at (-1.3,-0.8) {Квадрокоптер};
+  \pic[transform shape,scale=0.8] at (0,-2.4) {minitx};
+  \node[lbl] at (0,-3.35) {пульт};
+  \radiowaves{(1.1,-2.4)}{0}
+  \pic[transform shape,scale=1.3] at (3.2,-2.4) {receiver};
+  \node[lbl] at (3.2,-3.1) {приёмник};
+  \draw[arr] (4.9,-2.4) -- node[above,lbl]{каналы} (5.9,-2.4);
+  \pic[transform shape,scale=1.2] at (6.7,-2.4) {fcboard};
+  \node[lbl,align=center] at (6.7,-3.4) {полётный\\контроллер};
+  \draw[arr] (7.6,-2.4) -- (8.4,-2.4);
+  \foreach \dx/\dy in {0/0.35,0/-0.35,0.8/0.35,0.8/-0.35}{\pic[transform shape,scale=0.8] at (9.0+\dx,-2.4+\dy) {motor};}
+  \node[lbl] at (9.4,-3.2) {4 мотора};
+  \draw[arr,dashed,etx] (2.6,-1.75) to[bend right=25] node[above,lbl]{телеметрия} (0.5,-1.75);
+\end{tikzpicture}
+\caption{У самолёта приёмник сам двигает сервы. У коптера приёмник отдаёт каналы полётному
+контроллеру, а тот решает, как крутить моторы}
+\end{figure}
+
+\begin{itemize}
+  \item \textbf{Приёмник} (receiver, RX) принимает каналы по радио. Он должен «говорить на
+        одном языке» с пультом --- на одном \textbf{протоколе} (например, ExpressLRS).
+  \item \textbf{Телеметрия} --- обратная связь: приёмник сообщает пульту, как хорошо он тебя
+        слышит и сколько осталось заряда в батарее модели.
+\end{itemize}
+
+\section{Режимы стиков Mode 1--4}
+
+Раскладку Mode 2 можно поменять. В разных странах и школах привыкли к разным раскладкам:
+
+\begin{figure}[H]
+\centering
+\newcommand{\modebox}[5]{%
+\begin{tikzpicture}[scale=0.85]
+  \foreach \x/\v/\h in {0/#2/#3,2.6/#4/#5}{
+    \fill[black!8,draw=black!40,rounded corners=1mm] (\x-1,-1) rectangle (\x+1,1);
+    \draw[black!30,{Latex[length=1.5mm]}-{Latex[length=1.5mm]}] (\x,-0.8) -- (\x,0.8);
+    \draw[black!30,{Latex[length=1.5mm]}-{Latex[length=1.5mm]}] (\x-0.8,0) -- (\x+0.8,0);
+    \node[font=\sffamily\scriptsize\bfseries,text=accent,fill=black!8,inner sep=0.8pt] at (\x,0.5) {\v};
+    \node[font=\sffamily\scriptsize\bfseries,text=etx,fill=black!8,inner sep=0.8pt] at (\x+0.55,-0.28) {\h};
+  }
+  \node[font=\sffamily\small\bfseries] at (1.3,1.4) {#1};
+\end{tikzpicture}}
+\modebox{Mode 1}{Ele}{Rud}{Thr}{Ail}\qquad
+\modebox{Mode 2}{Thr}{Rud}{Ele}{Ail}\\[4mm]
+\modebox{Mode 3}{Ele}{Ail}{Thr}{Rud}\qquad
+\modebox{Mode 4}{Thr}{Ail}{Ele}{Rud}
+\caption{Четыре режима стиков: над стрелкой вверх-вниз --- что управляется вертикально,
+справа --- горизонтально}
+\end{figure}
+
+Если раскладку нужно сменить, это делают в двух местах: \emph{механически} (стик газа не
+пружинит и держится трещоткой --- её переносят на другой стик) и в EdgeTX
+(\mpath{SYS\sep Radio Setup\sep Mode}). В этой книге везде используется \textbf{Mode 2}.
+
+\begin{tryit}
+\begin{enumerate}
+  \item Возьми в руки выключенный пульт и, двигая стиками, вслух говори: «газ», «крен»,
+        «тангаж», «рыскание». Пока не будет получаться не задумываясь.
+  \item Возьми игрушечный самолётик (или ручку) и покажи им крен вправо, тангаж «нос вверх»,
+        рыскание влево.
+  \item Ответь: какой мотор квадрокоптера замедлится при крене влево? (Ответ: левые.)
+\end{enumerate}
+\end{tryit}
+
+\begin{summary}
+\begin{itemize}
+  \item Три вращения (крен, тангаж, рыскание) + газ = четыре направления двух стиков.
+  \item Mode 2: слева --- газ и рыскание, справа --- тангаж и крен.
+  \item Самолёт рулит поверхностями (элероны, руль высоты, руль направления),
+        коптер --- скоростью четырёх моторов.
+  \item Aileron = Roll, Elevator = Pitch, Rudder = Yaw. Порядок каналов AETR.
+  \item Канал --- число от $-100$ до $+100$, которое пульт шлёт на модель.
+\end{itemize}
+\end{summary}

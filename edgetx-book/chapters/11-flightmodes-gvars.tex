@@ -1,0 +1,174 @@
+% =====================================================================
+\chapter{Полётные режимы и глобальные переменные}
+\label{ch:fm}
+% =====================================================================
+\chapterintro
+  {как одним переключателем менять сразу много настроек (полётные режимы), как Boxer
+   выбирает режимы кнопками, что такое глобальные переменные и как настраивать модель
+   прямо в полёте}
+  {модель самолёта или планера (для практики)}
+
+\section{Полётные режимы: профили настроек}
+
+\begin{simple}
+Вспомни игру, где у героя есть разные «наборы экипировки»: для бега, для плавания,
+для битвы. Нажал кнопку --- и всё поменялось разом. \textbf{Полётный режим} в EdgeTX ---
+такой же набор: свои триммеры и свои строки во входах и миксерах. Переключатель выбирает,
+какой набор сейчас работает.
+\end{simple}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[every node/.style={font=\sffamily\small}]
+  \pic[transform shape,scale=1.1] at (0,0) {toggle=0};
+  \node[font=\sffamily\small\bfseries] at (0,-0.75) {\sw{SC}};
+  \foreach \y/\n/\t/\p/\hl in {1.6/FM1/Взлёт/{закрылки 20\,\%\\триммер тангажа $+5$}/0,0/FM0/Круиз/{всё по нулям\\обычные расходы}/1,-1.6/FM2/Посадка/{закрылки 60\,\%\\малые расходы}/0}{
+    \ifnum\hl=1
+      \node[draw=accent,line width=1.3pt,fill=accent!8,rounded corners=3pt,text width=44mm,align=left,minimum height=13mm] (c\n) at (5,\y) {\textbf{\n\ \t}\\\scriptsize \p};
+    \else
+      \node[draw=black!35,fill=black!3,rounded corners=3pt,text width=44mm,align=left,minimum height=13mm,text=black!60] (c\n) at (5,\y) {\textbf{\n\ \t}\\\scriptsize \p};
+    \fi}
+  \draw[arr,black!40] (0.5,0.4) -- (cFM1.west) node[pos=0.5,above,sloped,font=\sffamily\scriptsize]{\sw{SC↑}};
+  \draw[arr,accent,line width=1.4pt] (0.5,0.2) -- (cFM0.west) node[pos=0.5,above,font=\sffamily\scriptsize]{\sw{SC-}};
+  \draw[arr,black!40] (0.5,0) -- (cFM2.west) node[pos=0.5,below,sloped,font=\sffamily\scriptsize]{\sw{SC↓}};
+\end{tikzpicture}
+\caption{Переключатель выбирает набор настроек. Сейчас \sw{SC} посередине --- работает «Круиз»}
+\end{figure}
+
+\begin{note}
+Не путай полётные режимы \emph{пульта} с режимами \emph{полётного контроллера} (Angle, Horizon,
+Acro в Betaflight). Режимы контроллера выбираются просто переключателем на AUX-канале
+(глава~\ref{ch:mixes}). Для квадрокоптеров полётные режимы EdgeTX обычно не нужны ---
+они нужны самолётам и планерам.
+\end{note}
+
+\section{Страница Flight Modes}
+
+\begin{center}
+\lcdscreen{FLIGHT MODES}{4/13}{\lr{FM0 Cruise}{--- \ \ 0 0 0 0}\lsel{FM1 Launch}{SC↑\ \ 0 +5 0 0}\lr{FM2 Land}{SC↓\ \ 0 0 0 0}\lr{FM3}{---}\lr{Check FM trims}{}\lblank}
+\end{center}
+
+\begin{center}\small
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\linewidth}{@{}L{30mm}Y@{}}
+\toprule
+\menu{Name} & имя --- видно на главном экране \\
+\menu{Switch} & переключатель режима. У \sw{FM0} его нет --- это режим «по умолчанию» \\
+\menu{Trims} & у каждого режима свои триммеры, либо общие с \sw{FM0} \\
+\menu{Fade in/out} & плавный переход между режимами, в секундах (чтобы модель не дёргалась) \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\subsection{Кто главнее}
+
+Если включены переключатели сразу нескольких режимов, работает режим \textbf{с меньшим номером}:
+\sw{FM1} главнее \sw{FM2}, \sw{FM2} главнее \sw{FM3}. \sw{FM0} работает, только когда все
+остальные выключены. Поэтому самый важный режим (например, «Посадка») ставят в \sw{FM1}.
+
+\subsection{Как режим включает строки}
+
+У каждой строки входа и миксера есть поле \menu{Flight modes} --- ряд цифр
+\code{012345678}. Если цифру снять, строка в этом режиме \emph{не работает}. Так строка
+«закрылки на 60\,\%» работает только в режиме «Посадка».
+
+\section{Шесть кнопок Boxer}
+
+У Boxer под экраном шесть кнопок --- это переключатель \sw{6POS} (в списке может называться
+\sw{6P}). Нажатая кнопка --- одно положение: \sw{6P1}…\sw{6P6}.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[every node/.style={font=\sffamily\small}]
+  \foreach \i/\n/\f in {1/Launch/FM1,2/Speed/FM2,3/Cruise/FM0,4/Thermal/FM3,5/Land/FM4,6/Acro/FM5}{
+    \ifnum\i=3
+      \path[top color=accent!60,bottom color=accent!85,draw=black,rounded corners=2pt] (\i*2.1-2.1,0) rectangle ++(1.6,0.8);
+    \else
+      \path[top color=gray!40,bottom color=gray!65,draw=black,rounded corners=2pt] (\i*2.1-2.1,0) rectangle ++(1.6,0.8);
+    \fi
+    \node[font=\sffamily\small\bfseries] at (\i*2.1-1.3,0.4) {\i};
+    \node[font=\sffamily\scriptsize] at (\i*2.1-1.3,-0.35) {\sw{6P\i}};
+    \node[font=\sffamily\scriptsize,text=etx] at (\i*2.1-1.3,-0.8) {\f\ \n};}
+\end{tikzpicture}
+\caption{Каждая кнопка Boxer включает свой полётный режим. Нажата кнопка 3 --- режим «Cruise»}
+\end{figure}
+
+\begin{center}\small
+\begin{tabular}{@{}llll@{}}
+\toprule
+Режим & Имя & Switch & Триммеры \\
+\midrule
+\sw{FM0} & Cruise & --- (кнопка 3) & свои \\
+\sw{FM1} & Launch & \sw{6P1} & свои \\
+\sw{FM2} & Speed & \sw{6P2} & от FM0 + добавка \\
+\sw{FM3} & Thermal & \sw{6P4} & от FM0 + добавка \\
+\sw{FM4} & Land & \sw{6P5} & от FM0 \\
+\sw{FM5} & Acro & \sw{6P6} & от FM0 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\sw{6POS} можно отправить и прямо в канал (Source = \sw{6POS} в миксере) --- тогда каждая кнопка
+даёт своё значение от $-100$ до $+100$. Так выбирают, например, шесть режимов ArduPilot.
+
+У TX12 шестипозиционного переключателя нет; режимы выбирают трёхпозиционными тумблерами
+(или сочетанием двух тумблеров через логические переключатели).
+
+\section{Глобальные переменные}
+
+\begin{simple}
+\textbf{Глобальная переменная} (\sw{GV1}…\sw{GV9}) --- это «коробочка с числом», у которой есть
+имя. Число из коробочки можно подставить в любое поле: вес, сдвиг, экспоненту. А главное ---
+\textbf{в каждом полётном режиме в коробочке может лежать своё число}.
+\end{simple}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[every node/.style={font=\sffamily\small}]
+  \node[draw=etx,fill=etx!8,rounded corners=3pt,minimum width=26mm,minimum height=12mm,align=center] (gv) at (0,0) {\textbf{GV1 «Diff»}\\\scriptsize дифференциал};
+  \foreach \y/\f/\v in {1.2/FM0 Cruise/30,0/FM2 Speed/10,-1.2/FM4 Thermal/50}{
+    \node[anchor=west] at (3.2,\y) {\f:};
+    \node[draw=accent,fill=accent!10,rounded corners=2pt,font=\sffamily\small\bfseries] at (6.2,\y) {\v\,\%};
+    \draw[arr,black!40] (gv.east) -- (3.1,\y);}
+  \node[draw=black!40,rounded corners=2pt,align=left,anchor=west,font=\sffamily\scriptsize] at (7.4,0) {в миксере элеронов:\\Curve = Diff \textbf{GV1}};
+\end{tikzpicture}
+\caption{Одна переменная --- разные значения в разных режимах}
+\end{figure}
+
+\subsection{Как подставить GV вместо числа}
+
+Встань на число (например, \menu{Weight}), долгое \btn{ENTER} → выбери использование GV →
+\sw{GV1}. Вместо числа появится \code{GV1}. Сами значения переменных --- на странице
+\mpath{MDL\sep Global Variables}.
+
+\section{Настройка прямо в полёте}
+
+\begin{recipe}{подбираем экспоненту крутилкой}
+\begin{enumerate}
+  \item \mpath{MDL\sep Global Variables}: \sw{GV1}, имя \code{Expo}, диапазон от 0 до 60.
+  \item Во входе \sw{I1} (Ail): \menu{Curve} = \menu{Expo}, значение --- \code{GV1}.
+  \item \mpath{MDL\sep Special Functions}: условие \sw{SD↓}, действие \menu{Adjust GV1},
+        источник \sw{S1}.
+  \item В полёте опусти \sw{SD} и крути \sw{S1} --- экспонента меняется, пульт показывает число.
+        Нашёл удобное --- верни \sw{SD}, значение запомнится.
+\end{enumerate}
+\end{recipe}
+
+\begin{tryit}
+\begin{enumerate}
+  \item Создай два полётных режима на \sw{SC}: «Normal» (\sw{FM0}) и «Slow» (\sw{FM1}, \sw{SC↓}).
+  \item Во входе \sw{I1} сделай две строки: вес 100 (режим 0) и вес 50 (режим 1).
+        Проверь, как меняется канал.
+  \item На Boxer: назначь режимы на кнопки 1--3 и посмотри на главном экране, как меняется
+        имя режима.
+\end{enumerate}
+\end{tryit}
+
+\begin{summary}
+\begin{itemize}
+  \item Полётный режим = набор триммеров и строк, который включается переключателем.
+  \item Главнее режим с меньшим номером.
+  \item На Boxer режимы удобно выбирать кнопками \sw{6POS}.
+  \item \sw{GV} --- «коробочки с числами», своё значение в каждом режиме; их можно менять крутилкой.
+\end{itemize}
+\end{summary}

@@ -1,0 +1,192 @@
+% =====================================================================
+\chapter{Логические переключатели}
+\label{ch:logic}
+% =====================================================================
+\chapterintro
+  {как сделать «невидимый переключатель», который включается сам, когда выполнено условие:
+   газ внизу, батарея села, связь плохая, кнопку нажали дважды}
+  {модель с настроенными каналами}
+
+\section{Сторож, который следит за условием}
+
+\begin{simple}
+Представь сторожа, который всё время смотрит на что-то одно --- например, на напряжение
+батареи. Пока всё хорошо, его лампочка не горит. Как только напряжение стало меньше 14\,В ---
+лампочка загорается. Эта «лампочка» и есть \textbf{логический переключатель} (\sw{L1},
+\sw{L2}, …). Его можно использовать везде, где можно выбрать обычный переключатель.
+\end{simple}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[every node/.style={font=\sffamily\small}]
+  \pic[transform shape,scale=1.1] at (0,0) {battery};
+  \node[lbl] at (0,-0.6) {батарея: 13,8\,В};
+  \draw[arr] (1.0,0) -- (2.4,0);
+  \node[draw=etx,fill=blkmix,rounded corners=3pt,align=center,minimum height=12mm,text width=34mm] (c) at (4.3,0) {\textbf{L1: a<x}\\RxBt < 14,0\,В ?};
+  \draw[arr] (6.2,0) -- (7.4,0);
+  \fill[yellow!80!orange,draw=black!60] (7.9,0.1) circle (0.35);
+  \foreach \a in {0,45,...,315}{\draw[yellow!70!orange,line width=1pt] (7.9,0.1) ++(\a:0.45) -- ++(\a:0.2);}
+  \fill[gray!60] (7.72,-0.35) rectangle (8.08,-0.2);
+  \node[lbl,align=center] at (7.9,-0.8) {\sw{L1} включён};
+  \draw[arr,dashed] (8.6,0.1) -- (9.8,0.1);
+  \node[align=left,font=\sffamily\scriptsize,anchor=west] at (9.9,0.1) {пульт говорит\\«батарея разряжена»};
+\end{tikzpicture}
+\caption{Логический переключатель \sw{L1} следит за напряжением и «загорается», когда оно
+ниже 14\,В}
+\end{figure}
+
+\section{Страница Logical Switches}
+
+\begin{center}
+\lcdscreen{LOGICAL SWITCHES}{11/13}{\lsel{L1\ \ a<x\ \ \ RxBt\ \ 14.0}{}\lr{L2\ \ a<x\ \ \ Thr\ \ \ -95}{}\lr{L3\ \ AND\ \ \ L2\ \ \ \ SA↓}{}\lr{L4\ \ Edge\ \ SF↓ [0:0.5]}{}\lr{L5\ \ Sticky L4\ \ \ L6}{}\lblank}
+\end{center}
+
+У каждого логического переключателя:
+\begin{itemize}
+  \item \menu{Function} --- какое условие проверять (таблица ниже);
+  \item \menu{V1}, \menu{V2} --- что сравнивать: источник и число, или два источника;
+  \item \menu{AND switch} --- дополнительное условие: \sw{L} включится, только если ещё
+        и этот переключатель включён;
+  \item \menu{Delay} --- условие должно продержаться столько секунд, прежде чем \sw{L} включится;
+  \item \menu{Duration} --- включившись, \sw{L} будет гореть не меньше этого времени.
+\end{itemize}
+
+\section{Какие бывают условия}
+
+\begin{center}\small
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\linewidth}{@{}L{28mm}Y@{}}
+\toprule
+\textbf{Функция} & \textbf{Включается, когда …} \\
+\midrule
+\code{a<x}, \code{a>x} & источник меньше / больше числа («батарея < 14\,В») \\
+\code{a=x}, \code{a\textasciitilde x} & источник равен / примерно равен числу \\
+\code{|a|>x}, \code{|a|<x} & то же, но без учёта знака («стик отклонён больше чем на 50\,\% в любую сторону») \\
+\code{a<b}, \code{a>b}, \code{a=b} & сравниваются два источника \\
+\code{AND}, \code{OR}, \code{XOR} & логика: «оба включены», «хотя бы один», «ровно один» \\
+\code{Edge} & кнопку нажали и отпустили за заданное время (короткое или длинное нажатие) \\
+\code{Sticky} & защёлка: включается одним условием, выключается другим \\
+\code{Timer} & мигает сам: столько-то секунд вкл, столько-то выкл \\
+\code{Δ≥x} & значение изменилось на $x$ или больше \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\section{Как это выглядит во времени}
+
+Графики ниже --- как осциллограф: слева направо идёт время, наверху --- что происходит,
+внизу --- состояние логического переключателя.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[x=9mm,y=6mm,every node/.style={font=\sffamily\scriptsize}]
+  % напряжение
+  \draw[->,black!40] (0,2) -- (14.5,2);
+  \draw[black!70,thick] (0,4.5) -- (2,4.3) -- (3,4.1) -- (3.3,2.6) -- (3.6,4.0) -- (6,3.8) -- (7,3.6) -- (8,3.2) -- (10,2.9) -- (14,2.6);
+  \draw[warn,dashed] (0,3.4) -- (14,3.4) node[right,text=warn]{порог};
+  \node[anchor=east] at (-0.1,3.6) {RxBt};
+  \node at (3.45,4.6) {провал на газу};
+  % без delay
+  \draw[->,black!40] (0,0) -- (14.5,0);
+  \draw[black!60,line width=1.3pt] (0,0) -- (3.2,0) -- (3.2,0.8) -- (3.5,0.8) -- (3.5,0) -- (7.5,0) -- (7.5,0.8) -- (14,0.8);
+  \node[anchor=east] at (-0.1,0.4) {без Delay};
+  % с delay
+  \draw[->,black!40] (0,-2) -- (14.5,-2);
+  \draw[okgreen!60!black,line width=1.3pt] (0,-2) -- (9.5,-2) -- (9.5,-1.2) -- (14,-1.2);
+  \node[anchor=east] at (-0.1,-1.6) {Delay 2\,с};
+  \draw[<->,black!50] (7.5,-2.4) -- node[below]{2\,с} (9.5,-2.4);
+\end{tikzpicture}
+\caption{\code{a<x} с задержкой. Без \menu{Delay} короткий провал напряжения на полном газу
+даёт ложную тревогу. С \menu{Delay} 2\,с --- тревога только если напряжение низкое долго}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[x=9mm,y=6mm,every node/.style={font=\sffamily\scriptsize}]
+  \draw[->,black!40] (0,2) -- (14.5,2);
+  \draw[black!70,line width=1.3pt] (0,2) -- (1,2) -- (1,2.8) -- (1.4,2.8) -- (1.4,2) -- (5,2) -- (5,2.8) -- (7.2,2.8) -- (7.2,2) -- (14,2);
+  \node[anchor=east] at (-0.1,2.4) {кнопка \sw{SF}};
+  \node at (1.2,3.2) {коротко};\node at (6.1,3.2) {долго};
+  \draw[->,black!40] (0,0) -- (14.5,0);
+  \draw[etx,line width=1.3pt] (0,0) -- (1.4,0) -- (1.4,0.8) -- (1.8,0.8) -- (1.8,0) -- (14,0);
+  \node[anchor=east] at (-0.1,0.4) {Edge [0; 0,5]};
+  \draw[->,black!40] (0,-2) -- (14.5,-2);
+  \draw[accent,line width=1.3pt] (0,-2) -- (7.2,-2) -- (7.2,-1.2) -- (7.6,-1.2) -- (7.6,-2) -- (14,-2);
+  \node[anchor=east] at (-0.1,-1.6) {Edge [1; 3]};
+  \draw[->,black!40] (0,-4) -- (14.5,-4);
+  \draw[okgreen!60!black,line width=1.3pt] (0,-4) -- (1.4,-4) -- (1.4,-3.2) -- (7.2,-3.2) -- (7.2,-4) -- (14,-4);
+  \node[anchor=east] at (-0.1,-3.6) {Sticky};
+  \node[anchor=west,align=left] at (9,-3.4) {включила короткая,\\выключила длинная};
+\end{tikzpicture}
+\caption{\code{Edge} ловит нажатия заданной длины. \code{Sticky} (защёлка) включается от
+первого и выключается от второго --- кнопка превращается в тумблер}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[x=9mm,y=6mm,every node/.style={font=\sffamily\scriptsize}]
+  \draw[->,black!40] (0,0) -- (14.5,0);
+  \draw[etx,line width=1.3pt] (0,0) \foreach \i in {0,...,3}{ -- (\i*3.5,0) -- (\i*3.5,0.8) -- (\i*3.5+1,0.8) -- (\i*3.5+1,0)} -- (14,0);
+  \node[anchor=east] at (-0.1,0.4) {Timer 1/2,5};
+  \draw[<->,black!50] (0,-0.4) -- node[below]{1\,с} (1,-0.4);
+  \draw[<->,black!50] (1,-0.4) -- node[below]{2,5\,с} (3.5,-0.4);
+\end{tikzpicture}
+\caption{\code{Timer} сам мигает: удобно, чтобы повторять звук или вибрацию}
+\end{figure}
+
+\section{Рецепты}
+
+\begin{recipe}{безопасный арм}
+Цель: арм (\sw{CH5}) включится, только если в этот момент газ был внизу.
+\begin{enumerate}
+  \item \sw{L1}: \code{a<x}, V1 = \sw{Thr}, V2 = $-95$ --- «газ внизу».
+  \item \sw{L2}: \code{AND}, V1 = \sw{L1}, V2 = \sw{SA↓} --- «газ внизу и нажали арм».
+  \item \sw{L3}: \code{Sticky}, V1 = \sw{L2}, V2 = \sw{!SA↓} --- защёлка: включается от \sw{L2},
+        выключается, когда \sw{SA} вернули вверх.
+  \item Миксер \sw{CH5}: строка Source = \sw{MAX}, Weight = $-100$; строка Source = \sw{MAX},
+        Weight = $+100$, Switch = \sw{L3}, Multiplex = \menu{Replace}.
+\end{enumerate}
+Перевёл \sw{SA} с поднятым газом --- арма не будет. Нужно вернуть \sw{SA}, опустить газ и повторить.
+\end{recipe}
+
+\begin{recipe}{кнопка как тумблер (Boxer SF)}
+\sw{L4}: \code{Edge}, V1 = \sw{SF↓}, время $[0; 0{,}5]$\,с --- короткое нажатие.
+\sw{L5}: \code{Edge}, V1 = \sw{SF↓}, время $[1; 3]$\,с --- долгое нажатие.
+\sw{L6}: \code{Sticky}, V1 = \sw{L4}, V2 = \sw{L5}.
+Коротко нажал --- \sw{L6} включился, долго --- выключился. Отправь \sw{L6} в канал, например, для
+подсветки модели.
+\end{recipe}
+
+\begin{recipe}{таймер только в полёте}
+\sw{L7}: \code{a>x}, V1 = \sw{Thr}, V2 = $-90$ (газ поднят).
+\sw{L8}: \code{AND}, V1 = \sw{SA↓} (арм), V2 = \sw{L7}.
+В таймере \menu{Switch} = \sw{L8} --- время считается, только когда модель заармлена \emph{и}
+газ поднят.
+\end{recipe}
+
+\section{Как проверить}
+
+На главном экране есть страница со всеми логическими переключателями: включённые показаны
+тёмными квадратиками. Не работает? Проверь:
+\begin{itemize}
+  \item единицы: для телеметрии число пишется в её единицах (вольты, проценты, дБм);
+  \item знак: газ внизу --- это $-100$, а не 0;
+  \item не забыт ли лишний \menu{AND switch} или слишком большой \menu{Delay}.
+\end{itemize}
+
+\begin{tryit}
+\begin{enumerate}
+  \item Сделай \sw{L1}: \code{a>x}, \sw{Thr}, 0. Подвигай газ и посмотри на странице
+        логических переключателей, когда загорается \sw{L1}.
+  \item Сделай кнопку-тумблер из рецепта (на TX12 --- на любом переключателе).
+  \item Сделай \sw{L} типа \code{Timer} 1/1 и посмотри, как он мигает.
+\end{enumerate}
+\end{tryit}
+
+\begin{summary}
+\begin{itemize}
+  \item \sw{L1}…\sw{L64} --- «невидимые переключатели», включаются по условию.
+  \item Сравнения, логика (AND/OR), нажатия (\code{Edge}), защёлки (\code{Sticky}), мигалки (\code{Timer}).
+  \item \menu{Delay} убирает ложные срабатывания, \menu{Duration} растягивает включение.
+\end{itemize}
+\end{summary}

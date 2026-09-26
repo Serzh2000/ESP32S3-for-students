@@ -1,213 +1,248 @@
 % =====================================================================
-\chapter{Знакомство с пультами}
+\chapter{Знакомство с пультом}
+\label{ch:hardware}
 % =====================================================================
 \chapterintro
-  {из чего состоит пульт, как называются органы управления, чем отличаются TX12 и Boxer,
-   какие бывают версии радиомодулей и как обращаться с аккумуляторами}
-  {пульт TX12 или Boxer, заряженные аккумуляторы, кабель USB-C}
+  {как называются все кнопки, стики и переключатели на TX12 и Boxer, какие бывают
+   переключатели и какие числа они выдают, чем отличаются два пульта и как обращаться
+   с аккумуляторами}
+  {пульт TX12 или Boxer (можно выключенный)}
 
-\section{Что такое аппаратура управления}
+\section{Что такое пульт}
 
-Пульт (передатчик, по-английски \emph{transmitter}, TX или \emph{radio}) измеряет положение
-стиков, переключателей и крутилок, по заданным вами правилам превращает их в набор
-\textbf{каналов} и по радио отправляет эти каналы \textbf{приёмнику} (\emph{receiver}, RX)
-на модели. Приёмник выдаёт каналы на сервомашинки, регулятор оборотов или полётный контроллер.
-Обратно от приёмника приходит \textbf{телеметрия}: качество связи, напряжение батареи модели,
-данные GPS и т.\,д.
+\begin{simple}
+Пульт похож на геймпад от приставки: два стика, кнопки, переключатели и экран. Но провод
+к модели ему не нужен --- он разговаривает с ней по радио. А внутри у него маленький
+компьютер с программой \textbf{EdgeTX}, которая решает, какие именно числа отправить модели,
+когда ты двигаешь стиками.
+\end{simple}
 
-\begin{figure}[H]
-\centering
-\begin{tikzpicture}[node distance=6mm and 7mm]
-  \node[blk,fill=blksw,minimum width=24mm] (ctl) {Стики,\\переключатели,\\крутилки};
-  \node[blk,fill=blkmix,right=of ctl,minimum width=26mm] (etx) {EdgeTX:\\входы, миксеры,\\выходы};
-  \node[blk,fill=blkrf,right=of etx,minimum width=22mm] (tx) {Радиомодуль\\(ELRS, Multi…)};
-  \node[blk,fill=blkrf,right=13mm of tx,minimum width=16mm] (rx) {Приёмник};
-  \node[blk,fill=blkout,right=of rx,minimum width=20mm] (srv) {Сервы, ESC,\\полётный\\контроллер};
-  \draw[arr] (ctl) -- (etx);
-  \draw[arr] (etx) -- node[above,lbl]{каналы} (tx);
-  \draw[arr,decorate,decoration={snake,amplitude=1.2pt,segment length=5pt,pre length=2pt,post length=3pt}] ([yshift=2mm]tx.east) -- ([yshift=2mm]rx.west);
-  \draw[arr,dashed] ([yshift=-2mm]rx.west) -- node[below,lbl]{телеметрия} ([yshift=-2mm]tx.east);
-  \draw[arr] (rx) -- (srv);
-  \begin{scope}[on background layer]
-    \node[fit=(ctl)(etx)(tx),draw=etx,dashed,rounded corners,inner sep=6pt,label={[lbl,text=etx]above:Пульт}] {};
-  \end{scope}
-\end{tikzpicture}
-\caption{Путь сигнала от руки пилота до модели}
-\end{figure}
-
-Современные пульты вроде TX12 и Boxer --- это небольшие компьютеры на микроконтроллере STM32
-с монохромным экраном, SD-картой, динамиком и вибромотором. Всё «умное» в них делает
-прошивка EdgeTX, а радиочасть вынесена в отдельный \textbf{радиомодуль}: внутренний
-(встроенный) или внешний (вставляется в отсек на задней стороне).
+Правильное название пульта --- \textbf{аппаратура управления} или \textbf{передатчик}
+(англ. \emph{transmitter}, коротко \textbf{TX} или просто \emph{radio}). То, что стоит на
+модели и ловит сигнал, --- \textbf{приёмник} (\emph{receiver}, \textbf{RX}).
 
 \section{RadioMaster TX12}
 
-TX12 --- компактный пульт «игрового» формата, один из самых популярных первых пультов для FPV.
-Существует в двух поколениях:
-
-\begin{description}[font=\sffamily\bfseries\color{etx}]
-  \item[TX12 (MKI, 2021)] процессор STM32F2, стики на потенциометрах,
-        внутренний модуль --- 4-в-1 мультипротокол или CC2500; исходно шёл с OpenTX, сейчас
-        прошивается на EdgeTX.
-  \item[TX12 Mark II (MKII, 2022)] процессор STM32F407, стики на датчиках Холла,
-        заводская прошивка EdgeTX, внутренний модуль --- ExpressLRS 2,4\,ГГц до \SI{250}{мВт}
-        \emph{или} CC2500; питание от двух элементов 18650 (или от 2S LiPo подходящего размера),
-        зарядка через USB-C.
-\end{description}
-
 \begin{figure}[H]
 \centering
-\begin{tikzpicture}[scale=0.95]
-  \fill[black!12,rounded corners=16pt] (-4.6,-2.3) rectangle (4.6,1.9);
-  \fill[black!8,rounded corners=10pt] (-4.3,-3.7) rectangle (-2.3,-1.6);
-  \fill[black!8,rounded corners=10pt] (2.3,-3.7) rectangle (4.3,-1.6);
-  \fill[lcdbg,draw=black!60,rounded corners=1pt] (-1.2,-0.5) rectangle (1.2,0.85);
-  \node[font=\sffamily\tiny] at (0,0.17) {ЖК 128×64};
-  \foreach \x/\n in {-3.0/L,3.0/R}{
-    \draw[fill=black!25] (\x,-0.2) circle (1.0);
-    \fill[black!70] (\x,-0.2) circle (0.28);
-  }
-  % верхние органы
-  \foreach \x/\l in {-4.0/SE,-3.3/SB,3.3/SC,4.0/SF}{
-    \draw[fill=gray!60] (\x-0.07,1.85) rectangle (\x+0.07,2.3);
-    \node[font=\sffamily\scriptsize\bfseries,above] at (\x,2.3) {\l};
-  }
-  \foreach \x/\l in {-2.55/SA,2.55/SD}{
-    \draw[fill=gray!40] (\x-0.07,1.85) rectangle (\x+0.07,2.15);
-    \node[font=\sffamily\scriptsize\bfseries,above] at (\x,2.15) {\l};
-  }
-  \foreach \x/\l in {-1.7/S1,1.7/S2}{
-    \draw[fill=gray!50] (\x,1.95) ellipse (0.33 and 0.13);
-    \node[font=\sffamily\scriptsize\bfseries,above] at (\x,2.05) {\l};
-  }
-  % кнопки
-  \foreach \y/\l in {0.6/SYS,0.2/MDL,-0.2/TELE}{
-    \draw[fill=gray!30,rounded corners=1pt] (-1.85,\y-0.12) rectangle (-1.45,\y+0.12);
-  }
-  \foreach \y/\l in {0.6/PAGE<,0.2/PAGE>,-0.2/RTN}{
-    \draw[fill=gray!30,rounded corners=1pt] (1.45,\y-0.12) rectangle (1.85,\y+0.12);
-  }
-  \node[font=\sffamily\tiny,align=right,left] at (-1.9,0.6) {};
-  \draw[fill=gray!40] (0,-1.1) circle (0.27);
-  \draw[fill=gray!20] (0,-1.75) circle (0.18);
-  % триммеры
-  \foreach \x in {-3.0,3.0}{\draw[fill=gray!30,rounded corners=1pt] (\x-0.55,-1.5) rectangle (\x+0.55,-1.38);}
-  \foreach \x in {-1.75,1.75}{\draw[fill=gray!30,rounded corners=1pt] (\x-0.06,-1.3) rectangle (\x+0.06,-0.55);}
-  % подписи
-  \draw[gray] (-1.85,0.6) -- (-5.4,0.9) node[left,lbl]{\btn{SYS}};
-  \draw[gray] (-1.85,0.2) -- (-5.4,0.3) node[left,lbl]{\btn{MDL}};
-  \draw[gray] (-1.85,-0.2) -- (-5.4,-0.3) node[left,lbl]{\btn{TELE}};
-  \draw[gray] (1.85,0.6) -- (5.4,0.9) node[right,lbl]{\btn{PAGE<}};
-  \draw[gray] (1.85,0.2) -- (5.4,0.3) node[right,lbl]{\btn{PAGE>}};
-  \draw[gray] (1.85,-0.2) -- (5.4,-0.3) node[right,lbl]{\btn{RTN}};
-  \draw[gray] (0.27,-1.1) -- (5.4,-1.0) node[right,lbl]{колесо + \btn{ENTER}};
-  \draw[gray] (0.18,-1.75) -- (5.4,-1.8) node[right,lbl]{кнопка питания};
-  \draw[gray] (-3.0,-1.44) -- (-5.4,-1.8) node[left,lbl]{триммеры T1…T4};
-  \node[lbl] at (-3.0,-2.9) {левый стик};
-  \node[lbl] at (3.0,-2.9) {правый стик};
+\begin{tikzpicture}[scale=0.54]
+  \drawTXtwelve
+  % подписи тумблеров
+  \foreach \x/\n in {-6.55/SE,-5.6/SB,-4.55/SA,4.55/SD,5.6/SC,6.55/SF}{
+    \node[font=\sffamily\scriptsize\bfseries,text=accent] at (\x,5.35) {\n};}
+  \node[font=\sffamily\scriptsize\bfseries,text=accent] at (-3.1,4.45) {S1};
+  \node[font=\sffamily\scriptsize\bfseries,text=accent] at (3.1,4.45) {S2};
+  % выноски слева
+  \callout{(-2.55,1.75)}{(-9.0,3.9)}{east}{\btn{SYS} --- настройки\\пульта}
+  \callout{(-2.55,1.05)}{(-9.0,2.4)}{east}{\btn{MDL} --- настройки\\модели}
+  \callout{(-2.55,0.35)}{(-9.0,1.1)}{east}{\btn{TELE} --- телеметрия}
+  \callout{(-4.9,0.35)}{(-9.0,-0.3)}{east}{левый стик:\\газ и рыскание}
+  \callout{(-4.9,-1.42)}{(-9.0,-1.8)}{east}{триммер}
+  \callout{(-3.12,0.9)}{(-9.0,-2.9)}{east}{триммер}
+  % выноски справа
+  \callout{(2.55,1.75)}{(9.0,3.9)}{west}{\btn{PAGE<} --- страница\\назад}
+  \callout{(2.55,1.05)}{(9.0,2.4)}{west}{\btn{PAGE>} --- страница\\вперёд}
+  \callout{(2.55,0.35)}{(9.0,1.1)}{west}{\btn{RTN} --- выход}
+  \callout{(4.9,0.35)}{(9.0,-0.3)}{west}{правый стик:\\тангаж и крен}
+  \callout{(0.45,-1.0)}{(9.0,-1.8)}{west}{колесо; нажатие ---\\это \btn{ENTER}}
+  \callout{(0.25,-2.1)}{(9.0,-3.2)}{west}{кнопка питания}
+  \callout{(7.27,5.3)}{(9.0,5.4)}{west}{антенна}
+  \callout{(0,1.3)}{(0,6.6)}{south}{экран 128×64 точки}
 \end{tikzpicture}
-\caption{TX12: органы управления (схематично; расположение кнопок у ревизий может немного отличаться)}
+\caption{RadioMaster TX12, вид спереди. Буквами сверху подписаны переключатели и крутилки.
+Точное расположение кнопок у разных ревизий может немного отличаться}
+\label{fig:tx12}
 \end{figure}
 
-\begin{center}\small
-\begin{tabular}{@{}lll@{}}
-\toprule
-Орган & Тип & Типичное назначение \\
-\midrule
-\sw{SA}, \sw{SD} & 2 положения (у части партий --- без фиксации) & арм, отсечка газа, запуск таймера \\
-\sw{SB}, \sw{SC} & 3 положения & полётные режимы, расходы \\
-\sw{SE}, \sw{SF} & 3 положения & режимы, закрылки, доп.\ каналы \\
-\sw{S1}, \sw{S2} & потенциометры (крутилки) & настройка «на лету», камера, свет \\
-Триммеры & 4 качельки (\sw{T1}--\sw{T4}) & подстройка нейтрали осей \\
-\bottomrule
-\end{tabular}
-\end{center}
+TX12 --- компактный пульт в форме геймпада, один из самых популярных первых пультов.
+Есть две версии:
 
-\begin{tip}
-Точный тип каждого переключателя на \emph{вашем} экземпляре видно в
-\mpath{SYS\sep Hardware}. Если вы поменяли тумблер (RadioMaster продаёт сменные двух- и
-трёхпозиционные), там же нужно указать новый тип --- иначе EdgeTX неверно прочитает положения.
-\end{tip}
+\begin{description}[font=\sffamily\bfseries\color{etx}]
+  \item[TX12 (MKI, 2021)] стики на потенциометрах, радиомодуль --- «4-в-1» (мультипротокол)
+        или CC2500. Сначала продавался с прошивкой OpenTX, сейчас на него ставят EdgeTX.
+  \item[TX12 Mark II (MKII, 2022)] стики на датчиках Холла (не изнашиваются), более мощный
+        процессор, сразу с EdgeTX. Радиомодуль --- \textbf{ExpressLRS} (до 250\,мВт) или CC2500.
+        Питание --- два аккумулятора 18650, зарядка через USB-C.
+\end{description}
 
 \section{RadioMaster Boxer}
 
-Boxer (2023) --- пульт покрупнее, с полноразмерными стиками на датчиках Холла (V4.0)
-и большим аккумуляторным отсеком. Экран тот же, монохромный 128×64, поэтому интерфейс
-EdgeTX на Boxer практически совпадает с TX12: всё, что сказано в книге про меню, относится
-к обоим пультам.
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[scale=0.5]
+  \drawBoxer
+  \foreach \x/\n in {-6.9/SA,-5.95/SB,5.95/SC,6.9/SD}{
+    \node[font=\sffamily\scriptsize\bfseries,text=accent] at (\x,5.6) {\n};}
+  \node[font=\sffamily\scriptsize\bfseries,text=accent] at (-4.8,4.5) {SE};
+  \node[font=\sffamily\scriptsize\bfseries,text=accent] at (4.8,4.5) {SF};
+  \node[font=\sffamily\scriptsize\bfseries,text=accent] at (-3.2,4.55) {S1};
+  \node[font=\sffamily\scriptsize\bfseries,text=accent] at (3.2,4.55) {S2};
+  \callout{(-4.8,4.0)}{(-9.6,5.3)}{east}{\textbf{SE} --- кнопка\\с фиксацией}
+  \callout{(-2.78,2.45)}{(-9.6,3.6)}{east}{\btn{SYS}}
+  \callout{(-2.78,1.8)}{(-9.6,2.6)}{east}{\btn{MDL}}
+  \callout{(-2.78,1.15)}{(-9.6,1.6)}{east}{\btn{TELE}}
+  \callout{(-5.3,0.1)}{(-9.6,0.2)}{east}{левый стик}
+  \callout{(-0.25,-2.25)}{(-9.6,-2.6)}{east}{кнопка питания}
+  \callout{(4.8,4.0)}{(9.6,5.3)}{west}{\textbf{SF} --- кнопка\\без фиксации}
+  \callout{(2.78,2.45)}{(9.6,3.6)}{west}{\btn{PAGE}}
+  \callout{(2.78,1.8)}{(9.6,2.6)}{west}{\btn{PAGE}}
+  \callout{(2.78,1.15)}{(9.6,1.6)}{west}{\btn{RTN}}
+  \callout{(5.3,0.1)}{(9.6,0.4)}{west}{правый стик}
+  \callout{(1.6,0.25)}{(9.6,-1.1)}{west}{6 кнопок ---\\переключатель \sw{6POS}}
+  \callout{(0.45,-1.1)}{(9.6,-2.8)}{west}{колесо + \btn{ENTER}}
+\end{tikzpicture}
+\caption{RadioMaster Boxer, вид спереди (схематично)}
+\label{fig:boxer}
+\end{figure}
 
-Особенности Boxer:
+Boxer (2023) --- пульт покрупнее, с большими стиками на датчиках Холла и огромным
+аккумуляторным отсеком. \textbf{Экран у него такой же, как у TX12} (128×64 точки), поэтому
+меню EdgeTX выглядят одинаково. Всё, что написано в этой книге про меню, подходит к обоим
+пультам.
+
+Чем Boxer отличается:
 \begin{itemize}
-  \item внутренний модуль: \textbf{ExpressLRS до 1\,Вт} с активным охлаждением (вентилятором),
-        либо 4-в-1 мультипротокол, либо CC2500 --- в зависимости от версии;
-  \item питание: 2S LiPo (7,4\,В; в отсек помещается аккумулятор порядка \SI{6200}{мА\cdot ч})
-        или два элемента 18650 в комплектном держателе;
-  \item переключатели \sw{SA} (2 поз.), \sw{SB}, \sw{SC} (3 поз.), \sw{SD} (2 поз.);
-        низкопрофильные кнопки \sw{SE} (с фиксацией) и \sw{SF} (без фиксации);
-        два колеса-потенциометра \sw{S1}, \sw{S2};
-  \item \textbf{шесть кнопок} под экраном, которые вместе работают как шестипозиционный
-        переключатель (источник \sw{6POS}) --- удобно для выбора до шести полётных режимов;
-  \item отсек для внешнего модуля формата JR.
+  \item радиомодуль ExpressLRS \textbf{до 1\,Вт} с вентилятором (есть версии с «4-в-1» или CC2500);
+  \item питание --- аккумулятор 2S LiPo (7,4\,В) или два 18650 в держателе;
+  \item \textbf{шесть кнопок под экраном}: все вместе они работают как один переключатель
+        на шесть положений --- удобно выбирать режимы полёта;
+  \item две кнопки на плечах: \sw{SE} (нажал --- включилось, нажал ещё раз --- выключилось)
+        и \sw{SF} (включено, только пока держишь).
 \end{itemize}
+
+\section{Какие бывают переключатели}
+
+Каждый переключатель в EdgeTX --- это тоже \emph{источник числа}. Запомни: \textbf{верхнее
+положение даёт $-100$, нижнее $+100$, среднее --- 0}.
 
 \begin{figure}[H]
 \centering
-\begin{tikzpicture}[scale=0.95]
-  \fill[black!12,rounded corners=20pt] (-5.0,-2.4) rectangle (5.0,2.0);
-  \fill[black!8,rounded corners=12pt] (-4.8,-4.0) rectangle (-2.5,-1.6);
-  \fill[black!8,rounded corners=12pt] (2.5,-4.0) rectangle (4.8,-1.6);
-  \fill[lcdbg,draw=black!60,rounded corners=1pt] (-1.2,0.0) rectangle (1.2,1.4);
-  \node[font=\sffamily\tiny] at (0,0.7) {ЖК 128×64};
-  \foreach \i in {0,...,5}{
-    \draw[fill=gray!30,rounded corners=1pt] (-1.15+\i*0.42,-0.45) rectangle ++(0.32,0.25);
-    \node[font=\sffamily\tiny] at (-0.99+\i*0.42,-0.62) {\the\numexpr\i+1\relax};
-  }
-  \foreach \x in {-3.3,3.3}{
-    \draw[fill=black!25] (\x,-0.3) circle (1.15);
-    \fill[black!70] (\x,-0.3) circle (0.3);
-  }
-  \foreach \x/\l in {-4.3/SA,-3.6/SB,3.6/SC,4.3/SD}{
-    \draw[fill=gray!60] (\x-0.07,1.95) rectangle (\x+0.07,2.4);
-    \node[font=\sffamily\scriptsize\bfseries,above] at (\x,2.4) {\l};
-  }
-  \foreach \x/\l in {-2.6/SE,2.6/SF}{
-    \draw[fill=gray!45,rounded corners=1pt] (\x-0.2,1.9) rectangle (\x+0.2,2.08);
-    \node[font=\sffamily\scriptsize\bfseries,above] at (\x,2.08) {\l};
-  }
-  \foreach \x/\l in {-1.8/S1,1.8/S2}{
-    \draw[fill=gray!50] (\x,2.0) ellipse (0.3 and 0.12);
-    \node[font=\sffamily\scriptsize\bfseries,above] at (\x,2.08) {\l};
-  }
-  \draw[fill=gray!40] (0,-1.2) circle (0.27);
-  \node[lbl] at (-3.3,-3.0) {левый стик};
-  \node[lbl] at (3.3,-3.0) {правый стик};
-  \draw[gray] (1.1,-0.35) -- (5.9,-0.1) node[right,lbl,align=left]{кнопки 1--6\\(\sw{6POS})};
-  \draw[gray] (0.27,-1.2) -- (5.9,-1.3) node[right,lbl]{колесо + \btn{ENTER}};
-  \draw[gray] (-2.6,2.0) -- (-5.9,1.3) node[left,lbl,align=right]{кнопка с фиксацией};
-  \draw[gray] (2.6,2.0) -- (5.9,1.3) node[right,lbl,align=left]{кнопка без\\фиксации};
-\end{tikzpicture}
-\caption{Boxer: органы управления (схематично). Кнопки SYS, MDL, TELE, PAGE, RTN
-расположены по бокам от экрана}
+\begin{tabular}{@{}c@{\hspace{7mm}}c@{\hspace{7mm}}c@{\hspace{7mm}}c@{}}
+\begin{tikzpicture}[scale=0.85]
+  \pic[transform shape] at (0,0) {toggle=-1};
+  \pic[transform shape] at (1.5,0) {toggle=1};
+  \node[font=\sffamily\scriptsize] at (0,-0.6) {\sw{SA↑}};
+  \node[font=\sffamily\scriptsize] at (1.5,-0.6) {\sw{SA↓}};
+  \node[font=\sffamily\scriptsize,text=etx] at (0,-1.0) {$-100$};
+  \node[font=\sffamily\scriptsize,text=etx] at (1.5,-1.0) {$+100$};
+\end{tikzpicture} &
+\begin{tikzpicture}[scale=0.85]
+  \pic[transform shape] at (0,0) {toggle=-1};
+  \pic[transform shape] at (1.3,0) {toggle=0};
+  \pic[transform shape] at (2.6,0) {toggle=1};
+  \node[font=\sffamily\scriptsize] at (0,-0.6) {\sw{SB↑}};
+  \node[font=\sffamily\scriptsize] at (1.3,-0.6) {\sw{SB-}};
+  \node[font=\sffamily\scriptsize] at (2.6,-0.6) {\sw{SB↓}};
+  \node[font=\sffamily\scriptsize,text=etx] at (0,-1.0) {$-100$};
+  \node[font=\sffamily\scriptsize,text=etx] at (1.3,-1.0) {0};
+  \node[font=\sffamily\scriptsize,text=etx] at (2.6,-1.0) {$+100$};
+\end{tikzpicture} &
+\begin{tikzpicture}[scale=0.85]
+  \pic[transform shape] at (0,0) {pushbtn=0};
+  \pic[transform shape] at (1.4,0) {pushbtn=1};
+  \draw[motion,-{Latex[length=2mm]}] (1.4,1.0) -- (1.4,0.35);
+  \node[font=\sffamily\scriptsize] at (0,-0.6) {отпущена};
+  \node[font=\sffamily\scriptsize] at (1.4,-0.6) {нажата};
+  \node[font=\sffamily\scriptsize,text=etx] at (0,-1.0) {$-100$};
+  \node[font=\sffamily\scriptsize,text=etx] at (1.4,-1.0) {$+100$};
+\end{tikzpicture} &
+\begin{tikzpicture}[scale=0.85]
+  \pic[transform shape] at (0,0.2) {knob=-100};
+  \pic[transform shape] at (1.8,0.2) {knob=100};
+  \node[font=\sffamily\scriptsize,text=etx] at (0,-1.0) {$-100$};
+  \node[font=\sffamily\scriptsize,text=etx] at (1.8,-1.0) {$+100$};
+  \node[font=\sffamily\scriptsize] at (0.9,0.2) {…};
+\end{tikzpicture}\\[1mm]
+\small\bfseries двухпозиционный & \small\bfseries трёхпозиционный & \small\bfseries кнопка (без фиксации) & \small\bfseries крутилка\\
+\scriptsize 2 положения & \scriptsize 3 положения & \scriptsize возвращается сама & \scriptsize любое число от $-100$ до $+100$
+\end{tabular}
+\caption{Четыре вида «переключателей» и числа, которые они выдают}
+\label{fig:switch-types}
 \end{figure}
-
-\section{Сравнение TX12 MKII и Boxer}
 
 \begin{center}\small
 \renewcommand{\arraystretch}{1.2}
-\begin{tabularx}{\linewidth}{@{}p{35mm}XX@{}}
+\begin{tabularx}{\linewidth}{@{}L{24mm}L{52mm}Y@{}}
+\toprule
+\textbf{Орган} & \textbf{TX12} & \textbf{Boxer} \\
+\midrule
+\sw{SA} & 2 положения (у части партий --- без фиксации) & 2 положения \\
+\sw{SB}, \sw{SC} & 3 положения & 3 положения \\
+\sw{SD} & 2 положения (у части партий --- без фиксации) & 2 положения \\
+\sw{SE} & 3 положения & кнопка с фиксацией \\
+\sw{SF} & 3 положения & кнопка без фиксации \\
+\sw{S1}, \sw{S2} & крутилки & колёсики-крутилки \\
+\sw{6POS} & --- & 6 кнопок под экраном \\
+Триммеры & 4 качельки \sw{T1}--\sw{T4} & 4 качельки \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\begin{tip}
+Точный тип каждого переключателя на твоём экземпляре видно в меню \mpath{SYS\sep Hardware}
+(глава~\ref{ch:radio}). Там же можно посмотреть, что показывает переключатель, если его
+пощёлкать.
+\end{tip}
+
+\subsection{Что такое триммер}
+
+Рядом с каждым стиком есть маленькая качелька --- \textbf{триммер}. Он чуть-чуть сдвигает
+«ноль» стика. Если самолёт в полёте всё время слегка заваливается влево, пилот нажимает
+триммер крена вправо несколько раз --- и самолёт летит ровно с отпущенным стиком.
+У квадрокоптеров триммеры обычно не используются: выравнивает коптер сам полётный контроллер.
+
+\section{Что сзади и внутри}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[scale=0.55]
+  \path[plastic,rounded corners=6mm] (-7.8,3.6) -- (7.8,3.6) -- (8.1,-1.2)
+     .. controls (8.3,-3.8) and (7.6,-6.2) .. (5.8,-6.3)
+     .. controls (4.4,-6.3) and (3.8,-5.2) .. (3.3,-3.9)
+     .. controls (2.2,-3.2) and (-2.2,-3.2) .. (-3.3,-3.9)
+     .. controls (-3.8,-5.2) and (-4.4,-6.3) .. (-5.8,-6.3)
+     .. controls (-7.6,-6.2) and (-8.3,-3.8) .. (-8.1,-1.2) -- cycle;
+  % отсек модуля
+  \path[fill=black!85,draw=black!40,rounded corners=2pt] (-2.4,0.2) rectangle (2.4,3.2);
+  \foreach \x in {-0.6,-0.3,0,0.3,0.6}{\fill[yellow!70!orange] (\x,0.45) circle (0.08);}
+  \node[font=\sffamily\scriptsize,text=white] at (0,1.9) {отсек JR};
+  % крышка батареи
+  \path[fill=black!70,draw=black!40,rounded corners=3pt] (-3.0,-3.0) rectangle (3.0,-0.3);
+  \node[font=\sffamily\scriptsize,text=white] at (0,-1.6) {аккумуляторы};
+  % ручки
+  \foreach \x in {-5.3,5.3}{\path[fill=black!72,rounded corners=6pt] (\x-1.2,-5.5) rectangle (\x+1.2,-1.5);}
+  \callout{(0,0.45)}{(-9.2,2.6)}{east}{контакты для\\внешнего модуля}
+  \callout{(2.4,1.7)}{(9.0,2.6)}{west}{сюда вставляется\\внешний радиомодуль}
+  \callout{(3.0,-1.6)}{(9.0,-1.0)}{west}{крышка батарейного\\отсека}
+  \callout{(-3.0,-1.6)}{(-9.2,-1.0)}{east}{внутри: 2×18650\\или 2S LiPo (Boxer)}
+\end{tikzpicture}
+\caption{Задняя сторона пульта (схематично)}
+\end{figure}
+
+\begin{itemize}
+  \item \textbf{Отсек для внешнего модуля} формата JR. Встроенный модуль уже есть внутри пульта,
+        но сюда можно вставить другой --- например, для другой радиосистемы.
+  \item \textbf{Разъём USB-C} --- для зарядки, прошивки и подключения к компьютеру.
+  \item \textbf{Слот microSD} --- на карте хранятся модели, звуки, скрипты. Без карты пульт
+        работает хуже: нет голоса и настроек ELRS.
+\end{itemize}
+
+\section{TX12 или Boxer --- сравнение}
+
+\begin{center}\small
+\renewcommand{\arraystretch}{1.25}
+\begin{tabularx}{\linewidth}{@{}L{35mm}YY@{}}
 \toprule
 & \textbf{TX12 MKII} & \textbf{Boxer} \\
 \midrule
-Прошивка & EdgeTX & EdgeTX \\
-Экран & монохромный 128×64 & монохромный 128×64 \\
-Стики & Холл, компактные & Холл V4.0, полноразмерные \\
-Переключатели & 6 (4 трёхпозиционных) & 4 тумблера + 2 кнопки \\
-Крутилки & 2 & 2 колеса \\
-Шестипозиционный & --- & да, 6 кнопок \\
-Внутренний ELRS & до 250\,мВт & до 1\,Вт, вентилятор \\
-Внешний модуль & отсек JR & отсек JR \\
+Экран & 128×64, монохромный & 128×64, монохромный \\
+Стики & Холл, компактные & Холл, полноразмерные \\
+Переключатели & 6 тумблеров & 4 тумблера + 2 кнопки \\
+Крутилки & 2 & 2 колёсика \\
+Переключатель 6POS & нет & да, 6 кнопок \\
+ELRS внутри & до 250\,мВт & до 1\,Вт, с вентилятором \\
 Питание & 2×18650 & 2S LiPo или 2×18650 \\
-Габариты & компактный, «геймпадный» хват & крупнее, удобен для «щипкового» хвата \\
+Для кого & компактный и лёгкий, хорош для начала & удобный хват, долго работает от батареи \\
 \bottomrule
 \end{tabularx}
 \end{center}
@@ -215,50 +250,33 @@ EdgeTX на Boxer практически совпадает с TX12: всё, ч�
 \section{Аккумуляторы и зарядка}
 
 \begin{itemize}
-  \item \textbf{18650}: используйте качественные элементы \emph{одного} типа и одинаковой степени
-        заряда. Соблюдайте полярность --- она выштампована в отсеке. Незащищённые элементы
-        с плоским «плюсом» могут не доставать до контактов; с защитой --- могут не влезть по длине.
-  \item \textbf{2S LiPo} (Boxer, частично TX12 MKII): проверьте разъём (часто XT30 или JST)
-        и габариты. Раздутый аккумулятор в пульт ставить нельзя.
-  \item Зарядка через USB-C встроенным зарядным устройством работает при \emph{выключенном} пульте.
-        Индикатор заряда гаснет или меняет цвет, когда заряд окончен (зависит от ревизии).
+  \item \textbf{18650} --- два одинаковых элемента, одного типа и одинаково заряженных.
+        Смотри на полярность: «$+$» и «$-$» нарисованы в отсеке.
+  \item \textbf{2S LiPo} (Boxer) --- проверь разъём и размер. \textbf{Вздувшийся аккумулятор
+        ставить нельзя.}
+  \item Заряжай через USB-C, когда пульт \emph{выключен}. Когда заряд закончен, индикатор
+        гаснет или меняет цвет.
 \end{itemize}
 
 \begin{caution}
-Не оставляйте заряжающийся пульт без присмотра и не заряжайте повреждённые элементы.
-Если пульт долго не используется, храните литиевые аккумуляторы заряженными примерно
-до \SI{3.8}{В} на элемент (7,6\,В на 2S).
+Не оставляй заряжающийся пульт без присмотра и не заряжай повреждённые аккумуляторы.
+Если пульт долго лежит без дела, храни аккумуляторы заряженными примерно наполовину.
 \end{caution}
 
-\section{Режимы стиков (Mode 1/2)}
-
-Какой стик управляет каким каналом, определяет \textbf{режим} (Mode):
-
-\begin{center}\small
-\begin{tabular}{@{}lcccc@{}}
-\toprule
-& Левый ↕ & Левый ↔ & Правый ↕ & Правый ↔\\
-\midrule
-Mode 1 & тангаж (Ele) & рыскание (Rud) & газ (Thr) & крен (Ail)\\
-\textbf{Mode 2} & \textbf{газ (Thr)} & \textbf{рыскание (Rud)} & \textbf{тангаж (Ele)} & \textbf{крен (Ail)}\\
-Mode 3 & тангаж & крен & газ & рыскание\\
-Mode 4 & газ & крен & тангаж & рыскание\\
-\bottomrule
-\end{tabular}
-\end{center}
-
-Mode 2 --- самый распространённый в мире и в FPV. Механически стик газа у Mode 2 находится
-слева и не возвращается в центр (есть трещотка или фрикцион). Если вы купили пульт в Mode 2,
-а хотите Mode 1, придётся перенести пружину центрирования и трещотку на другой стик
-(инструкции есть у производителя) \emph{и} поменять режим в EdgeTX
-(\mpath{SYS\sep Radio Setup\sep Mode}, глава~\ref{ch:radio}).
+\begin{tryit}
+\begin{enumerate}
+  \item Найди на своём пульте все переключатели и назови их буквами: \sw{SA}, \sw{SB}, …
+  \item Какие из них трёхпозиционные? Какие возвращаются сами?
+  \item Найди триммеры. Сколько их?
+  \item Найди кнопки \btn{SYS}, \btn{MDL}, \btn{TELE}, \btn{RTN} и колесо.
+\end{enumerate}
+\end{tryit}
 
 \begin{summary}
 \begin{itemize}
-  \item Пульт = органы управления + EdgeTX + радиомодуль; приёмник на модели получает каналы
-        и возвращает телеметрию.
-  \item TX12 и Boxer имеют одинаковый экран, поэтому меню EdgeTX у них одинаковые.
-  \item Главные отличия --- набор переключателей, 6POS-кнопки и мощность ELRS у Boxer.
-  \item Режим стиков (обычно Mode 2) задаётся и механически, и в прошивке.
+  \item Пульт = стики + переключатели + экран + компьютер с EdgeTX + радиомодуль.
+  \item Переключатели называются \sw{SA}…\sw{SF}, крутилки --- \sw{S1}, \sw{S2}.
+  \item Верхнее положение переключателя = $-100$, среднее = 0, нижнее = $+100$.
+  \item Меню у TX12 и Boxer одинаковые, потому что одинаковый экран.
 \end{itemize}
 \end{summary}

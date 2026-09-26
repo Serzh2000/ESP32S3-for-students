@@ -1,0 +1,152 @@
+% =====================================================================
+\chapter{Телеметрия}
+\label{ch:telemetry}
+% =====================================================================
+\chapterintro
+  {как модель рассказывает пульту о себе: качество связи, заряд батареи, координаты;
+   как найти датчики, настроить тревоги и экраны}
+  {модель с приёмником ELRS (или другим с телеметрией); для батареи --- полётный контроллер}
+
+\section{Обратная связь}
+
+\begin{simple}
+Телеметрия --- это «письма от модели». Приёмник рассказывает пульту, хорошо ли он тебя
+слышит, а полётный контроллер добавляет: сколько вольт в батарее, какой ток, где модель по GPS.
+Пульт показывает это на экране и может сказать голосом.
+\end{simple}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[every node/.style={font=\sffamily\small}]
+  \pic[transform shape,scale=1.1] at (0,1.2) {battery};
+  \node[lbl] at (0,0.6) {батарея};
+  \node[draw=black!50,fill=white,rounded corners=2pt,font=\sffamily\scriptsize] at (0,-0.4) {GPS};
+  \node[lbl] at (0,-0.9) {спутники};
+  \pic[transform shape,scale=1.1] at (2.4,0.4) {fcboard};
+  \node[lbl,align=center] at (2.4,-0.6) {полётный\\контроллер};
+  \draw[arr] (0.8,1.1) -- (1.7,0.6);
+  \draw[arr] (0.5,-0.4) -- (1.7,0.2);
+  \pic[transform shape,scale=1.2] at (5.0,0.4) {receiver};
+  \node[lbl] at (5.0,-0.3) {приёмник};
+  \draw[arr] (3.2,0.4) -- (4.1,0.4);
+  \draw[arr,dashed,etx,line width=1.2pt] (6.4,0.4) -- node[above,lbl]{по радио} (8.3,0.4);
+  \pic[transform shape,scale=1.1] at (9.5,0.4) {minitx};
+  \node[draw=black!40,fill=lcdbg,font=\ttfamily\scriptsize,align=left,anchor=west] at (10.8,0.4) {RxBt 15.8V\\RQly 100\%\\Sats 12};
+\end{tikzpicture}
+\caption{Путь телеметрии: датчики → полётный контроллер → приёмник → пульт}
+\end{figure}
+
+\section{Найти датчики}
+
+\begin{enumerate}
+  \item Включи модель, дождись связи.
+  \item \mpath{MDL\sep Telemetry} → \menu{Discover new sensors}. Пульт начнёт собирать все
+        датчики, которые присылает модель.
+  \item Через 10 секунд нажми \menu{Stop discovery}.
+\end{enumerate}
+
+\begin{center}
+\lcdscreen{TELEMETRY}{13/13}{\lr{1RSS}{-54dB}\lr{RQly}{100\%}\lr{TPWR}{100mW}\lr{RxBt}{15.8V}\lr{Curr}{12.3A}\lsel{Discover new sensors}{}}
+\end{center}
+
+Мигающее значение или «?» означает, что данные сейчас не приходят.
+\menu{Delete all sensors} --- очистить список и начать заново.
+
+\section{Главные датчики ExpressLRS}
+
+\begin{simple}
+Представь, что ты разговариваешь с другом через шумную улицу. \textbf{RSSI} --- это
+\emph{громкость}: насколько сильно слышен голос. \textbf{LQ} (качество связи) --- это
+\emph{сколько слов друг понял}. Можно слышать громко, но через шум понимать мало. Поэтому
+главный показатель --- \textbf{LQ}.
+\end{simple}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[every node/.style={font=\sffamily\small}]
+  \fill[warn!60] (0,0) rectangle (5,0.7);
+  \fill[yellow!70!orange] (5,0) rectangle (7,0.7);
+  \fill[okgreen!60] (7,0) rectangle (10,0.7);
+  \draw[black!50] (0,0) rectangle (10,0.7);
+  \foreach \x/\l in {0/0,5/50,7/70,10/100}{\draw (\x,0) -- (\x,-0.15) node[below,font=\sffamily\scriptsize]{\l\,\%};}
+  \node[font=\sffamily\scriptsize\bfseries,text=white] at (2.5,0.35) {опасно: разворачивайся!};
+  \node[font=\sffamily\scriptsize\bfseries] at (6,0.35) {осторожно};
+  \node[font=\sffamily\scriptsize\bfseries] at (8.5,0.35) {отлично};
+  \node[anchor=east,font=\sffamily\small\bfseries] at (-0.2,0.35) {RQly};
+  \draw[etx,line width=1.6pt,-{Latex}] (9.2,1.4) -- (9.2,0.75);
+  \node[font=\sffamily\scriptsize,text=etx] at (9.2,1.6) {сейчас 92\,\%};
+\end{tikzpicture}
+\caption{Качество связи RQly: чем ближе к 100\,\%, тем лучше}
+\end{figure}
+
+\begin{center}\small
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\linewidth}{@{}L{22mm}Y@{}}
+\toprule
+\textbf{Датчик} & \textbf{Что показывает} \\
+\midrule
+\sw{RQly} & качество связи, \% --- \textbf{главный}. Ниже 70\,\% --- пора возвращаться \\
+\sw{1RSS}, \sw{2RSS} & уровень сигнала на антеннах приёмника, дБм. Около $-50$ --- рядом, около
+  $-100$ и ниже --- на пределе \\
+\sw{RSNR} & насколько сигнал сильнее шума \\
+\sw{TPWR} & мощность, с которой сейчас передаёт пульт \\
+\sw{RxBt} & напряжение батареи модели \\
+\sw{Curr}, \sw{Capa} & ток и сколько энергии уже потрачено (мА·ч) \\
+\sw{GPS}, \sw{Alt}, \sw{GSpd}, \sw{Sats} & координаты, высота, скорость, число спутников \\
+\sw{FM} & режим полётного контроллера (\code{ACRO}, \code{ANGL}, \code{!FS!} --- failsafe) \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\section{Тревоги}
+
+На странице \menu{Telemetry} есть пороги для качества связи: \menu{Low alarm} (около 70) и
+\menu{Critical alarm} (около 50). Пульт скажет «Signal low» или «Signal critical». Если связь
+пропала совсем --- «Telemetry lost», вернулась --- «Telemetry recovered».
+
+Тревогу по батарее сделай сам: логический переключатель \code{a<x} с \sw{RxBt}
+(глава~\ref{ch:logic}) + специальная функция \menu{Play track} (глава~\ref{ch:special}).
+
+\begin{tip}
+Удобнее следить за напряжением \emph{на одну банку}. В Betaflight для этого есть команда
+\code{set report\_cell\_voltage = ON} --- тогда \sw{RxBt} придёт уже в пересчёте на банку,
+и порог 3,5\,В подойдёт для любой батареи.
+\end{tip}
+
+\section{Экраны телеметрии}
+
+Кнопка \btn{TELE} показывает до четырёх экранов. Что на них --- настраивается в
+\menu{Telemetry}, раздел \menu{Screens}:
+\begin{itemize}
+  \item \menu{Nums} --- таблица чисел;
+  \item \menu{Bars} --- полоски с минимумом и максимумом;
+  \item \menu{Script} --- экран, нарисованный Lua-скриптом (глава~\ref{ch:lua}).
+\end{itemize}
+
+\begin{center}
+\lcdscreen{Quad-5in}{TELE 1/2}{\lblank\lr{RxBt\ \ 15.8V}{RQly\ \ 100\%}\lr{Curr\ \ 12.3A}{1RSS\ \ -54}\lr{Capa\ \ 812}{TPWR\ \ 100mW}\lr{FM\ \ \ \ ACRO}{Tmr1\ \ 02:37}}
+\end{center}
+
+\section{Сброс}
+
+Минимумы, максимумы и счётчики (например, \sw{Capa}) хранятся до сброса. Удобно сделать
+специальную функцию \menu{Reset → Telemetry} на кнопку, или сбросить из меню главного экрана
+(долгое \btn{ENTER} → \menu{Reset}).
+
+\begin{tryit}
+\begin{enumerate}
+  \item Найди датчики своей модели. Сколько их?
+  \item Сделай экран \menu{Nums} с \sw{RxBt}, \sw{RQly}, \sw{1RSS}, \sw{TPWR}.
+  \item Отойди с моделью (без пропеллеров!) на 30--50 метров, поставив мощность 10\,мВт.
+        Как меняются \sw{1RSS} и \sw{RQly}?
+\end{enumerate}
+\end{tryit}
+
+\begin{summary}
+\begin{itemize}
+  \item Телеметрия --- данные от модели к пульту.
+  \item \menu{Discover new sensors} находит все датчики.
+  \item Главный показатель связи --- \sw{RQly}: ниже 70\,\% --- возвращайся.
+  \item Тревоги связи --- встроенные, тревогу батареи собираешь сам.
+\end{itemize}
+\end{summary}

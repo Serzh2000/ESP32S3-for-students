@@ -1,0 +1,194 @@
+% =====================================================================
+\chapter{Первое включение и настройки пульта}
+\label{ch:radio}
+% =====================================================================
+\chapterintro
+  {что за предупреждения появляются при включении, как откалибровать стики, выбрать
+   режим стиков и порядок каналов, настроить звук, голос, подсветку и контроль батареи}
+  {пульт с заряженными аккумуляторами}
+
+\section{Предупреждения при включении}
+
+\begin{simple}
+Пульт при включении проверяет, не опасно ли сейчас начинать. Если стик газа поднят или
+переключатели стоят «не так», он не пустит тебя дальше, пока ты не исправишь. Это как
+ремень безопасности в машине: раздражает, но спасает.
+\end{simple}
+
+\begin{figure}[H]
+\centering
+\begin{tabular}{@{}c@{\hspace{6mm}}c@{}}
+\lcdscreen{THROTTLE WARNING}{}{\lblank\lc{\bfseries Throttle not idle}\lblank\lc{Опусти газ вниз}\lblank\lc{\linv{ Press any key to skip }}} &
+\lcdscreen{SWITCH WARNING}{}{\lblank\lc{\bfseries Switches not in}\lc{\bfseries default position}\lblank\lc{\linv{SA↓}\ \ \linv{SC-}}\lblank}
+\end{tabular}
+\caption{Слева: газ не внизу. Справа: переключатели \sw{SA} и \sw{SC} не в стартовом положении}
+\end{figure}
+
+\begin{description}[font=\sffamily\bfseries\color{etx}]
+  \item[Throttle warning] опусти стик газа до конца вниз --- надпись исчезнет сама.
+  \item[Switch warning] переведи показанные переключатели в стартовое положение
+        (обычно --- все вверх).
+  \item[SD card warning] версия файлов на SD-карте не совпадает с прошивкой
+        (глава~\ref{ch:firmware}).
+  \item[Sound off] звук выключен --- ты можешь не услышать важное предупреждение.
+\end{description}
+
+\begin{caution}
+Не привыкай пропускать предупреждения кнопкой. Однажды модель с поднятым газом рванёт
+с места прямо у тебя в руках.
+\end{caution}
+
+\section{Калибровка стиков}
+
+\begin{simple}
+Пульт должен точно знать, где у каждого стика центр и где края. Этому его учит
+калибровка. Делай её на новом пульте, после прошивки и если стики «врут».
+\end{simple}
+
+\begin{figure}[H]
+\centering
+\begin{tabular}{@{}ccc@{}}
+\begin{tikzpicture}[scale=0.75]
+  \pic[transform shape] at (0,0) {stickidle};
+  \pic[transform shape] at (2.5,0) {stickidle};
+  \node[font=\sffamily\scriptsize,align=center] at (1.25,-1.5) {отпусти стики,\\крутилки --- в середину};
+\end{tikzpicture} &
+\begin{tikzpicture}[scale=0.75]
+  \foreach \x in {0,2.5}{
+    \fill[black!8,draw=black!40,rounded corners=1.2mm] (\x-1,-1) rectangle (\x+1,1);
+    \draw[motion,-{Latex[length=2mm]}] (\x+0.8,0) arc (0:340:0.8);
+    \shade[ball color=black!55] (\x+0.8,0) circle (0.2);}
+  \node[font=\sffamily\scriptsize,align=center] at (1.25,-1.5) {обведи стики по кругу\\до упора 2--3 раза};
+\end{tikzpicture} &
+\begin{tikzpicture}[scale=0.75]
+  \pic[transform shape] at (0,0.1) {knob=-135};
+  \pic[transform shape] at (2.2,0.1) {knob=135};
+  \draw[motion,-{Latex[length=2mm]}] (0.5,0.9) -- (1.7,0.9);
+  \node[font=\sffamily\scriptsize,align=center] at (1.1,-1.5) {прокрути крутилки\\от края до края};
+\end{tikzpicture}\\
+\small\bfseries шаг 1 & \small\bfseries шаг 2 & \small\bfseries шаг 3
+\end{tabular}
+\caption{Калибровка в три шага}
+\end{figure}
+
+\begin{enumerate}
+  \item \mpath{SYS\sep Hardware}, пункт \menu{Calibration} (в некоторых версиях --- отдельная
+        страница \menu{Calibration}). Нажми \btn{ENTER}.
+  \item Отпусти стики в центр, крутилки поставь в середину → \btn{ENTER}.
+  \item Обведи стики по кругу до упора, прокрути крутилки → \btn{ENTER}. Готово.
+\end{enumerate}
+
+\begin{tip}
+Проверь на главном экране (страница с каналами): в центре стики должны давать 0, по краям ---
+ровно $-100$ и $+100$. Если газ внизу показывает, например, $-96$, повтори калибровку.
+\end{tip}
+
+\section{Режим стиков и порядок каналов}
+
+\mpath{SYS\sep Radio Setup} --- длинная страница общих настроек. Две самые важные:
+
+\begin{description}[font=\sffamily\bfseries\color{etx}]
+  \item[Mode] режим стиков 1--4 (глава~\ref{ch:axes}). Почти всегда \textbf{2}.
+  \item[Default channel order] в каком порядке стики попадут в первые четыре канала
+        \emph{у новых моделей}.
+\end{description}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[x=13mm,y=8mm,every node/.style={font=\sffamily\small}]
+  \node[anchor=east,font=\sffamily\small\bfseries] at (0.3,0) {AETR:};
+  \foreach \n/\c [count=\i] in {Ail/etx,Ele/etx,Thr/accent,Rud/etx}{
+    \node[draw=\c,fill=\c!12,rounded corners=2pt,minimum width=11mm,minimum height=6mm] at (\i,0) {\n};
+    \node[font=\sffamily\scriptsize,text=black!60] at (\i,0.65) {CH\i};}
+  \node[anchor=west,font=\sffamily\scriptsize] at (4.6,0) {ExpressLRS, Betaflight, INAV --- \textbf{выбирай это}};
+  \node[anchor=east,font=\sffamily\small\bfseries] at (0.3,-1.2) {TAER:};
+  \foreach \n/\c [count=\i] in {Thr/accent,Ail/etx,Ele/etx,Rud/etx}{
+    \node[draw=\c,fill=\c!12,rounded corners=2pt,minimum width=11mm,minimum height=6mm] at (\i,-1.2) {\n};}
+  \node[anchor=west,font=\sffamily\scriptsize] at (4.6,-1.2) {порядок Spektrum/JR};
+\end{tikzpicture}
+\caption{Два популярных порядка каналов. Газ (оранжевый) --- на третьем или первом месте}
+\end{figure}
+
+\begin{note}
+Порядок каналов пульта и порядок, который ждёт модель (например, \menu{Channel map} в
+Betaflight), \textbf{должны совпадать}. Иначе ты будешь давать газ, а коптер --- крениться.
+\end{note}
+
+\section{Батарея пульта}
+
+\begin{center}
+\lcdscreen{RADIO SETUP}{3/9}{\lr{Battery range}{6.6-8.4V}\lsel{Battery low}{\ledit{7.0V}}\lr{Battery calib}{7.9V}\lr{Inactivity alarm}{10m}\lr{Sound mode}{All}\lblank}
+\end{center}
+
+\begin{itemize}
+  \item \menu{Battery range} --- от «пустой» до «полной» батареи на значке. Для двух банок
+        (2×18650 или 2S LiPo): \textbf{6,6--8,4\,В}.
+  \item \menu{Battery low} --- когда пульт начнёт пищать «батарея разряжена»:
+        около \textbf{7,0\,В}.
+  \item \menu{Battery calib} --- если показания врут, измерь напряжение мультиметром и
+        выставь такое же.
+\end{itemize}
+
+\section{Звук, голос, вибрация}
+
+\begin{itemize}
+  \item \menu{Sound mode} --- что озвучивать. Режим \menu{All} включает всё, включая голос.
+  \item \menu{Volume} и другие громкости --- громкость голоса, писков, музыки.
+  \item \menu{Voice language} --- язык голоса. Нужна папка \code{SOUNDS/ru} (для русского)
+        на SD-карте --- её устанавливает Buddy (глава~\ref{ch:firmware}).
+  \item \menu{Haptic} --- вибромотор: включить, сила, длительность.
+\end{itemize}
+
+\section{Подсветка, время и прочее}
+
+\begin{itemize}
+  \item \menu{Backlight} --- когда включать подсветку экрана и на сколько секунд.
+        Подсветка расходует батарею --- 10--30 секунд достаточно.
+  \item \menu{Date}, \menu{Time} --- для правильных имён файлов логов.
+  \item \menu{Inactivity alarm} --- напомнит о забытом включённом пульте.
+  \item \menu{USB mode} --- что делать при подключении USB: \menu{Ask} (спросить),
+        \menu{Joystick} (для симуляторов), \menu{Storage} (как флешка), \menu{Serial}.
+        Удобнее всего оставить \menu{Ask}.
+  \item \menu{Owner} --- имя владельца. Полезно в кружке, где много одинаковых пультов.
+\end{itemize}
+
+\section{Hardware: «паспорт» пульта}
+
+\mpath{SYS\sep Hardware} описывает, какие переключатели и крутилки физически стоят в пульте.
+
+\begin{center}
+\lcdscreen{HARDWARE}{8/9}{\lr{SA}{2POS}\lr{SB}{3POS}\lr{SC}{3POS}\lsel{SD}{\ledit{Toggle}}\lr{S1}{Pot w. det}\lr{Internal RF}{CRSF}}
+\end{center}
+
+\begin{itemize}
+  \item тип переключателя: \menu{2POS}, \menu{3POS}, \menu{Toggle} (без фиксации) или
+        \menu{None} (нет);
+  \item тип крутилки: с фиксацией в середине или без;
+  \item имя: можно переименовать, например \sw{S1} → \sw{Cam};
+  \item \menu{Internal RF} --- тип встроенного радиомодуля (\menu{CRSF} для ELRS,
+        \menu{Multi} для «4-в-1»).
+\end{itemize}
+
+\begin{caution}
+Если тип переключателя указан неправильно, среднее положение не будет работать. Если
+неправильно указан тип внутреннего модуля, пульт не сможет с ним говорить. Меняй здесь
+что-то, только если точно знаешь, что делаешь.
+\end{caution}
+
+\begin{tryit}
+\begin{enumerate}
+  \item Откалибруй стики и проверь на странице каналов: 0 в центре, $\pm100$ по краям.
+  \item Установи \menu{Battery low} = 7,0\,В.
+  \item Выставь \menu{Default channel order} = AETR и \menu{Mode} = 2.
+  \item Включи русский голос (если он установлен) и проверь, говорит ли пульт.
+\end{enumerate}
+\end{tryit}
+
+\begin{summary}
+\begin{itemize}
+  \item Предупреждения при включении --- для безопасности; исправляй, а не пропускай.
+  \item Калибровка: центр → круги до упора → сохранить.
+  \item Mode 2 и порядок каналов AETR --- стандарт для ELRS и квадрокоптеров.
+  \item Батарея 2S: шкала 6,6--8,4\,В, предупреждение около 7,0\,В.
+\end{itemize}
+\end{summary}

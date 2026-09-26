@@ -1,0 +1,231 @@
+% =====================================================================
+\chapter{Готовые рецепты}
+\label{ch:recipes}
+% =====================================================================
+\chapterintro
+  {полные настройки для типовых моделей: FPV-квадрокоптер на Betaflight, учебный самолёт,
+   летающее крыло, планер с тормозом «бабочка», машина или лодка}
+  {всё, что было в предыдущих главах}
+
+\section{Порядок настройки любой модели}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[every node/.style={font=\sffamily\scriptsize}]
+  \foreach \i/\t in {1/{Создать\\модель},2/{Радио,\\привязка},3/{Входы},4/{Миксеры},5/{Выходы},6/{Таймеры,\\проверки},7/{Failsafe},8/{Телеметрия,\\голос},9/{Проверка\\на земле}}{
+    \node[draw=etx,fill=etx!6,rounded corners=3pt,text width=15.6mm,minimum height=12mm,align=center,inner sep=2pt] (b\i) at (\i*1.84,0) {\t};
+    \node[circle,fill=accent,text=white,font=\sffamily\tiny\bfseries,inner sep=1pt] at ($(b\i.north west)+(0.1,-0.1)$) {\i};}
+  \foreach \i [evaluate=\i as \j using int(\i+1)] in {1,...,8}{\draw[arr] (b\i) -- (b\j);}
+\end{tikzpicture}
+\caption{Девять шагов --- и модель готова к первому полёту}
+\end{figure}
+
+\section{FPV-квадрокоптер (Betaflight + ExpressLRS)}
+
+\subsection{Какой переключатель за что отвечает}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[scale=0.5]
+  \drawTXtwelve
+  \foreach \x/\n in {-6.55/SE,-5.6/SB,-4.55/SA,4.55/SD,5.6/SC,6.55/SF}{
+    \node[font=\sffamily\tiny\bfseries,text=accent] at (\x,3.1) {\n};}
+  \foreach \x/\lx/\t/\c in {-6.55/-11.5/ЧЕРЕПАХА/okgreen,-5.6/-8.3/РЕЖИМ/etx,-4.55/-5.1/ARM/warn,5.6/7.0/БИПЕР/etx,6.55/10.4/ЗАПИСЬ/okgreen}{
+    \draw[callout] (\x,5.1) -- (\lx,7.0);
+    \node[draw=\c,fill=\c!12,text=\c!70!black,rounded corners=2pt,font=\sffamily\scriptsize\bfseries,inner sep=2pt,anchor=south] at (\lx,7.0) {\t};}
+\end{tikzpicture}
+\caption{Пример раскладки для TX12. \sw{SA} --- арм, \sw{SB} --- режим полёта, \sw{SC} --- бипер,
+\sw{SE} --- «черепаха», \sw{SF} --- запись видео}
+\end{figure}
+
+\begin{center}\small
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{@{}llll@{}}
+\toprule
+\textbf{Канал} & \textbf{TX12} & \textbf{Boxer} & \textbf{Режим в Betaflight} \\
+\midrule
+\sw{CH1}--\sw{CH4} & стики & стики & Roll, Pitch, Throttle, Yaw \\
+\sw{CH5} (AUX1) & \sw{SA} & \sw{SA} & \textbf{ARM} (только 2 положения!) \\
+\sw{CH6} (AUX2) & \sw{SB} & \sw{SB} & ANGLE / HORIZON / ACRO \\
+\sw{CH7} (AUX3) & \sw{SC} & \sw{SC} & BEEPER --- найти упавший коптер \\
+\sw{CH8} (AUX4) & \sw{SE} & \sw{SD} & FLIP OVER AFTER CRASH («черепаха») \\
+\sw{CH9} (AUX5) & \sw{SF} & \sw{SE} & запись видео, PREARM \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{В пульте}
+
+\begin{enumerate}
+  \item Новая модель \code{Quad-5in}. \menu{Internal RF} = \menu{CRSF}, привязка
+        (глава~\ref{ch:rf}). Packet Rate 250\,Гц, Switch Mode \menu{Wide}.
+  \item Входы \sw{I1}--\sw{I4}: вес 100, экспо 0, триммер \menu{OFF}.
+  \item Миксеры: переключатели в \sw{CH5}--\sw{CH9} по таблице.
+  \item Timer1: обратный отсчёт 4:00 по \sw{SA↓}; Timer2: общий налёт (\menu{Persistent}).
+  \item Предполётная проверка: газ внизу, \sw{SA} вверху.
+  \item Телеметрия: найти датчики, экран с \sw{RxBt} и \sw{RQly}.
+\end{enumerate}
+
+\subsection{В Betaflight Configurator}
+
+\begin{enumerate}
+  \item Вкладка \menu{Receiver}: приёмник \menu{Serial}, протокол \menu{CRSF},
+        \menu{Channel map} = \code{AETR1234}. Подвигай стиками --- полоски должны двигаться
+        правильно: центр около 1500, края около 1000 и 2000.
+  \item Вкладка \menu{Modes}: назначь \menu{ARM} на AUX1 в диапазон, где стоит \sw{SA} в
+        положении «вниз».
+\end{enumerate}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[x=0.11mm,y=6mm,every node/.style={font=\sffamily\scriptsize}]
+  \node[anchor=east,font=\sffamily\small\bfseries] at (880,0.5) {ARM};
+  \node[anchor=east] at (880,-0.1) {AUX1};
+  \fill[black!8] (900,0) rectangle (2100,1);
+  \fill[okgreen!55] (1700,0) rectangle (2100,1);
+  \draw[black!40] (900,0) rectangle (2100,1);
+  \foreach \v in {900,1000,1200,1400,1500,1600,1800,2000,2100}{\draw[black!40] (\v,0) -- (\v,-0.2) node[below]{\v};}
+  \fill[warn] (1000,1.3) -- ++(-25,0.45) -- ++(50,0) -- cycle;
+  \node[above,text=warn] at (1000,1.75) {\sw{SA↑} = 1000};
+  \fill[okgreen!60!black] (2000,1.3) -- ++(-25,0.45) -- ++(50,0) -- cycle;
+  \node[above,text=okgreen!60!black] at (2000,1.75) {\sw{SA↓} = 2000};
+  \node[text=okgreen!40!black,font=\sffamily\scriptsize\bfseries] at (1900,0.5) {ARM};
+\end{tikzpicture}
+\caption{Вкладка Modes: зелёный диапазон --- где ARM включён. \sw{SA} внизу даёт 2000 ---
+попадает в диапазон}
+\end{figure}
+
+\begin{enumerate}[resume]
+  \item Вкладка \menu{Failsafe}: проверь, что при выключении пульта коптер переходит в
+        failsafe (\textbf{без пропеллеров!}).
+  \item Для напряжения на банку: в CLI \code{set report\_cell\_voltage = ON}.
+\end{enumerate}
+
+\begin{recipe}{голос для квадрокоптера}
+\begin{itemize}
+  \item \sw{SA↓} → \menu{Play track} \code{armed}; \sw{SA↑} → \code{disarm}.
+  \item Каждое положение \sw{SB} → \code{angle}, \code{horizon}, \code{acro}.
+  \item \sw{L1}: \code{a<x} \sw{RxBt} 3,5\,В, \menu{Delay} 2\,с → \menu{Play track} \code{batlow},
+        повтор 10\,с.
+  \item \sw{L2}: \code{a<x} \sw{RQly} 70 → \menu{Haptic} + \menu{Play value} \sw{RQly}, повтор 5\,с.
+\end{itemize}
+\end{recipe}
+
+\section{Учебный самолёт (4 канала)}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[scale=0.85]
+  \pic[transform shape,ailL/.style={surf},ailR/.style={surf},ele/.style={fill=etx!70,draw=etx!50!black},rud/.style={fill=okgreen!70,draw=okgreen!50!black}] {planetop};
+  \callout{(2.6,0.25)}{(4.3,1.0)}{west}{\sw{CH1} элероны (Y-кабель)}
+  \callout{(0.8,-2.5)}{(4.3,-2.0)}{west}{\sw{CH2} руль высоты}
+  \callout{(0,2.13)}{(-4.3,2.2)}{east}{\sw{CH3} мотор (через регулятор)}
+  \callout{(0,-2.8)}{(-4.3,-2.7)}{east}{\sw{CH4} руль направления}
+\end{tikzpicture}
+\caption{Самолёт: какой канал к какому рулю}
+\end{figure}
+
+\begin{itemize}
+  \item Входы: расходы на \sw{SC} (100/70/50\,\%), экспонента 25--35\,\% на элеронах и
+        руле высоты, 20\,\% на руле направления.
+  \item Отсечка газа: \menu{Override CH3} $-100$ на \sw{SD} (TX12) или \sw{SA} (Boxer).
+  \item Выходы: направления и пределы (глава~\ref{ch:outputs}). Проверка: стик вправо ---
+        правый элерон вверх; на себя --- руль высоты вверх; левый стик вправо --- руль направления
+        вправо.
+  \item Failsafe: газ --- минимум, рули --- в центр.
+  \item Таймер \menu{Throttle \%} на 8--10 минут.
+\end{itemize}
+
+\section{Летающее крыло}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[scale=0.85]
+  \pic[transform shape,elL/.style={surf},elR/.style={surf}] {wingtop};
+  \callout{(-2.4,-0.85)}{(-4.4,-1.8)}{east}{\sw{CH1} левый элевон}
+  \callout{(2.4,-0.85)}{(4.4,-1.8)}{west}{\sw{CH2} правый элевон}
+  \callout{(0,-0.95)}{(0,-2.3)}{north}{\sw{CH3} мотор}
+\end{tikzpicture}
+\caption{Летающее крыло: два элевона и мотор}
+\end{figure}
+
+\begin{itemize}
+  \item Миксеры элевонов --- глава~\ref{ch:mixes}. Крылу обычно нужно больше тангажа, чем
+        крена: Ele 60\,\%, Ail 40\,\%.
+  \item Экспонента 30--40\,\% --- у крыла резкая реакция.
+  \item Если на крыле стоит полётный контроллер (INAV, ArduPilot) --- \textbf{не} смешивай в пульте,
+        отправляй «чистые» Ail и Ele, смешивает контроллер.
+\end{itemize}
+
+\section{Планер с тормозом «бабочка» (crow)}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[scale=1.1]
+  \path[airframe] (-3,0.25) -- (-0.2,0.05) -- (0.2,0.05) -- (3,0.25) -- (3,0.33) -- (0.2,0.15) -- (-0.2,0.15) -- (-3,0.33) -- cycle;
+  \path[airframe2] (0,0.15) circle (0.28);
+  \path[airframe] (-0.04,0.4) -- (-0.02,1.2) -- (0.02,1.2) -- (0.04,0.4) -- cycle;
+  \begin{scope}[shift={(2.2,0.24)},rotate=30]\path[surf] (0,-0.04) rectangle (0.7,0.04);\end{scope}
+  \begin{scope}[shift={(-2.2,0.24)},rotate=-30]\path[surf] (0,-0.04) rectangle (-0.7,0.04);\end{scope}
+  \begin{scope}[shift={(0.6,0.12)},rotate=-40]\path[fill=etx!70,draw=etx!50!black] (0,-0.04) rectangle (1.2,0.04);\end{scope}
+  \begin{scope}[shift={(-0.6,0.12)},rotate=40]\path[fill=etx!70,draw=etx!50!black] (0,-0.04) rectangle (-1.2,0.04);\end{scope}
+  \node[font=\sffamily\scriptsize,text=accent] at (3.2,0.9) {элероны вверх};
+  \node[font=\sffamily\scriptsize,text=etx] at (1.5,-0.9) {закрылки вниз};
+\end{tikzpicture}
+\caption{«Бабочка», вид сзади: элероны вверх, закрылки вниз --- планер резко тормозит}
+\end{figure}
+
+Планер с элеронами на \sw{CH1} и \sw{CH6} и закрылками на \sw{CH5} и \sw{CH7}. В режиме
+«Посадка» стик газа управляет «бабочкой», а мотор выключен:
+
+\begin{center}\small
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{@{}lllll@{}}
+\toprule
+Канал & Source & Weight & Curve & Когда \\
+\midrule
+\sw{CH1} AilL & \sw{I1} Ail & 100 & Diff 30 & всегда \\
+              & стик \sw{Thr} & 50 & x>0 & FM Land \\
+\sw{CH6} AilR & \sw{I1} Ail & $-100$ & Diff 30 & всегда \\
+              & стик \sw{Thr} & 50 & x>0 & FM Land \\
+\sw{CH5} FlpL & стик \sw{Thr} & $-80$ & x>0 & FM Land \\
+\sw{CH7} FlpR & стик \sw{Thr} & $-80$ & x>0 & FM Land \\
+\sw{CH2} Ele  & \sw{I2} Ele & 100 & & всегда \\
+              & стик \sw{Thr} & $-10$ & x>0 & FM Land (поправка) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Знаки зависят от установки серв --- проверяй на земле.
+
+\section{Машина или лодка}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[scale=0.9]
+  \path[fill=warn!70,draw=black,rounded corners=4pt] (-0.9,-1.8) rectangle (0.9,1.8);
+  \path[fill=etx!40,draw=black,rounded corners=2pt] (-0.7,0.2) rectangle (0.7,1.0);
+  \foreach \x/\y/\r in {-1.05/1.15/20,1.05/1.15/20,-1.05/-1.15/0,1.05/-1.15/0}{
+    \begin{scope}[shift={(\x,\y)},rotate=\r]\path[fill=black!80,rounded corners=1pt] (-0.22,-0.4) rectangle (0.22,0.4);\end{scope}}
+  \draw[motion] (-1.5,1.9) arc (150:100:1.4);
+  \node[font=\sffamily\scriptsize,align=center,anchor=east] at (-1.6,1.4) {\sw{CH1}\\руль};
+  \draw[motion] (1.5,-0.5) -- (1.5,0.9);
+  \draw[motion] (1.5,-0.5) -- (1.5,-1.6);
+  \node[font=\sffamily\scriptsize,align=center,anchor=west] at (1.7,-0.4) {\sw{CH2}\\газ: вперёд / назад};
+\end{tikzpicture}
+\caption{Машина: руль и газ}
+\end{figure}
+
+\begin{itemize}
+  \item \sw{CH1} --- руль (правый стик влево-вправо), \sw{CH2} --- газ (левый стик
+        вверх-вниз; у машин газ часто «с нулём посередине»: вверх --- вперёд, вниз --- назад).
+  \item Ограничитель скорости для новичка: \sw{GV1} = 50 и вес газа = \code{GV1};
+        \menu{Adjust GV1} от крутилки \sw{S1} --- «родительский контроль».
+  \item Экспонента на руле 20--30\,\%.
+  \item Failsafe: газ в \textbf{середину} (у машины с задним ходом минимум --- это полный назад!).
+\end{itemize}
+
+\begin{summary}
+Порядок для любой модели: радио и привязка → входы → миксеры → выходы → таймеры и
+проверки → failsafe → телеметрия и голос → проверка на земле → первый полёт!
+\end{summary}

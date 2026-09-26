@@ -1,0 +1,307 @@
+% =====================================================================
+\chapter{Радиомодуль и привязка приёмника}
+\label{ch:rf}
+% =====================================================================
+\chapterintro
+  {как пульт «знакомится» с приёмником, что такое ExpressLRS, частота пакетов, телеметрия,
+   мощность, failsafe; как работать с мультипротокольным модулем}
+  {приёмник, модель \textbf{без пропеллеров}}
+
+\section{Радиомодуль и протокол}
+
+\begin{simple}
+Радиомодуль --- это «рот и уши» пульта. Он говорит на определённом радиоязыке ---
+\textbf{протоколе}. Приёмник на модели должен понимать тот же язык. Самый популярный язык
+сегодня --- \textbf{ExpressLRS} (ELRS). Если в твоём пульте модуль «4-в-1», он знает много
+старых языков: FrSky, FlySky, Spektrum и другие.
+\end{simple}
+
+\begin{center}\small
+\renewcommand{\arraystretch}{1.25}
+\begin{tabularx}{\linewidth}{@{}L{34mm}L{32mm}Y@{}}
+\toprule
+\textbf{Модуль} & \textbf{Режим в EdgeTX} & \textbf{С какими приёмниками работает} \\
+\midrule
+ExpressLRS 2,4\,ГГц & \menu{CRSF} & ELRS 2,4\,ГГц той же основной версии \\
+«4-в-1» (Multi) & \menu{MULTI} & FrSky, FlySky, Spektrum DSM, Futaba S-FHSS и десятки других \\
+CC2500 & \menu{MULTI} & FrSky D8/D16, Futaba S-FHSS и некоторые другие \\
+Внешний в отсеке JR & \menu{CRSF}, \menu{PPM}, … & зависит от модуля \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\section{Включаем модуль в модели}
+
+\mpath{MDL\sep Setup}, прокрути вниз до \menu{Internal RF}:
+
+\begin{center}
+\lcdscreen{SETUP}{2/13}{\lr{Internal RF}{}\lsel{ Mode}{\ledit{CRSF}}\lr{ Receiver}{01}\lr{ Baudrate}{400K}\lr{External RF}{}\lr{ Mode}{OFF}}
+\end{center}
+
+\begin{itemize}
+  \item \menu{Mode} = \menu{CRSF} (для ELRS) или \menu{MULTI} (для «4-в-1»);
+  \item \menu{Receiver} --- номер приёмника для защиты Model Match (см. ниже);
+  \item \menu{Baudrate} --- скорость разговора пульта с модулем (для самых быстрых режимов ELRS
+        её увеличивают).
+\end{itemize}
+
+\section{ExpressLRS}
+
+ELRS настраивается скриптом \mpath{SYS\sep Tools\sep ExpressLRS}:
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  \node (s) at (0,0) {\lcdscreen{ExpressLRS}{0/250}{\lr{Packet Rate}{250Hz(-108dbm)}\lr{Telem Ratio}{Std (1:64)}\lr{Switch Mode}{Wide}\lr{Model Match}{Off}\lr{TX Power (250mW)}{>}\lsel{[Bind]}{}}};
+  \callout{(2.6,1.45)}{(4.6,1.8)}{west}{пакеты: плохие/хорошие}
+  \callout{(-2.0,1.1)}{(-4.6,1.4)}{east}{частота пакетов}
+  \callout{(-2.0,0.72)}{(-4.6,0.6)}{east}{доля телеметрии}
+  \callout{(-2.0,0.35)}{(-4.6,-0.2)}{east}{режим каналов}
+  \callout{(2.0,-0.4)}{(4.6,-0.2)}{west}{мощность}
+  \callout{(-2.3,-1.15)}{(-4.6,-1.1)}{east}{привязка}
+\end{tikzpicture}
+\caption{Скрипт ExpressLRS. Если в заголовке «\texttt{-{}-}», скрипт не видит модуль:
+проверь \menu{Internal RF} = \menu{CRSF}}
+\end{figure}
+
+\subsection{Привязка: как пульт знакомится с приёмником}
+
+\textbf{Способ 1 --- фраза привязки (удобнее всего).} Фраза --- это «секретный пароль». Если
+в модуль пульта и в приёмник записана \emph{одна и та же} фраза, они узнают друг друга сами,
+как только включатся. Ничего нажимать не надо.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[every node/.style={font=\sffamily\small}]
+  \pic[transform shape,scale=1.2] at (0,0) {minitx};
+  \node[draw=etx,fill=etx!8,rounded corners=2pt,font=\ttfamily\scriptsize] at (0,-1.2) {"sasha-2026"};
+  \foreach \y/\p/\ok in {1.4/sasha-2026/1,0/sasha-2026/1,-1.4/misha-777/0}{
+    \pic[transform shape,scale=1.1] at (5.5,\y) {receiver};
+    \node[draw=black!40,fill=white,rounded corners=2pt,font=\ttfamily\scriptsize,anchor=west] at (7.0,\y) {"\p"};
+    \ifnum\ok=1
+      \draw[okgreen!70!black,line width=1.3pt,-{Latex}] (1.5,0.1) -- (4.6,\y);
+      \node[text=okgreen!60!black,font=\sffamily\bfseries] at (10.4,\y) {\cmark{} связь};
+    \else
+      \draw[warn,line width=1.3pt,dashed] (1.5,0.1) -- (4.6,\y);
+      \node[text=warn,font=\sffamily\bfseries] at (10.6,\y) {\xmark{} не узнаёт};
+    \fi}
+\end{tikzpicture}
+\caption{Пульт связывается только с приёмниками, у которых такая же фраза привязки}
+\end{figure}
+
+Фраза вписывается в ExpressLRS Configurator при прошивке (глава~\ref{ch:firmware}) или
+в web-интерфейсе приёмника. \textbf{Совет для кружка:} у каждого ученика --- своя фраза,
+тогда чужой пульт не подключится к твоей модели.
+
+\textbf{Способ 2 --- режим привязки (bind).}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[every node/.style={font=\sffamily\scriptsize}]
+  % питание 3 раза
+  \node[font=\sffamily\small\bfseries,anchor=west] at (-0.3,1.6) {1. Включи-выключи приёмник 3 раза};
+  \draw[->,black!50] (0,0) -- (6.5,0) node[right]{время};
+  \draw[etx,line width=1.3pt] (0,0) -- (0.5,0) -- (0.5,0.8) -- (1.2,0.8) -- (1.2,0) -- (1.6,0) -- (1.6,0.8) -- (2.3,0.8) -- (2.3,0) -- (2.7,0) -- (2.7,0.8) -- (6.3,0.8);
+  \node at (0.85,1.05) {вкл};\node at (1.95,1.05) {вкл};\node at (3.1,1.05) {вкл и оставить};
+  % светодиод
+  \node[font=\sffamily\small\bfseries,anchor=west] at (7.3,1.6) {2. Светодиод приёмника};
+  \foreach \x in {7.6,7.9,8.5,8.8,9.4,9.7}{\fill[okgreen] (\x,0.5) circle (0.1);}
+  \node[anchor=west] at (7.4,0.0) {мигает двойными вспышками ---};
+  \node[anchor=west] at (7.4,-0.35) {ждёт привязки};
+  % результат
+  \node[font=\sffamily\small\bfseries,anchor=west] at (-0.3,-1.2) {3. На пульте выбери \menu{[Bind]} в скрипте ExpressLRS};
+  \node[font=\sffamily\small\bfseries,anchor=west] at (-0.3,-1.8) {4. Светодиод горит постоянно --- готово!};
+  \fill[okgreen] (7.7,-1.8) circle (0.13);
+\end{tikzpicture}
+\caption{Привязка через режим bind}
+\end{figure}
+
+\begin{caution}
+Не смешивай способы. Если приёмник привязан кнопкой, а потом ты сменил фразу в пульте,
+связь пропадёт.
+\end{caution}
+
+\subsection{Частота пакетов (Packet Rate)}
+
+\begin{simple}
+Пульт отправляет модели «письма» с положениями стиков. \textbf{Частота пакетов} --- сколько
+писем в секунду. Чем больше писем, тем быстрее модель откликается --- но каждое письмо
+короче и хуже слышно издалека. Чем меньше писем --- тем дальше долетает связь.
+\end{simple}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{axis}[xbar,width=12.5cm,height=5.8cm,xmin=0,xmax=100,
+  symbolic y coords={F1000,500Hz,333Hz Full,250Hz,150Hz,50Hz},ytick=data,
+  y tick label style={font=\sffamily\scriptsize},x tick label style={font=\sffamily\scriptsize},
+  xlabel={условная дальность, \%},xlabel style={font=\sffamily\scriptsize},
+  bar width=7pt,nodes near coords={\pgfplotspointmeta},
+  every node near coord/.append style={font=\sffamily\scriptsize,/pgf/number format/.cd,fixed},
+  point meta=explicit symbolic,enlarge y limits=0.12,
+  axis x line*=bottom,axis y line*=left]
+\addplot[fill=etx!55,draw=etx] coordinates {
+  (35,F1000) [гонки]
+  (45,500Hz) [гонки, быстрый отклик]
+  (55,333Hz Full) [гонки]
+  (65,250Hz) [фристайл, обучение]
+  (80,150Hz) [дальние полёты]
+  (100,50Hz) [максимальная дальность]};
+\end{axis}
+\end{tikzpicture}
+\caption{Чем выше частота пакетов, тем меньше дальность (цифры примерные, для сравнения)}
+\end{figure}
+
+Для учёбы и фристайла выбирай \textbf{250\,Гц} --- это хорошая середина. Режимы 1000\,Гц нужны
+гонщикам и требуют высокой скорости \menu{Baudrate}.
+
+\subsection{Телеметрия (Telem Ratio)}
+
+Часть «писем» идёт в обратную сторону: приёмник сообщает пульту о связи и батарее. Это
+\textbf{телеметрия}. \menu{Telem Ratio} говорит, какая доля писем уходит на неё.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[x=4.2mm,y=5mm]
+  \foreach \row/\n/\lbl in {0/4/{1:4},-1.4/16/{1:16},-2.8/1000/{Off}}{
+    \node[anchor=east,font=\sffamily\scriptsize] at (-0.5,\row+0.35) {\lbl};
+    \foreach \i in {0,...,31}{
+      \pgfmathtruncatemacro{\m}{mod(\i+1,\n)}
+      \ifnum\m=0 \fill[accent] (\i,\row) rectangle ++(0.8,0.7);
+      \else \fill[etx!55] (\i,\row) rectangle ++(0.8,0.7); \fi}}
+  \fill[etx!55] (0,-4.4) rectangle ++(0.8,0.7); \node[anchor=west,font=\sffamily\scriptsize] at (1,-4.05) {управление (пульт → модель)};
+  \fill[accent] (14,-4.4) rectangle ++(0.8,0.7); \node[anchor=west,font=\sffamily\scriptsize] at (15,-4.05) {телеметрия (модель → пульт)};
+\end{tikzpicture}
+\caption{Каждый прямоугольник --- один пакет. При 1:4 каждый четвёртый пакет --- телеметрия}
+\end{figure}
+
+\menu{Std} (стандартно) подходит почти всегда. Больше телеметрии нужно, если настраиваешь
+коптер Lua-скриптом Betaflight прямо с пульта.
+
+\subsection{Режимы каналов (Switch Mode)}
+
+Стики (\sw{CH1}--\sw{CH4}) ELRS отправляет в каждом пакете и очень точно. Переключатели
+(\sw{CH5} и дальше) --- по-разному:
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[x=10mm,y=6mm,every node/.style={font=\sffamily\scriptsize}]
+  \foreach \p in {0,...,5}{
+    \node at (\p*2+0.9,1.1) {пакет \the\numexpr\p+1\relax};
+    \draw[black!40,rounded corners=1pt] (\p*2,-2.4) rectangle ++(1.8,3.0);
+    \fill[etx!55] (\p*2+0.1,-0.2) rectangle ++(1.6,0.6); \node[white] at (\p*2+0.9,0.1) {CH1--4};
+    \fill[accent!80] (\p*2+0.1,-1.0) rectangle ++(1.6,0.6); \node[white] at (\p*2+0.9,-0.7) {CH5 (арм)};
+    \pgfmathtruncatemacro{\c}{6+\p}
+    \fill[okgreen!55] (\p*2+0.1,-1.8) rectangle ++(1.6,0.6); \node at (\p*2+0.9,-1.5) {CH\c};}
+\end{tikzpicture}
+\caption{Стики и \sw{CH5} едут в каждом пакете, остальные каналы --- по очереди}
+\end{figure}
+
+\begin{description}[font=\sffamily\bfseries\color{etx}]
+  \item[Hybrid] вспомогательные каналы передаются с малой точностью (несколько положений) ---
+        хватает для переключателей;
+  \item[Wide] вспомогательные каналы точнее (128 положений) --- лучше, если там крутилки
+        (наклон камеры, свет).
+\end{description}
+
+\begin{caution}
+\sw{CH5} в ExpressLRS --- это \textbf{канал арма}. Ставь на него только двухпозиционный
+переключатель арма и не используй его для чего-то другого.
+\end{caution}
+
+\subsection{Мощность (TX Power)}
+
+\begin{itemize}
+  \item \menu{Max Power} --- максимальная мощность: до 250\,мВт у TX12, до 1000\,мВт у Boxer.
+  \item \menu{Dynamic} --- пульт сам убавляет мощность, пока связь хорошая, и прибавляет, когда
+        модель улетает далеко. Экономит батарею --- включай.
+\end{itemize}
+
+\begin{tip}
+Для полётов «в пределах видимости» хватает 100--250\,мВт. 1\,Вт на Boxer сильно греет модуль
+(включается вентилятор) и быстро сажает батарею. И соблюдай правила своей страны
+о допустимой мощности.
+\end{tip}
+
+\subsection{Model Match --- защита от «не той» модели}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[every node/.style={font=\sffamily\small}]
+  \node[draw=etx,fill=etx!8,rounded corners=2pt,align=center] (m) at (0,0) {в пульте выбрана\\\textbf{02 Wing-900}\\\scriptsize Receiver = 02};
+  \node[draw=black!40,rounded corners=2pt,align=center] (a) at (5.5,0.9) {крыло\\\scriptsize запомнило 02};
+  \node[draw=black!40,rounded corners=2pt,align=center] (b) at (5.5,-0.9) {квадрокоптер\\\scriptsize запомнил 01};
+  \draw[arr,okgreen!60!black,line width=1.2pt] (m) -- node[above,sloped,font=\sffamily\scriptsize]{\cmark{} работает} (a);
+  \draw[warn,line width=1.2pt,dashed] (m) -- node[below,sloped,font=\sffamily\scriptsize]{\xmark{} молчит} (b);
+\end{tikzpicture}
+\caption{С Model Match приёмник реагирует только на «свою» модель}
+\end{figure}
+
+Порядок: в каждой модели задай свой номер \menu{Receiver} → привяжи приёмник → в скрипте
+ELRS включи \menu{Model Match}. Теперь, если ты по ошибке выберешь в пульте модель
+самолёта, квадрокоптер не оживёт.
+
+\subsection{Failsafe: что будет, если связь пропала}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[x=10mm,y=7mm,every node/.style={font=\sffamily\scriptsize}]
+  \draw[->,black!50] (0,0) -- (12.5,0) node[right]{время};
+  \fill[okgreen!30] (0,0.1) rectangle (5,0.9); \node at (2.5,0.5) {связь есть};
+  \fill[warn!30] (5,0.1) rectangle (12,0.9); \node at (8.5,0.5) {связи нет};
+  \draw[warn,line width=1.2pt] (5,-0.3) -- (5,1.4) node[above,text=warn]{пульт выключили / улетел далеко};
+  \node[anchor=west,align=left] at (0,-1.0) {\textbf{ELRS:} приёмник перестаёт выдавать сигнал →};
+  \node[anchor=west,align=left] at (0,-1.6) {полётный контроллер понимает: «связи нет» → моторы стоп (или возврат домой по GPS)};
+\end{tikzpicture}
+\caption{Failsafe --- план на случай потери связи}
+\end{figure}
+
+\begin{caution}
+Проверь failsafe \textbf{до первого полёта}, без пропеллеров: включи модель, заармь, выключи
+пульт. Моторы должны остановиться (или контроллер должен показать режим failsafe).
+\end{caution}
+
+\section{Мультипротокольный модуль «4-в-1» и CC2500}
+
+\begin{center}
+\lcdscreen{SETUP}{2/13}{\lr{Internal RF}{MULTI}\lsel{ Protocol}{\ledit{FrSky X2}}\lr{ Subtype}{D16}\lr{ RF Freq. fine tune}{0}\lr{ Failsafe}{No pulses}\lr{ [Bind] [Range]}{}}
+\end{center}
+
+\begin{description}[font=\sffamily\bfseries\color{etx}]
+  \item[Protocol] «язык»: \menu{FrSky X} (D16), \menu{FrSky X2} (ACCST v2), \menu{FrSky D} (D8),
+        \menu{FlySky 2A}, \menu{DSM} и т.\,д.
+  \item[Subtype] «диалект»: например \menu{D16}, \menu{D16 8ch}, \menu{LBT(EU)}. Должен
+        совпадать с прошивкой приёмника.
+  \item[RF Freq. fine tune] подстройка частоты. Если связь рвётся уже в паре метров,
+        попробуй значения от $-40$ до $+40$.
+  \item[Failsafe] \menu{No pulses} --- перестать выдавать сигнал (для полётных контроллеров);
+        \menu{Custom} --- поставить рули в заданные положения (газ --- минимум!);
+        \menu{Hold} --- держать последние значения (опасно для мотора).
+\end{description}
+
+\subsection{Привязка FrSky}
+
+\begin{enumerate}
+  \item Выбери протокол и подтип, как у приёмника.
+  \item Включи приёмник, \emph{удерживая} на нём кнопку \code{F/S} (bind).
+  \item На пульте выбери \menu{[Bind]} --- пульт запищит.
+  \item Когда светодиод приёмника поменяет мигание, останови привязку и выключи-включи приёмник.
+  \item Постоянно горящий (обычно зелёный) светодиод = связь есть.
+\end{enumerate}
+
+\begin{tryit}
+\begin{enumerate}
+  \item Привяжи приёмник ELRS к своей модели (фразой или кнопкой).
+  \item Посмотри в скрипте ExpressLRS счётчик пакетов. Выключи приёмник --- что изменилось?
+  \item Проверь failsafe без пропеллеров.
+\end{enumerate}
+\end{tryit}
+
+\begin{summary}
+\begin{itemize}
+  \item ELRS: \menu{Internal RF} = \menu{CRSF}, настройки --- в скрипте ExpressLRS.
+  \item Привязка --- по фразе (автоматически) или кнопкой \menu{[Bind]}.
+  \item 250\,Гц --- универсальная частота пакетов; \sw{CH5} --- канал арма.
+  \item Failsafe проверяется до первого полёта.
+\end{itemize}
+\end{summary}
