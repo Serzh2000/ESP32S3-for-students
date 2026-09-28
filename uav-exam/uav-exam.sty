@@ -1,0 +1,112 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{uav-exam}[2026/09/28 Оформление конспекта по БПЛА]
+
+% ---------- Язык и шрифты (PT — свободные шрифты ПараТайп) ----------
+\RequirePackage{fontspec}
+\RequirePackage{polyglossia}
+\setdefaultlanguage{russian}
+\setotherlanguage{english}
+\setmainfont{PT Serif}
+\setsansfont{PT Sans}
+\setmonofont{PT Mono}[Scale=0.92]
+\newfontfamily\cyrillicfont{PT Serif}[Ligatures=TeX]
+\newfontfamily\cyrillicfontsf{PT Sans}[Ligatures=TeX]
+\newfontfamily\cyrillicfonttt{PT Mono}[Scale=0.92]
+
+% ---------- Вёрстка ----------
+\RequirePackage[margin=2cm,top=2.3cm,bottom=2.3cm]{geometry}
+\RequirePackage{microtype}
+\RequirePackage{amsmath}
+\RequirePackage{booktabs,tabularx,array,multirow}
+\RequirePackage{enumitem}
+\setlist{itemsep=1pt,topsep=3pt}
+\setlength{\emergencystretch}{3em}
+\RequirePackage{xcolor}
+\RequirePackage{titlesec}
+\RequirePackage{fancyhdr}
+\RequirePackage{graphicx}
+\RequirePackage{float}
+\RequirePackage{caption,subcaption}
+\captionsetup{font=small,labelfont={bf,sf}}
+\RequirePackage[colorlinks,linkcolor=accent,urlcolor=accent,citecolor=accent]{hyperref}
+\RequirePackage{xurl}
+
+% ---------- Графика ----------
+\RequirePackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,calc,shapes.geometric,shapes.misc,fit,backgrounds,decorations.pathreplacing}
+\RequirePackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\RequirePackage{siunitx}
+\sisetup{output-decimal-marker={,},range-phrase={\,--\,},range-units=single,list-final-separator={ и },group-minimum-digits=5,mode=text}
+% Русские обозначения единиц
+\DeclareSIPrefix\kilo{к}{3}
+\DeclareSIPrefix\mega{М}{6}
+\DeclareSIPrefix\giga{Г}{9}
+\DeclareSIPrefix\milli{м}{-3}
+\DeclareSIPrefix\micro{мк}{-6}
+\DeclareSIPrefix\centi{с}{-2}
+\DeclareSIUnit\gram{г}
+\DeclareSIUnit\metre{м}
+\DeclareSIUnit\second{с}
+\DeclareSIUnit\minute{мин}
+\DeclareSIUnit\hour{ч}
+\DeclareSIUnit\hertz{Гц}
+\DeclareSIUnit\watt{Вт}
+\DeclareSIUnit\volt{В}
+\DeclareSIUnit\ampere{А}
+\RequirePackage{etoolbox,needspace}
+\pretocmd{\section}{\needspace{16\baselineskip}}{}{}
+\RequirePackage[most]{tcolorbox}
+
+% ---------- Цвета ----------
+\definecolor{sky}{HTML}{1B4F72}
+\definecolor{skydark}{HTML}{0E2F44}
+\definecolor{accent}{HTML}{2874A6}
+\definecolor{okgreen}{HTML}{1E8449}
+\definecolor{warn}{HTML}{CA6F1E}
+\definecolor{bad}{HTML}{B03A2E}
+\definecolor{blk1}{HTML}{D6EAF8}
+\definecolor{blk2}{HTML}{D5F5E3}
+\definecolor{blk3}{HTML}{FCF3CF}
+\definecolor{blk4}{HTML}{FADBD8}
+\definecolor{blk5}{HTML}{E8DAEF}
+
+% ---------- Заголовки ----------
+\titleformat{\section}{\sffamily\LARGE\bfseries\color{skydark}}{\thesection.}{0.5em}{}[{\color{accent}\titlerule[1.2pt]}]
+\titleformat{\subsection}{\sffamily\large\bfseries\color{accent}}{\thesubsection}{0.6em}{}
+\titleformat{\subsubsection}{\sffamily\normalsize\bfseries}{}{0em}{}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\sffamily\small\color{gray}Конспект к экзамену по БПЛА · 2026}
+\fancyhead[R]{\sffamily\small\color{gray}\nouppercase{\leftmark}}
+\fancyfoot[C]{\sffamily\small\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\sectionmark}[1]{\markboth{\thesection. #1}{}}
+
+% ---------- Боксы ----------
+\newtcolorbox{keybox}[1][Главное]{enhanced,colback=accent!5,colframe=accent,fonttitle=\sffamily\bfseries,
+  title=#1,boxrule=0.8pt,arc=2pt,left=6pt,right=6pt}
+\newtcolorbox{caution}[1][Внимание]{enhanced,colback=warn!8,colframe=warn,fonttitle=\sffamily\bfseries,
+  title=#1,boxrule=0.8pt,arc=2pt,left=6pt,right=6pt}
+\newtcolorbox{exam}{enhanced,colback=okgreen!5,colframe=okgreen,fonttitle=\sffamily\bfseries,
+  title=Вопросы для самопроверки,boxrule=0.8pt,arc=2pt,left=6pt,right=6pt}
+\newtcolorbox{formula}[1][Формула]{enhanced,colback=blk5!40,colframe=blk5!50!black,fonttitle=\sffamily\bfseries,
+  title=#1,boxrule=0.8pt,arc=2pt,left=6pt,right=6pt}
+
+\newcommand{\term}[1]{\textbf{\textsf{#1}}}
+\newcommand{\code}[1]{\texttt{#1}}
+% Фото с подписью и источником: \photo{ширина}{файл}{подпись}{источник}
+\newcommand{\photo}[4]{%
+  \begin{figure}[H]\centering
+  \includegraphics[width=#1]{img/#2}
+  \caption{#3 {\color{gray}\scriptsize(фото: #4)}}
+  \end{figure}}
+
+\tikzset{
+  blk/.style={draw,rounded corners=2pt,align=center,font=\sffamily\small,minimum height=8mm,inner sep=3pt},
+  arr/.style={-{Stealth[length=2.2mm]},thick},
+  darr/.style={{Stealth[length=2.2mm]}-{Stealth[length=2.2mm]},thick},
+}
+
+\endinput

@@ -1,0 +1,50 @@
+% !TEX program = xelatex
+\documentclass[11pt,a4paper]{article}
+\usepackage{uav-exam}
+
+\begin{document}
+
+% ---------------- Титул ----------------
+\begin{titlepage}
+\centering
+\vspace*{0cm}
+{\sffamily\color{accent}\large Подготовка к экзамену\par}
+\vspace{4mm}
+{\sffamily\bfseries\color{skydark}\fontsize{30}{36}\selectfont Беспилотные\\[2mm] авиационные системы\par}
+\vspace{4mm}
+{\color{accent}\rule{0.6\linewidth}{1.2pt}\par}
+\vspace{4mm}
+{\sffamily\Large Конспект: законы 2026, устройство, связь, ПО\par}
+\vspace{8mm}
+\includegraphics[width=0.62\linewidth]{img/fpv-quad.jpg}\par
+\vspace{1cm}
+\begin{minipage}{0.82\linewidth}\sffamily\small
+\begin{enumerate}[label=\textbf{\arabic*.},itemsep=0pt]
+\item Полёты в России в 2026 году, Ленинградская область и Санкт-Петербург
+\item Классификация БАС
+\item Из чего состоит БАС: полётный контроллер, моторы, пропеллеры, рамы, камеры, передатчики
+\item Аналоговая и цифровая видеопередача
+\item ПО для настройки: Betaflight, INAV, ArduPilot
+\item Протоколы: UART, PWM, PPM, SBUS (и CRSF, DShot)
+\item Системы управления: ELRS, FrSky, Crossfire и др.
+\item Дальность связи: бюджет радиолинии, зона Френеля, горизонт
+\end{enumerate}
+\end{minipage}
+\vfill
+{\sffamily\small\color{gray} Санкт-Петербург, 2026. Фото на титуле — FPV-квадрокоптер 7" (ArduPilot Wiki)\par}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+\input{sections/01-law}
+\input{sections/02-classes}
+\input{sections/03-hardware}
+\input{sections/04-video}
+\input{sections/05-software}
+\input{sections/06-protocols}
+\input{sections/07-radio}
+\input{sections/08-range}
+\input{sections/09-sources}
+
+\end{document}

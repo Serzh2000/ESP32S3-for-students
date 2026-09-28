@@ -1,0 +1,91 @@
+\section{Аналоговая и цифровая видеопередача}
+
+\subsection{Как работает аналоговая система}
+\begin{figure}[H]\centering
+\begin{tikzpicture}[node distance=6mm,font=\sffamily\small]
+\node[blk,fill=blk2] (c) {Камера\\(CMOS)};
+\node[blk,fill=blk1,right=of c] (osd) {OSD\\(наложение)};
+\node[blk,fill=blk4,right=of osd] (fm) {Частотный\\модулятор 5,8\,ГГц};
+\node[blk,fill=blk4,right=of fm] (pa) {Усилитель\\мощности};
+\node[right=6mm of pa] (ant) {\Large\textbf{((\,·\,))}};
+\draw[arr] (c) -- node[below,font=\scriptsize]{PAL} (osd); \draw[arr] (osd) -- (fm); \draw[arr] (fm) -- (pa); \draw[arr] (pa) -- (ant);
+\node[below=12mm of pa,blk,fill=blk3] (rx) {Видеоприёмник\\(демодулятор, diversity)};
+\node[blk,fill=blk3,left=of rx] (scr) {Экран очков\\+ DVR};
+\draw[arr] (rx) -- (scr);
+\draw[arr,dashed] (ant.south) |- node[pos=0.25,right,font=\scriptsize]{радио} (rx.east);
+\end{tikzpicture}
+\caption{Аналоговый видеотракт}
+\end{figure}
+
+\begin{itemize}
+\item Камера выдаёт \term{композитный видеосигнал} (PAL — 625 строк, 25 кадров/с; NTSC — 525 строк, 30 кадров/с). Каждая строка — это напряжение, пропорциональное яркости, плюс синхроимпульсы и поднесущая цвета.
+\item VTX \term{частотно модулирует} несущую 5,8~ГГц этим сигналом (FM): частота несущей отклоняется пропорционально мгновенному напряжению. Сжатия нет — сигнал идёт «как есть».
+\item Приёмник демодулирует сигнал и сразу выводит его на экран. \term{Diversity} — два приёмника с разными антеннами, выбирается лучший сигнал.
+\item При ослаблении сигнала появляются \textbf{шум («снег»), полосы, потеря цвета}, но картинка остаётся видна почти до полной потери связи — \textbf{плавная деградация}.
+\end{itemize}
+
+\subsection{Как работает цифровая система}
+\begin{figure}[H]\centering
+\begin{tikzpicture}[node distance=5mm,font=\sffamily\small]
+\node[blk,fill=blk2] (c) {Камера\\HD};
+\node[blk,fill=blk1,right=of c] (enc) {Кодек\\H.264/H.265};
+\node[blk,fill=blk1,right=of enc] (fec) {Пакеты +\\коррекция\\ошибок (FEC)};
+\node[blk,fill=blk4,right=of fec] (ofdm) {Цифровая\\модуляция\\OFDM/QAM};
+\node[right=5mm of ofdm] (ant) {\Large\textbf{((\,·\,))}};
+\draw[arr] (c) -- (enc); \draw[arr] (enc) -- (fec); \draw[arr] (fec) -- (ofdm); \draw[arr] (ofdm) -- (ant);
+\node[below=11mm of fec,blk,fill=blk3] (dec) {Демодуляция $\to$ исправление ошибок $\to$\\декодирование $\to$ экран очков};
+\draw[arr,dashed] (ant.south) |- node[pos=0.25,right,font=\scriptsize]{радио} (dec.east);
+\end{tikzpicture}
+\caption{Цифровой видеотракт}
+\end{figure}
+\begin{itemize}
+\item Видео \textbf{сжимается} кодеком (H.264/H.265), разбивается на пакеты, к ним добавляется избыточность для \term{коррекции ошибок}, затем передаётся цифровой модуляцией (OFDM, QAM) — как Wi-Fi.
+\item Пока ошибки исправимы — картинка идеальна. Когда сигнал падает ниже порога — \textbf{резкий обрыв}: снижается битрейт, появляются «квадраты», фризы, затем изображение пропадает (\term{эффект обрыва}, cliff effect).
+\item Сжатие и буферизация добавляют \textbf{задержку} (\SIrange{20}{40}{\milli\second} против $\sim$\SIrange{10}{20}{\milli\second} у аналога «от объектива до экрана»).
+\item Системы: \textbf{DJI O3/O4} (до 1080p/4K, дальность до \SI{10}{\kilo\metre}+), \textbf{Walksnail Avatar}, \textbf{HDZero} (без межкадрового сжатия — фиксированная малая задержка, любят гонщики), \textbf{OpenIPC} (открытое ПО на IP-камерах + Wi-Fi-адаптеры, режим wifibroadcast).
+\end{itemize}
+
+\begin{figure}[H]\centering
+\begin{tikzpicture}
+\begin{axis}[width=0.8\linewidth,height=55mm,xlabel={Уровень сигнала (расстояние растёт вправо)},ylabel={Качество картинки},
+  xmin=0,xmax=10,ymin=0,ymax=1.05,xtick=\empty,ytick=\empty,legend pos=south west,legend style={font=\small\sffamily},
+  axis lines=left]
+\addplot[very thick,okgreen,domain=0:10,samples=80] {1/(1+exp(1.1*(x-6.5)))*0.62};
+\addplot[very thick,accent,domain=0:10,samples=200] {x<7.3 ? 1 : (x<7.8 ? 1-(x-7.3)*1.6 : 0)};
+\legend{{Аналог — плавно ухудшается},{Цифра — отлично, потом обрыв}}
+\end{axis}
+\end{tikzpicture}
+\caption{Поведение аналогового и цифрового видео при ослаблении сигнала}
+\end{figure}
+
+\subsection{Сравнение}
+\begin{table}[H]\centering\small
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{\linewidth}{@{}p{32mm} X X@{}}
+\toprule
+ & \textbf{Аналог} & \textbf{Цифра} \\
+\midrule
+Модуляция & FM, без сжатия & OFDM/QAM, сжатие H.264/H.265 \\
+Качество & $\sim$480–576 строк, шумы & 720p–1080p (и выше), чёткая картинка \\
+Задержка & минимальная, стабильная & \SIrange{20}{40}{\milli\second}, может «плавать» \\
+При плохом сигнале & шум, полосы — но видно & фризы, «квадраты», затем чёрный экран \\
+Проникновение и дальность & хуже при той же мощности, но можно «пролететь сквозь помехи» & лучше благодаря коррекции ошибок \\
+Совместимость & любые очки с любым VTX & только в пределах одной экосистемы \\
+Много пилотов одновременно & да, на разных каналах (до 8) & ограничено \\
+Цена, масса & дёшево, легко & дорого, тяжелее, нужен обдув \\
+Запись & DVR в очках (низкое качество) & HD-запись на борту и в очках \\
+Защищённость & любой может принимать & шифрование (у DJI) \\
+\bottomrule
+\end{tabularx}
+\caption{Аналоговая и цифровая передача видео}
+\end{table}
+
+\photo{0.55\linewidth}{djigoggles.jpeg}{Изображение в цифровых очках DJI с OSD от полётного контроллера}{ArduPilot Wiki}
+
+\begin{exam}
+\begin{enumerate}
+\item Почему у аналогового видео меньше задержка, чем у цифрового?
+\item Что увидит пилот на границе дальности в аналоговой и в цифровой системе?
+\item Какой вид модуляции используется в аналоговом VTX? В цифровом?
+\end{enumerate}
+\end{exam}
