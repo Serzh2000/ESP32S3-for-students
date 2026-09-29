@@ -1,0 +1,93 @@
+% =====================================================================
+\section{Справочник}
+% =====================================================================
+\subsection*{Выводы, с которыми нужно быть осторожным}
+
+\begin{center}\small
+\begin{tabularx}{\textwidth}{@{}l X@{}}
+\toprule
+Выводы & Особенность \\
+\midrule
+GPIO0, 3, 45, 46 & «загрузочные»: влияют на запуск; GPIO0 --- кнопка BOOT \\
+GPIO19, 20 & USB (D$-$, D$+$) \\
+GPIO26--32 & память программ --- не использовать \\
+GPIO35--37 & заняты памятью PSRAM на модулях с Octal PSRAM (N8R8, N16R8) \\
+GPIO43, 44 & UART0 (TX, RX) --- сообщения при загрузке \\
+GPIO11--20 & ADC2 --- не работает при включённом Wi-Fi \\
+GPIO22--25 & не существуют \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\subsection*{Шпаргалка по функциям Arduino-ESP32}
+
+\begin{center}\small
+\begin{tabularx}{\textwidth}{@{}l X l@{}}
+\toprule
+Функция & Что делает & Урок\\
+\midrule
+\code{pinMode(pin, OUTPUT / INPUT\_PULLUP)} & настроить вывод & \ref{les:led}, \ref{les:gpio-in}\\
+\code{digitalWrite(pin, HIGH / LOW)} & выдать 1 или 0 & \ref{les:led}\\
+\code{digitalRead(pin)} & прочитать 0 или 1 & \ref{les:gpio-in}\\
+\code{millis()}, \code{delay(ms)} & время с момента включения; пауза & \ref{les:led}\\
+\code{ledcAttach(pin, freq, bits)} & включить ШИМ на выводе & \ref{les:pwm}\\
+\code{ledcWrite(pin, duty)} & задать коэффициент заполнения & \ref{les:pwm}\\
+\code{ledcWriteTone(pin, freq)} & звук заданной частоты & \ref{les:pwm}\\
+\code{WiFi.begin(ssid, pass)} & подключиться к сети & \ref{les:radio}\\
+\code{WiFi.softAP(ssid, pass)} & создать свою сеть & \ref{les:radio}\\
+\code{MDNS.begin("имя")} & имя \code{имя.local} & \ref{les:radio}\\
+\code{server.on(путь, функция)} & обработчик адреса веб-сервера & \ref{les:web}\\
+\code{Serial.begin()}, \code{print()}, \code{readStringUntil()} & связь с компьютером & \ref{les:serial}\\
+\code{attachInterrupt(pin, isr, FALLING)} & прерывание от вывода & \ref{les:gpio-in}\\
+\code{analogReadMilliVolts(pin)} & измерить напряжение, мВ & \ref{les:adc}\\
+\code{Wire.begin(sda, scl)} & запустить шину I\textsuperscript{2}C & \ref{les:i2c}\\
+\code{xTaskCreatePinnedToCore(...)} & создать задачу FreeRTOS & \ref{les:rtos}\\
+\code{esp\_deep\_sleep\_start()} & уйти в глубокий сон & \ref{les:sleep}\\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\subsection*{Полезные формулы}
+
+\begin{center}\small
+\renewcommand{\arraystretch}{1.6}
+\begin{tabular}{@{}ll@{}}
+\toprule
+Закон Ома & $I = U/R$, \quad $R = U/I$\\
+Резистор для светодиода & $R = (U_\text{пит} - U_F)/I$\\
+Частота и период & $f = 1/T$\\
+Коэффициент заполнения ШИМ & $D = t_\text{вкл}/T$, \quad $U_\text{ср} = D\cdot U_\text{пит}$\\
+Число вариантов в $N$ битах & $2^N$\\
+Шаг квантования АЦП & $q = U_\text{макс}/2^N$\\
+Длина волны & $\lambda = c/f$\\
+Делитель напряжения & $U_\text{вых} = U_\text{вх}\cdot R_2/(R_1+R_2)$\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection*{Что изучать дальше}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=5mm and 6mm, b/.style={blk,minimum width=28mm}]
+  \node[b,fill=blkcpu] (base) {Этот курс\\ (уроки 1--14)};
+  \node[b,fill=blkrf,above right=4mm and 12mm of base] (ble) {Bluetooth LE\\ \scriptsize связь с телефоном};
+  \node[b,fill=blkrf,right=12mm of base] (mqtt) {MQTT, умный дом,\\ обновление по Wi-Fi};
+  \node[b,fill=blkrf,below right=4mm and 12mm of base] (usb) {USB-клавиатура,\\ MIDI-инструмент};
+  \node[b,fill=blkper,right=of ble] (cam) {Камера,\\ цветной дисплей};
+  \node[b,fill=blkper,right=of mqtt] (ai) {Нейросети\\ на микроконтроллере};
+  \node[b,fill=blkper,right=of usb] (idf) {ESP-IDF ---\\ «профессиональный» уровень};
+  \foreach \t in {ble,mqtt,usb} \draw[arr] (base.east) -- (\t.west);
+  \draw[arr] (ble) -- (cam); \draw[arr] (mqtt) -- (ai); \draw[arr] (usb) -- (idf);
+\end{tikzpicture}
+\caption{Куда двигаться после этого курса}
+\end{figure}
+
+\subsection*{Полезные источники}
+\begin{itemize}
+  \item Документация на ESP32-S3 --- \url{https://www.espressif.com/en/support/documents/technical-documents}
+  \item Документация Arduino-ESP32 --- \url{https://docs.espressif.com/projects/arduino-esp32/}
+  \item Руководство ESP-IDF --- \url{https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/}
+  \item Описание платы --- \emph{ESP32-S3-DevKitC-1 User Guide} на \url{https://docs.espressif.com}
+  \item Учебник по HTML и CSS --- \url{https://developer.mozilla.org/ru/docs/Learn}
+\end{itemize}

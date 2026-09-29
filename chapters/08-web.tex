@@ -1,0 +1,366 @@
+% =====================================================================
+\section{Веб-сервер: HTTP, HTML и CSS}
+\label{les:web}
+% =====================================================================
+\lessonintro
+  {понять, как браузер разговаривает с сервером (запросы GET и POST), и сделать красивую веб-страницу для управления светодиодом}
+  {урок~\ref{les:pwm} (яркость через ШИМ), урок~\ref{les:radio} (подключение к Wi-Fi, IP-адрес, mDNS)}
+  {панель управления светодиодом в браузере телефона: кнопка, ползунок и «лампочка» на экране}
+  {схема со светодиодом на \pin{4} (рис.~\ref{fig:led}), телефон или компьютер в той же Wi-Fi сети}
+
+\subsection{Клиент и сервер}
+
+Когда ты открываешь сайт, твой браузер (\textbf{клиент}) отправляет \textbf{запрос} другому компьютеру
+(\textbf{серверу}), а тот присылает \textbf{ответ} --- страницу. Это похоже на кафе: посетитель делает
+заказ, официант передаёт его на кухню и приносит блюдо. Сегодня кухней будет наша плата: ESP32-S3
+станет \textbf{веб-сервером}, а браузер телефона --- клиентом.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=10mm]
+  \node[blk,fill=blkmem,minimum width=32mm,minimum height=14mm] (b) {Браузер\\ \scriptsize (клиент)};
+  \node[blk,fill=blkcpu,minimum width=32mm,minimum height=14mm,right=55mm of b] (s) {ESP32-S3\\ \scriptsize (веб-сервер)};
+  \draw[arr,accent] ($(b.east)+(0,0.3)$) -- node[above,font=\sffamily\scriptsize]{запрос: «дай страницу /»} ($(s.west)+(0,0.3)$);
+  \draw[arr,okgreen] ($(s.west)+(0,-0.3)$) -- node[below,font=\sffamily\scriptsize]{ответ: HTML-страница} ($(b.east)+(0,-0.3)$);
+\end{tikzpicture}
+\caption{Клиент спрашивает --- сервер отвечает. Сам сервер никогда не начинает разговор первым}
+\end{figure}
+
+Язык, на котором они разговаривают, называется \textbf{HTTP} (англ. \emph{HyperText Transfer Protocol} ---
+протокол передачи гипертекста). Начнём с самой простой страницы:
+
+\codecap{Первый веб-сервер}
+\codeinput{l08_hello_web}
+
+Загрузи программу, дождись сообщения в Serial Monitor и открой адрес в браузере телефона, подключённого
+к той же сети. Обнови страницу несколько раз --- число секунд будет расти: страницу каждый раз
+заново «готовит» плата.
+
+\begin{itemize}
+  \item \code{WebServer server(80)} --- создать сервер. 80 --- номер «двери» (порта), в которую браузер
+        стучится по умолчанию;
+  \item \code{server.on("/", handleRoot)} --- «если спросят адрес \code{/}, вызови \code{handleRoot}»;
+  \item \code{server.send(200, тип, текст)} --- отправить ответ. 200 --- код «всё хорошо»;
+  \item \code{server.handleClient()} --- проверить, не пришёл ли запрос. Вызываем постоянно в \code{loop()}.
+\end{itemize}
+
+\subsection{Из чего состоит адрес}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  \node[font=\ttfamily\Large,inner sep=0] (u) {%
+    \textcolor{gray}{http://}\textcolor{accent}{esp32-led.local}\textcolor{esp}{/level}\textcolor{okgreen!70!black}{?v=30}};
+  \draw[decorate,decoration={brace,mirror,amplitude=4pt},gray] ($(u.south west)+(0,-0.1)$) -- ++(1.85,0) node[midway,below=5pt,font=\sffamily\scriptsize,align=center,text=black]{протокол};
+  \draw[decorate,decoration={brace,mirror,amplitude=4pt},accent] ($(u.south west)+(1.95,-0.1)$) -- ++(3.9,0) node[midway,below=5pt,font=\sffamily\scriptsize,align=center,text=black]{кому: имя или\\ IP-адрес платы};
+  \draw[decorate,decoration={brace,mirror,amplitude=4pt},esp] ($(u.south west)+(5.95,-0.1)$) -- ++(1.5,0) node[midway,below=5pt,font=\sffamily\scriptsize,align=center,text=black]{путь:\\ что хотим};
+  \draw[decorate,decoration={brace,mirror,amplitude=4pt},okgreen!70!black] ($(u.south west)+(7.55,-0.1)$) -- ++(1.2,0) node[midway,below=5pt,font=\sffamily\scriptsize,align=center,text=black]{параметры:\\ имя = значение};
+\end{tikzpicture}
+\caption{Адрес (URL) состоит из частей. Параметров может быть несколько: \code{?v=30\&color=red}}
+\end{figure}
+
+\subsection{Методы GET и POST}
+
+Каждый запрос начинается со слова-\textbf{метода}, который говорит, чего хочет клиент. Самые важные:
+
+\begin{itemize}
+  \item \textbf{GET} («получить») --- «дай мне страницу». Параметры записываются прямо в адресе,
+        после знака \code{?}. Так работают обычные ссылки и адресная строка браузера;
+  \item \textbf{POST} («отправить») --- «прими от меня данные». Данные передаются в \emph{теле}
+        запроса, отдельно от адреса. Так отправляют формы: логин и пароль, сообщение, заказ.
+\end{itemize}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+  msg/.style={draw,thick,rounded corners=2pt,align=left,font=\ttfamily\scriptsize,inner sep=5pt,text width=62mm}]
+  \node[msg,fill=blkmem!60] (g) {\textbf{GET /level?v=30 HTTP/1.1}\\ Host: esp32-led.local\\ \textcolor{gray}{(тела нет)}};
+  \node[msg,fill=blkper!70,right=8mm of g] (p) {\textbf{POST /note HTTP/1.1}\\ Host: esp32.local\\ Content-Type: application/x-www-form-urlencoded\\[2pt]
+     \textcolor{esp}{text=Привет,\ плата!}};
+  \node[font=\sffamily\small\bfseries,above=1mm of g] {GET --- как открытка};
+  \node[font=\sffamily\small\bfseries,above=1mm of p] {POST --- как письмо в конверте};
+  \node[font=\sffamily\scriptsize,below=1mm of g,align=center] {данные видны прямо в адресе,\\ их можно сохранить в закладки};
+  \node[font=\sffamily\scriptsize,below=1mm of p,align=center] {данные в теле запроса (красным),\\ в адресной строке их не видно};
+\end{tikzpicture}
+\caption{Так выглядят запросы на самом деле --- это обычный текст}
+\end{figure}
+
+\begin{table}[H]
+\centering\small
+\begin{tabularx}{\textwidth}{@{}l X X@{}}
+\toprule
+ & \textbf{GET} & \textbf{POST}\\
+\midrule
+Для чего & получить страницу или данные & отправить данные, что-то изменить\\
+Где данные & в адресе: \code{/level?v=30} & в теле запроса\\
+Видно в адресной строке & да & нет\\
+Можно добавить в закладки & да & нет\\
+Повтор при обновлении страницы & безопасен & браузер спросит «отправить повторно?»\\
+Объём данных & небольшой (адрес ограничен по длине) & большой (хоть целый файл)\\
+\bottomrule
+\end{tabularx}
+\caption{Сравнение GET и POST}
+\end{table}
+
+\begin{tip}
+Правило хорошего тона: \textbf{GET} --- только чтобы что-то \emph{узнать}, \textbf{POST} --- чтобы что-то
+\emph{изменить}. Иначе поисковый робот или «ускоритель» браузера, заранее открывающий ссылки,
+может случайно выключить тебе свет!
+\end{tip}
+
+Сервер отвечает \textbf{кодом ответа} --- трёхзначным числом:
+
+\begin{table}[H]
+\centering\small
+\begin{tabular}{@{}lll@{}}
+\toprule
+Код & Значение & Когда встречается\\
+\midrule
+200 & OK --- всё хорошо & страница найдена и отправлена\\
+303 & See Other --- смотри другую & «я всё сделал, теперь открой главную»\\
+404 & Not Found --- не найдено & адреса нет --- знаменитая «ошибка 404»\\
+500 & Internal Server Error & ошибка в программе сервера\\
+\bottomrule
+\end{tabular}
+\caption{Самые частые коды ответа HTTP}
+\end{table}
+
+\subsubsection{Пример: управление через GET}
+
+Самый простой способ управлять светодиодом --- ссылки. Нажатие на ссылку \code{/toggle} переключает
+светодиод, а форма с ползунком отправляет \code{/level?v=...}:
+
+\codecap{Светодиод управляется GET-запросами}
+\codeinput{l08_get_led}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[y=-0.85cm]
+  \node[blk,fill=blkmem,minimum width=3cm] (b) at (0,0) {Браузер};
+  \node[blk,fill=blkcpu,minimum width=3cm] (s) at (9,0) {ESP32-S3};
+  \draw[thick,gray] (b.south) -- (0,8.2);
+  \draw[thick,gray] (s.south) -- (9,8.2);
+  \draw[arr,accent] (0,1.5) -- node[above,font=\ttfamily\scriptsize]{GET /} (9,1.5);
+  \draw[arr,okgreen] (9,2.6) -- node[above,font=\ttfamily\scriptsize]{200 OK + HTML-страница} (0,2.6);
+  \node[font=\sffamily\scriptsize,anchor=east] at (-0.2,3.7) {нажали «Вкл/выкл»};
+  \draw[arr,accent] (0,4.4) -- node[above,font=\ttfamily\scriptsize]{GET /toggle} (9,4.4);
+  \fill[esp!30] (8.85,4.6) rectangle (9.15,5.6);
+  \node[font=\ttfamily\scriptsize,anchor=west] at (9.3,5.1) {ledOn = !ledOn};
+  \draw[arr,okgreen] (9,6.0) -- node[above,font=\ttfamily\scriptsize]{303 → откройте /} (0,6.0);
+  \draw[arr,accent] (0,7.0) -- node[above,font=\ttfamily\scriptsize]{GET /} (9,7.0);
+  \draw[arr,okgreen] (9,7.9) -- node[above,font=\ttfamily\scriptsize]{200 OK (Светодиод: ВКЛ)} (0,7.9);
+\end{tikzpicture}
+\caption{Что происходит при нажатии кнопки на странице}
+\end{figure}
+
+Работает, но у этого способа два минуса: команды меняют состояние через GET (см. совет выше), а
+страница каждый раз полностью перезагружается и мигает. Исправим оба.
+
+\subsubsection{Пример: отправка данных через POST}
+
+Сделаем «записку для платы»: форма отправляет текст методом POST, плата печатает его в Serial Monitor
+и показывает на странице.
+
+\codecap{Приём данных методом POST}
+\codeinput{l08_post_note}
+
+В форме указано \code{method='POST'}, а на плате обработчик зарегистрирован с \code{HTTP\_POST}:
+на обычный GET-запрос по адресу \code{/note} он не ответит. Текст записки достаётся функцией
+\code{server.arg("text")} --- так же, как параметры GET, только данные пришли из тела запроса.
+
+\subsection{HTML: из чего сделана страница}
+
+Страница, которую отправляет сервер, написана на языке \textbf{HTML} (англ. \emph{HyperText Markup Language} ---
+язык разметки гипертекста). Это не язык программирования: он описывает, \emph{что} есть на странице.
+Каждый элемент обозначается \textbf{тегами} в угловых скобках: открывающим \code{<p>} и закрывающим \code{</p>}.
+Теги вкладываются друг в друга, как матрёшки:
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+  lvl/.style={draw,thick,rounded corners=3pt,font=\ttfamily\small,anchor=north west,inner sep=4pt}]
+  \node[lvl,fill=blkmem!40,minimum width=75mm,minimum height=52mm] (html) at (0,0) {};
+  \node[font=\ttfamily\small,anchor=north west] at (0.1,-0.05) {<html>};
+  \node[lvl,fill=blkrtc!40,minimum width=71mm,minimum height=9mm] at (0.2,-0.55) {};
+  \node[font=\ttfamily\small,anchor=north west] at (0.3,-0.6) {<head> \textcolor{gray}{название, стили}};
+  \node[lvl,fill=blkrf!50,minimum width=71mm,minimum height=36mm] at (0.2,-1.6) {};
+  \node[font=\ttfamily\small,anchor=north west] at (0.3,-1.65) {<body> \textcolor{gray}{то, что видно}};
+  \node[lvl,fill=white,minimum width=67mm] at (0.4,-2.2) {<h1>Мой светодиод</h1>};
+  \node[lvl,fill=white,minimum width=67mm] at (0.4,-2.95) {<p>Яркость: 50 \%</p>};
+  \node[lvl,fill=white,minimum width=67mm] at (0.4,-3.7) {<button>Вкл / выкл</button>};
+  \node[lvl,fill=white,minimum width=67mm] at (0.4,-4.45) {<input type="range">};
+  % результат
+  \begin{scope}[xshift=9.2cm]
+    \fill[black!80,rounded corners=4mm] (0,-5.3) rectangle (3.4,0.2);
+    \fill[white] (0.2,-4.9) rectangle (3.2,-0.3);
+    \node[font=\bfseries\large,anchor=west] at (0.3,-0.8) {Мой светодиод};
+    \node[font=\small,anchor=west] at (0.3,-1.7) {Яркость: 50 \%};
+    \node[draw,fill=gray!15,font=\scriptsize,anchor=west] at (0.3,-2.5) {Вкл / выкл};
+    \draw[gray,thick] (0.3,-3.3) -- (3.0,-3.3);
+    \fill[accent] (1.65,-3.3) circle (0.12);
+    \node[font=\sffamily\scriptsize,text=white] at (1.7,-5.05) {так без CSS};
+  \end{scope}
+\end{tikzpicture}
+\caption{Структура HTML-страницы (слева) и как браузер её показывает (справа)}
+\end{figure}
+
+\begin{table}[H]
+\centering\small
+\begin{tabular}{@{}ll@{}}
+\toprule
+Тег & Что означает\\
+\midrule
+\code{<h1>}\ldots\code{</h1>} & крупный заголовок (есть ещё \code{h2}--\code{h6} поменьше)\\
+\code{<p>}\ldots\code{</p>} & абзац текста\\
+\code{<b>}\ldots\code{</b>} & жирный текст\\
+\code{<a href="/toggle">}\ldots\code{</a>} & ссылка\\
+\code{<button>}\ldots\code{</button>} & кнопка\\
+\code{<input type="range">} & ползунок (\code{type="text"} --- поле для текста)\\
+\code{<form>}\ldots\code{</form>} & форма: собирает поля и отправляет на сервер\\
+\code{<div>}\ldots\code{</div>} & «коробка» для группировки элементов\\
+\bottomrule
+\end{tabular}
+\caption{Теги, которых хватит для первых страниц}
+\end{table}
+
+\subsection{CSS: делаем красиво}
+
+HTML отвечает за содержание, а за \emph{внешний вид} --- цвета, шрифты, отступы, скругления, тени ---
+отвечает язык \textbf{CSS} (англ. \emph{Cascading Style Sheets} --- каскадные таблицы стилей). Стили пишут
+внутри тега \code{<style>}. Каждое правило состоит из \emph{селектора} (к чему применить) и списка свойств:
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  \node[font=\ttfamily\large,inner sep=0] (c) {\textcolor{esp}{button} \{ \textcolor{accent}{background}: \textcolor{okgreen!60!black}{\#1f618d}; \textcolor{accent}{border-radius}: \textcolor{okgreen!60!black}{12px}; \}};
+  \draw[esp,thick] ($(c.north west)+(0.5,0.1)$) -- ++(0,0.4) node[above,font=\sffamily\scriptsize,text=black]{селектор: все кнопки};
+  \draw[accent,thick] ($(c.north west)+(3.3,0.1)$) -- ++(0,0.4) node[above,font=\sffamily\scriptsize,text=black]{свойство};
+  \draw[okgreen!60!black,thick] ($(c.north west)+(5.6,0.1)$) -- ++(0,0.4) node[above,font=\sffamily\scriptsize,text=black]{значение};
+  \node[font=\sffamily\scriptsize,below=2mm of c] {читается так: «у всех кнопок фон цвета \#1f618d и скруглённые на 12 пикселей углы»};
+\end{tikzpicture}
+\caption{Устройство правила CSS}
+\end{figure}
+
+Цвета в CSS часто записывают шестнадцатеричным кодом \code{\#RRGGBB}: две цифры на красный, зелёный
+и синий --- та же смесь трёх цветов, что в RGB-светодиоде из урока~\ref{les:led}! Например, \code{\#ff0000} ---
+красный, \code{\#ffffff} --- белый.
+
+\begin{table}[H]
+\centering\small
+\begin{tabular}{@{}ll@{}}
+\toprule
+Свойство CSS & Что меняет\\
+\midrule
+\code{color}, \code{background} & цвет текста и фона\\
+\code{font-family}, \code{font-size} & шрифт и его размер\\
+\code{padding}, \code{margin} & внутренний и внешний отступ\\
+\code{border-radius} & скругление углов (\code{50\%} --- круг)\\
+\code{box-shadow} & тень или свечение вокруг элемента\\
+\code{width}, \code{height} & ширина и высота\\
+\code{transition} & плавная смена стиля (анимация)\\
+\bottomrule
+\end{tabular}
+\caption{Свойства CSS для первых экспериментов}
+\end{table}
+
+\subsection{Практика: панель управления светодиодом}
+
+Соберём всё вместе: HTML-страницу с CSS-стилями и маленькой программой на \textbf{JavaScript} --- языке,
+который выполняется прямо в браузере. Он будет отправлять POST-запросы \emph{без перезагрузки страницы}
+и перерисовывать «лампочку» на экране.
+
+\begin{figure}[H]
+\centering
+\definecolor{webbg}{HTML}{EEF2F7}\definecolor{webred}{HTML}{FF5A4F}\definecolor{webblue}{HTML}{1F618D}
+\begin{tikzpicture}
+  % телефон
+  \fill[black!85,rounded corners=5mm] (0,0) rectangle (4.4,8);
+  \fill[webbg] (0.25,0.6) rectangle (4.15,7.4);
+  \fill[black!60,rounded corners=1mm] (1.7,7.6) rectangle (2.7,7.75);
+  % карточка
+  \fill[black!10,rounded corners=3mm] (0.62,1.28) rectangle (3.82,6.88);
+  \fill[white,rounded corners=3mm] (0.55,1.35) rectangle (3.75,6.95);
+  \node[font=\sffamily\bfseries,text=espdark] at (2.15,6.45) {Мой светодиод};
+  \fill[webred,opacity=0.25] (2.15,5.2) circle (0.85);
+  \fill[webred] (2.15,5.2) circle (0.62);
+  \fill[webblue,rounded corners=2mm] (1.1,3.55) rectangle (3.2,4.1);
+  \node[font=\sffamily\small,text=white] at (2.15,3.82) {Вкл / выкл};
+  \draw[gray!60,line width=2pt,line cap=round] (0.9,2.85) -- (3.4,2.85);
+  \draw[accent,line width=2pt,line cap=round] (0.9,2.85) -- (2.4,2.85);
+  \fill[accent] (2.4,2.85) circle (0.13);
+  \node[font=\sffamily\small] at (2.15,2.1) {Яркость: \textbf{60} \%};
+  % выноски
+  \tikzset{co/.style={font=\sffamily\scriptsize,align=left,anchor=west},cl/.style={thin,gray}}
+  \draw[cl] (3.75,6.6) -- (5.2,6.9) node[co]{\code{.card} --- белая карточка:\\ скругление и тень};
+  \draw[cl] (2.8,5.2) -- (5.2,5.4) node[co]{\code{.led.on} --- круг со\\ свечением \code{box-shadow}};
+  \draw[cl] (3.2,3.8) -- (5.2,3.9) node[co]{\code{button} → POST \code{toggle}};
+  \draw[cl] (3.4,2.85) -- (5.2,2.6) node[co]{\code{input type=range} →\\ POST \code{level=60}};
+  \draw[cl] (3.2,2.1) -- (5.2,1.5) node[co]{JavaScript вписывает\\ число из ответа JSON};
+\end{tikzpicture}
+\caption{Как будет выглядеть панель на телефоне}
+\end{figure}
+
+\codecap{Панель управления: HTML + CSS + JavaScript}
+\codeinput{l08_panel}
+
+Как это работает:
+\begin{enumerate}
+  \item При открытии \code{http://esp32-led.local} браузер делает \code{GET /} и получает страницу \code{PAGE}.
+  \item Скрипт на странице сразу делает \code{GET /api}. Плата отвечает состоянием в формате
+        \textbf{JSON} --- \code{\{"on":true,"level":60\}}. Это текст, который легко читают и программы, и люди.
+  \item При нажатии кнопки функция \code{fetch()} отправляет \code{POST /api} с телом \code{toggle=},
+        а при движении ползунка --- \code{level=60}. Плата меняет яркость и снова отвечает JSON.
+  \item Функция \code{show()} перекрашивает «лампочку» и обновляет число. Страница не перезагружается.
+\end{enumerate}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[y=-0.8cm]
+  \node[blk,fill=blkmem,minimum width=3cm] (b) at (0,0) {Браузер + JavaScript};
+  \node[blk,fill=blkcpu,minimum width=3cm] (s) at (9,0) {ESP32-S3};
+  \draw[thick,gray] (b.south) -- (0,6.3);
+  \draw[thick,gray] (s.south) -- (9,6.3);
+  \draw[arr,accent] (0,1.3) -- node[above,font=\ttfamily\scriptsize]{GET /} (9,1.3);
+  \draw[arr,okgreen] (9,2.2) -- node[above,font=\ttfamily\scriptsize]{200 OK + страница с CSS и JS} (0,2.2);
+  \draw[arr,accent] (0,3.1) -- node[above,font=\ttfamily\scriptsize]{GET /api} (9,3.1);
+  \draw[arr,okgreen] (9,4.0) -- node[above,font=\ttfamily\scriptsize]{\{"on":false,"level":50\}} (0,4.0);
+  \node[font=\sffamily\scriptsize,anchor=east] at (-0.2,4.7) {двинули ползунок};
+  \draw[arr,accent] (0,5.0) -- node[above,font=\ttfamily\scriptsize]{POST /api \quad level=60} (9,5.0);
+  \fill[esp!30] (8.85,5.1) rectangle (9.15,5.6);
+  \draw[arr,okgreen] (9,5.9) -- node[above,font=\ttfamily\scriptsize]{\{"on":true,"level":60\}} (0,5.9);
+\end{tikzpicture}
+\caption{Страница загружается один раз, дальше идут только маленькие запросы к \code{/api}}
+\end{figure}
+
+\begin{tip}
+Хранить страницу в строке \code{PAGE} удобно, пока она небольшая. Для больших сайтов с картинками
+файлы записывают в файловую систему платы (LittleFS) --- это хорошая тема для самостоятельного изучения.
+\end{tip}
+
+\begin{summary}
+\begin{itemize}[leftmargin=*]
+  \item Браузер (клиент) отправляет запросы, ESP32-S3 (сервер) отвечает. Язык разговора --- HTTP.
+  \item GET --- получить (параметры в адресе), POST --- отправить данные (в теле запроса).
+  \item Ответ сервера содержит код: 200 --- успех, 303 --- перейди, 404 --- не найдено.
+  \item HTML описывает содержание страницы, CSS --- её внешний вид, JavaScript --- поведение.
+  \item JSON --- удобный формат для обмена данными между страницей и платой.
+\end{itemize}
+\end{summary}
+
+\begin{quiz}
+\begin{enumerate}
+  \item Какой метод и какой путь в адресе \code{http://esp32.local/set?color=red}? Какой параметр?
+  \item Почему пароль нельзя отправлять методом GET?
+  \item Что означает код ответа 404?
+  \item Какое CSS-свойство делает квадрат кругом?
+\end{enumerate}
+\end{quiz}
+
+\begin{tasks}
+\begin{enumerate}
+  \item Поменяй цвета панели на свои любимые. Сделай «лампочку» зелёной.
+  \item Добавь на панель кнопки «30\,\%», «60\,\%» и «100\,\%».
+  \item Добавь адрес \code{/api/uptime}, который возвращает JSON со временем работы платы, и покажи его на странице.
+  \item Запусти панель в режиме точки доступа (урок~\ref{les:radio}), чтобы она работала без роутера.
+\end{enumerate}
+\end{tasks}

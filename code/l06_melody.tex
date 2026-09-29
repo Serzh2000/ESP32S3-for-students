@@ -1,0 +1,18 @@
+\begin{CodeVerbatim}
+\PY{c+c1}{// Пищалка играет гамму «до\PYZhy{}ре\PYZhy{}ми\PYZhy{}фа\PYZhy{}соль\PYZhy{}ля\PYZhy{}си\PYZhy{}до»}
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{int}\PY{+w}{ }\PY{n}{BUZZER\PYZus{}PIN}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{15}\PY{p}{;}
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{int}\PY{+w}{ }\PY{n}{NOTES}\PY{p}{[}\PY{p}{]}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{l+m+mi}{262}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{294}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{330}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{349}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{392}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{440}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{494}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{523}\PY{p}{\PYZcb{}}\PY{p}{;}\PY{+w}{  }\PY{c+c1}{// частоты, Гц}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{setup}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{n}{ledcAttach}\PY{p}{(}\PY{n}{BUZZER\PYZus{}PIN}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{1000}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{8}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{loop}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{k}{for}\PY{+w}{ }\PY{p}{(}\PY{k+kt}{int}\PY{+w}{ }\PY{n}{i}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}\PY{+w}{ }\PY{n}{i}\PY{+w}{ }\PY{o}{\PYZlt{}}\PY{+w}{ }\PY{l+m+mi}{8}\PY{p}{;}\PY{+w}{ }\PY{n}{i}\PY{o}{+}\PY{o}{+}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{    }\PY{n}{ledcWriteTone}\PY{p}{(}\PY{n}{BUZZER\PYZus{}PIN}\PY{p}{,}\PY{+w}{ }\PY{n}{NOTES}\PY{p}{[}\PY{n}{i}\PY{p}{]}\PY{p}{)}\PY{p}{;}\PY{+w}{     }\PY{c+c1}{// квадратная волна нужной частоты}
+\PY{+w}{    }\PY{n}{delay}\PY{p}{(}\PY{l+m+mi}{300}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{p}{\PYZcb{}}
+\PY{+w}{  }\PY{n}{ledcWriteTone}\PY{p}{(}\PY{n}{BUZZER\PYZus{}PIN}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{;}\PY{+w}{              }\PY{c+c1}{// 0 Гц \PYZhy{}\PYZhy{} тишина}
+\PY{+w}{  }\PY{n}{delay}\PY{p}{(}\PY{l+m+mi}{1500}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+\end{CodeVerbatim}

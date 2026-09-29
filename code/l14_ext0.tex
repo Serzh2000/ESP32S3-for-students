@@ -1,0 +1,8 @@
+\begin{CodeVerbatim}
+\PY{c+cp}{\PYZsh{}}\PY{c+cp}{include}\PY{+w}{ }\PY{c+cpf}{\PYZdq{}driver/rtc\PYZus{}io.h\PYZdq{}}\PY{+w}{                  }\PY{c+c1}{// функции rtc\PYZus{}gpio\PYZus{}*}
+
+\PY{n}{rtc\PYZus{}gpio\PYZus{}pullup\PYZus{}en}\PY{p}{(}\PY{n}{GPIO\PYZus{}NUM\PYZus{}5}\PY{p}{)}\PY{p}{;}\PY{+w}{             }\PY{c+c1}{// подтяжка, работающая во сне}
+\PY{n}{rtc\PYZus{}gpio\PYZus{}pulldown\PYZus{}dis}\PY{p}{(}\PY{n}{GPIO\PYZus{}NUM\PYZus{}5}\PY{p}{)}\PY{p}{;}
+\PY{n}{esp\PYZus{}sleep\PYZus{}enable\PYZus{}ext0\PYZus{}wakeup}\PY{p}{(}\PY{n}{GPIO\PYZus{}NUM\PYZus{}5}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{;}\PY{+w}{ }\PY{c+c1}{// проснуться при LOW (кнопка нажата)}
+\PY{n}{esp\PYZus{}deep\PYZus{}sleep\PYZus{}start}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+\end{CodeVerbatim}

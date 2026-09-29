@@ -1,56 +1,116 @@
 % Титульная страница
-% ================= Титул =================
+% ---------- Авторы: поправьте ФИО здесь ----------
+\newcommand{\courseauthors}{%
+  Корягин Сергей\\  % TODO: дописать отчество
+  Полякова Полина Алексеевна}
+\newcommand{\authorposition}{педагоги дополнительного образования\\ МОБУ «СОШ «ЦО «Кудрово»}
+% =================================================
 \begin{titlepage}
 \centering
-\vspace*{2cm}
+\vspace*{0.6cm}
 {\sffamily\Huge\bfseries\color{espdark} ESP32-S3\par}
-\vspace{4mm}
-{\sffamily\LARGE Базовый курс в десяти уроках\par}
-\vspace{2mm}
-{\sffamily\large со сквозным проектом «умная лампа»\par}
-\vspace{1.2cm}
-\begin{tikzpicture}[scale=1.05]
-  \fill[rounded corners=3pt,fill=black!80] (-3.6,-1.6) rectangle (3.6,1.6);
-  \foreach \x in {-3.3,-2.9,...,3.4} {
-    \fill[yellow!70!orange] (\x-0.08,1.35) rectangle (\x+0.08,1.5);
-    \fill[yellow!70!orange] (\x-0.08,-1.5) rectangle (\x+0.08,-1.35);
-  }
-  \fill[gray!55,rounded corners=1pt] (-0.4,-1.0) rectangle (2.9,1.0);
-  \draw[gray!20,line width=0.6pt] (2.3,-0.8) -- ++(0,1.6);
-  \foreach \y in {-0.6,-0.2,0.2,0.6}{\draw[gray!20,line width=0.6pt] (2.3,\y) -- ++(0.45,0);}
-  \node[font=\sffamily\bfseries\small,white] at (0.95,0.15) {ESP32-S3};
-  \node[font=\sffamily\tiny,white] at (0.95,-0.25) {WROOM-1};
-  \fill[gray!70] (-3.9,0.35) rectangle (-3.3,0.95);
-  \fill[gray!70] (-3.9,-0.95) rectangle (-3.3,-0.35);
-  \node[font=\sffamily\tiny,white] at (-2.8,0.65) {UART};
-  \node[font=\sffamily\tiny,white] at (-2.8,-0.65) {USB};
-  \fill[white] (-1.6,0.1) rectangle (-1.2,0.5);
-  \fill[esp!60,opacity=0.6] (-1.4,0.3) circle (0.45);
-  \node[font=\sffamily\tiny,white] at (-1.4,-0.2) {RGB};
-  \foreach \s/\l in {-2.0/BOOT,-0.9/RST}{
-    \fill[gray!40] (\s-0.2,-1.15) rectangle (\s+0.2,-0.75);
-    \node[font=\sffamily\tiny,white] at (\s,-0.55) {\l};
-  }
-\end{tikzpicture}
-\vspace{1.2cm}
+\vspace{3mm}
+{\sffamily\LARGE Первые шаги в электронике\\[1mm] и программировании микроконтроллеров\par}
+\vspace{7mm}
 
-\begin{minipage}{0.8\textwidth}
-\sffamily\large
-\begin{enumerate}[label=\arabic*.,start=0,itemsep=1pt]
-  \item Знакомство с чипом и настройка среды
-  \item Цифровой выход: светодиод
-  \item Последовательный порт: разговор с компьютером
-  \item Цифровой вход: кнопки и прерывания
-  \item ШИМ (LEDC): плавная яркость
-  \item АЦП: читаем аналоговые сигналы
-  \item Шина I\textsuperscript{2}C: дисплей
-  \item FreeRTOS: задачи и синхронизация
-  \item Wi-Fi и веб-сервер
+% ---------- Иллюстрация: плата-персонаж ----------
+\begin{tikzpicture}[x=1cm,y=1cm,line join=round,line cap=round]
+  % фон-подложка
+  \fill[accent!7,rounded corners=8mm] (-7.2,-3.6) rectangle (7.2,4.9);
+  % волна: аналоговый -> цифровой
+  \draw[accent,line width=1.6pt,domain=-6.6:-2.8,samples=80] plot (\x,{-2.7+0.45*sin(\x*170)});
+  \draw[->,gray,line width=1pt] (-2.6,-2.7) -- (-1.9,-2.7);
+  \draw[esp,line width=1.6pt] (-1.7,-3.1) -- (-1.7,-2.3) -- (-1.1,-2.3) -- (-1.1,-3.1) -- (-0.5,-3.1) -- (-0.5,-2.3) -- (0.7,-2.3) -- (0.7,-3.1) -- (1.3,-3.1);
+  \node[font=\sffamily\tiny,text=accent] at (-4.7,-3.35) {аналоговый};
+  \node[font=\sffamily\tiny,text=esp] at (-0.2,-3.35) {цифровой};
+  % плата
+  \fill[black!15,rounded corners=5mm] (-2.05,-1.95) rectangle (2.25,3.35);
+  \fill[black!82,rounded corners=5mm] (-2.2,-1.8) rectangle (2.1,3.5);
+  \foreach \y in {-1.3,-0.8,...,3.1}{
+    \fill[pinmetal] (-2.0,\y-0.1) rectangle (-1.8,\y+0.1);
+    \fill[pinmetal] (1.7,\y-0.1) rectangle (1.9,\y+0.1);
+  }
+  % модуль-«лицо»
+  \fill[gray!45,rounded corners=3mm] (-1.35,-0.6) rectangle (1.25,2.6);
+  \fill[gray!25,rounded corners=3mm] (-1.25,-0.5) rectangle (1.15,2.5);
+  % антенна
+  \fill[gray!55] (-1.35,2.75) rectangle (1.25,3.3);
+  \draw[white,line width=1pt] (-1.1,2.85) -- (-1.1,3.2) -- (-0.75,3.2) -- (-0.75,2.85) -- (-0.4,2.85) -- (-0.4,3.2) -- (-0.05,3.2) -- (-0.05,2.85) -- (0.3,2.85) -- (0.3,3.2) -- (0.65,3.2) -- (0.65,2.85) -- (1.0,2.85);
+  % глаза
+  \foreach \ex in {-0.55,0.45}{
+    \fill[white] (\ex,1.45) ellipse (0.33 and 0.42);
+    \fill[black!85] (\ex+0.06,1.38) circle (0.2);
+    \fill[white] (\ex+0.12,1.46) circle (0.07);
+  }
+  % щёки и улыбка
+  \fill[esp!45,opacity=0.7] (-0.95,0.72) ellipse (0.22 and 0.13);
+  \fill[esp!45,opacity=0.7] (0.85,0.72) ellipse (0.22 and 0.13);
+  \draw[black!80,line width=1.4pt] (-0.4,0.7) .. controls (-0.2,0.35) and (0.1,0.35) .. (0.3,0.7);
+  \node[font=\sffamily\bfseries\scriptsize,text=black!70] at (-0.05,-0.15) {ESP32-S3};
+  % USB-разъёмы и кнопки
+  \fill[gray!60,rounded corners=0.5mm] (-1.5,-2.15) rectangle (-0.7,-1.6);
+  \fill[gray!60,rounded corners=0.5mm] (0.6,-2.15) rectangle (1.4,-1.6);
+  \fill[gray!50] (-1.45,-1.35) rectangle (-1.05,-0.95); \fill[black!60] (-1.25,-1.15) circle (0.12);
+  \fill[gray!50] (0.95,-1.35) rectangle (1.35,-0.95); \fill[black!60] (1.15,-1.15) circle (0.12);
+  % Wi-Fi дуги
+  \foreach \r/\o in {0.55/1,0.95/0.75,1.35/0.5}{
+    \draw[okgreen,line width=2pt,opacity=\o] (2.9,3.3) ++(135:\r) arc[start angle=135,end angle=45,radius=\r];
+  }
+  \fill[okgreen] (2.9,3.3) circle (0.1);
+  \node[font=\sffamily\bfseries\scriptsize,text=okgreen!70!black] at (2.9,2.85) {Wi-Fi};
+  % провода к светодиоду
+  \draw[wyellow,line width=2.2pt,rounded corners=3mm] (1.9,1.6) -- (3.6,1.6) -- (3.6,0.9);
+  \draw[black!80,line width=2.2pt,rounded corners=3mm] (1.9,0.1) -- (4.3,0.1) -- (4.3,0.9);
+  % светодиод с лучами
+  \foreach \a in {30,60,90,120,150}{\draw[warn,line width=1.6pt] (3.95,2.05) ++(\a:0.95) -- ++(\a:0.4);}
+  \fill[esp!80!black] (3.35,0.85) rectangle (4.55,1.05);
+  \fill[esp] (3.45,1.05) -- (3.45,1.8) arc[start angle=180,end angle=0,radius=0.5] -- (4.45,1.05) -- cycle;
+  \fill[white,opacity=0.6] (3.72,1.95) circle (0.1);
+  % кнопка и потенциометр слева
+  \draw[wgreen,line width=2.2pt,rounded corners=3mm] (-1.8,1.1) -- (-3.4,1.1) -- (-3.4,1.6);
+  \fill[black!75,rounded corners=1mm] (-4.0,1.6) rectangle (-2.8,2.8);
+  \fill[black!40] (-3.4,2.2) circle (0.38);
+  \draw[wblue,line width=2.2pt,rounded corners=3mm] (-1.8,-0.4) -- (-4.9,-0.4) -- (-4.9,0.1);
+  \fill[blue!55!black,rounded corners=1mm] (-5.6,0.1) rectangle (-4.2,1.5);
+  \fill[white] (-4.9,0.8) circle (0.5);
+  \fill[gray!30] (-4.9,0.8) circle (0.38);
+  \draw[black!70,line width=1.5pt] (-4.9,0.8) -- ++(60:0.35);
+  % экран справа снизу
+  \draw[wpurple,line width=2.2pt,rounded corners=3mm] (1.9,-0.9) -- (4.4,-0.9) -- (4.4,-1.2);
+  \fill[blue!45!black,rounded corners=1mm] (3.6,-2.9) rectangle (6.4,-1.2);
+  \fill[black] (3.8,-2.7) rectangle (6.2,-1.4);
+  \node[font=\ttfamily\bfseries\scriptsize,text=cyan!60] at (5.0,-1.8) {Привет!};
+  \fill[cyan!60] (3.95,-2.45) rectangle (5.4,-2.25);
+\end{tikzpicture}
+
+\vspace{7mm}
+\begin{minipage}{0.92\textwidth}
+\sffamily\small
+\begin{multicols}{2}
+\begin{enumerate}[label=\arabic*.,itemsep=0pt]
+  \item Знакомство с платой
+  \item Сигналы: аналоговые и цифровые
+  \item Выводы платы: что есть что
+  \item Arduino IDE и первая программа
+  \item Светодиод: закон Ома и мигание
+  \item ШИМ: яркость и частота
+  \item Радио: Wi-Fi и Bluetooth
+  \item Веб-сервер: HTTP, HTML и CSS
+  \item Последовательный порт
+  \item Кнопки и прерывания
+  \item АЦП: измеряем напряжение
+  \item Шина I\textsuperscript{2}C: экран
+  \item FreeRTOS: несколько дел сразу
   \item Сон и энергосбережение
 \end{enumerate}
+\end{multicols}
 \end{minipage}
 
 \vfill
-{\small Все примеры --- для Arduino-ESP32 версии 3.x (на базе ESP-IDF 5.x)\\
+{\sffamily\large\bfseries \courseauthors\par}
+\vspace{1mm}
+{\sffamily\small \authorposition\par}
+\vspace{6mm}
+{\footnotesize Все примеры --- для Arduino-ESP32 версии 3.x
 и отладочной платы ESP32-S3-DevKitC-1 (или совместимой).\par}
 \end{titlepage}

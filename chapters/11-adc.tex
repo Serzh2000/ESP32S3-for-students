@@ -1,0 +1,273 @@
+% =====================================================================
+\section{АЦП: измеряем аналоговый сигнал}
+\label{les:adc}
+% =====================================================================
+\lessonintro
+  {научиться измерять напряжение, понять ограничения АЦП ESP32-S3, управлять сервоприводом «крутилкой»}
+  {урок~\ref{les:signals} (АЦП, квантование), урок~\ref{les:pins} (выводы ADC1/ADC2), урок~\ref{les:pwm} (ШИМ)}
+  {потенциометр поворачивает сервопривод; вольтметр для батарейки}
+  {потенциометр \SI{10}{k\ohm}, сервопривод SG90, резисторы \SI{100}{k\ohm} и \SI{33}{k\ohm}, конденсатор \SI{100}{nF}}
+
+Мы уже знаем, что АЦП превращает напряжение в число (урок~\ref{les:signals}). Настало время
+попробовать его в деле.
+
+\subsection{Как работает АЦП ESP32-S3}
+
+АЦП в ESP32-S3 12-битный: диапазон напряжений делится на $2^{12} = 4096$ ступенек, и результат ---
+число от 0 до 4095:
+\[
+  N \approx \frac{U_\text{вх}}{U_\text{макс}} \cdot 4095 .
+\]
+Он работает методом \textbf{последовательного приближения}, как в игре «угадай число»: «больше
+половины? --- да; больше трёх четвертей? --- нет; \ldots» --- 12 вопросов, и число найдено.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  width=0.62\textwidth, height=5.6cm,
+  xlabel={$U_\text{вх}$, В}, ylabel={число от АЦП},
+  xmin=0, xmax=3.3, ymin=0, ymax=4300,
+  grid=major, grid style={gray!25},
+  legend pos=north west, legend style={font=\scriptsize},
+  tick label style={font=\scriptsize}, label style={font=\small},
+  scaled y ticks=false, yticklabel style={/pgf/number format/1000 sep={}},
+  xticklabel style={/pgf/number format/use comma},
+]
+  \addplot[very thick,gray,dashed,domain=0:3.3] {min(4095,x/3.1*4095)};
+  \addlegendentry{идеальный}
+  \addplot[very thick,esp,smooth] coordinates {
+    (0,0) (0.05,0) (0.1,40) (0.3,330) (0.8,1000) (1.5,1930) (2.2,2850) (2.7,3470) (2.95,3800) (3.1,4020) (3.2,4095) (3.3,4095)};
+  \addlegendentry{настоящий (без поправки)}
+  \draw[<-,thin] (axis cs:0.08,20) -- (axis cs:0.5,1400) node[above,font=\scriptsize,align=center]{«мёртвая зона»\\ у нуля};
+  \draw[<-,thin] (axis cs:3.2,4095) -- (axis cs:2.4,3900) node[left,font=\scriptsize]{потолок};
+\end{axis}
+\end{tikzpicture}
+\caption{Как число от АЦП зависит от напряжения (иллюстрация). Края диапазона неточные ---
+поэтому удобнее функция с заводской поправкой}
+\end{figure}
+
+Особенности, которые нужно помнить:
+\begin{itemize}
+  \item Измерять можно от 0 до $\approx$3,1~В. Больше 3,3~В подавать \textbf{нельзя}!
+  \item \textbf{ADC2 не работает вместе с Wi-Fi} --- поэтому берём выводы ADC1: \pin{1}--\pin{10}.
+  \item Каждый чип на заводе измерили и записали поправки. Функция \code{analogReadMilliVolts()} учитывает
+        их и сразу возвращает милливольты. Ею и будем пользоваться.
+\end{itemize}
+
+\subsection{Потенциометр --- «крутилка»}
+
+\textbf{Потенциометр} --- это резистор с третьим, подвижным контактом (движком). Крайние выводы подключают
+к 0 и 3,3~В, а движок, скользя по резистивной дорожке, выдаёт любое напряжение между ними. Поворот
+ручки --- самый наглядный аналоговый сигнал.
+
+\begin{twoview}{Потенциометр на выводе GPIO1}{fig:pot}
+\begin{tikzpicture}[bb]
+  \bbBoard{24}
+  \bbDevKit{29}{25}
+  \bbPotD{8}{12}{10k}
+  \draw[wire=wblack] (8,14) -- (8,16);
+  \draw[wire=wred] (10,14) -- (10,17);
+  \draw[wire=wgreen] (dk-1) -- (39.5,22) -- (39.5,28.6) -- (9,28.6) -- (9,14);
+  \draw[wire=wred] (dk-3V3) -- (27.5,25) -- (27.5,17) -- (24,17);
+  \draw[wire=wblack] (dk-GND) -- (26.5,4) -- (26.5,16) -- (24,16);
+\end{tikzpicture}
+\nextview
+\begin{circuitikz}
+  \draw (0,3) node[vcc]{3,3 В} to[pR, n=pot, l_=\SI{10}{k\ohm}] (0,0) node[ground]{};
+  \draw (pot.wiper) -- ++(1,0) to[short,-o] ++(0.6,0) node[right]{\pin{1} (ADC1)};
+\end{circuitikz}
+\end{twoview}
+
+\codecap{Чтение потенциометра}
+\codeinput{l11_pot}
+
+\begin{tip}
+Открой \textsf{Tools → Serial Plotter}: пары «имя:значение» Arduino IDE нарисует графиками. Покрути ручку ---
+увидишь свой аналоговый сигнал вживую!
+\end{tip}
+
+\subsection{Шум и усреднение}
+
+Даже если ручку не трогать, числа немного «прыгают» --- это \textbf{шум}: помехи из урока~\ref{les:signals}.
+Самый простой способ с ним бороться --- \textbf{усреднение}: измерить несколько раз подряд и взять среднее.
+Случайные отклонения вверх и вниз компенсируют друг друга.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  width=0.85\textwidth, height=4.8cm,
+  xlabel={номер измерения}, ylabel={мВ},
+  xmin=0, xmax=100, ymin=1540, ymax=1720,
+  grid=major, grid style={gray!25},
+  tick label style={font=\scriptsize}, label style={font=\small},
+  yticklabel style={/pgf/number format/1000 sep={}},
+  legend style={font=\scriptsize,at={(0.5,1.03)},anchor=south,legend columns=2,draw=none},
+  trig format plots=rad,
+]
+  \addplot[thin,accent,samples=101,domain=0:100] {1630+25*sin(7.3*x)+18*sin(13.1*x+1)+12*sin(29.7*x+2)};
+  \addlegendentry{одно измерение}
+  \addplot[very thick,esp,samples=101,domain=0:100] {1630+3*sin(0.9*x)+2*sin(2.3*x)};
+  \addlegendentry{среднее из 8 измерений}
+\end{axis}
+\end{tikzpicture}
+\caption{Ручка стоит на месте, а измерения «дрожат». Среднее из нескольких измерений намного спокойнее}
+\end{figure}
+
+\subsection{Сервопривод}
+
+\textbf{Сервопривод} --- моторчик с редуктором и «мозгами», который поворачивается на заданный угол
+(0--180°) и держит его. Такие стоят в радиоуправляемых машинах и роботах. Угол задают ШИМ-сигналом
+частотой 50~Гц: \emph{длительность} импульса говорит, куда повернуться.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[x=0.55cm,y=0.8cm]
+  \foreach \w/\ang [count=\r] in {1/0°,1.5/90°,2/180°}{
+    \begin{scope}[yshift=-\r*1.5cm]
+      \draw[->] (0,0) -- (22.5,0) node[right,font=\scriptsize]{мс};
+      \draw[very thick,accent] (0,0) -- (0,1) -- (\w,1) -- (\w,0) -- (20,0) -- (20,1) -- (20+\w,1) -- (20+\w,0) -- (22,0);
+      \node[font=\sffamily\small,anchor=west] at (4,0.6) {импульс \w\ мс $\Rightarrow$ угол \ang};
+      \begin{scope}[shift={(15,0.55)},x=1cm,y=1cm]
+        \fill[blue!60!black] (-0.35,-0.35) rectangle (0.35,0.35);
+        \fill[white] (0,0) circle (0.12);
+        \pgfmathsetmacro{\a}{180-(\w-1)*180}
+        \draw[white,line width=2pt,line cap=round] (0,0) -- ++(\a:0.5);
+        \draw[white,line width=2pt,line cap=round] (0,0) -- ++(\a:0.5);
+        \draw[black,line width=1.6pt,line cap=round] (0,0) -- ++(\a:0.55);
+      \end{scope}
+    \end{scope}
+  }
+  \draw[<->] (0,-5.3) -- node[below,font=\scriptsize]{период 20 мс (50 Гц)} (20,-5.3);
+\end{tikzpicture}
+\caption{Управление сервоприводом: чем длиннее импульс, тем больше угол}
+\end{figure}
+
+\codecap{Сервопривод качается туда-обратно}
+\codeinput{l11_servo}
+
+\subsection{Практика: ручка поворачивает сервопривод}
+
+Соединим «крутилку» и сервопривод: повернул ручку --- повернулся моторчик. Так устроены многие
+манипуляторы роботов.
+
+У сервопривода три провода: \textcolor{wbrown}{\textbf{коричневый}} --- земля, \textcolor{wred}{\textbf{красный}} ---
+питание 5~В, \textcolor{worange}{\textbf{оранжевый}} --- сигнал. Питание сервопривода возьмём с вывода 5V
+платы, поэтому на макетной плате у нас будут \emph{две разные шины «+»}: сверху 3,3~В для потенциометра,
+снизу 5~В для мотора. Будь внимателен и не перепутай их! Шины «−» соединены перемычкой слева.
+
+\begin{twoview}{Потенциометр управляет сервоприводом}{fig:servo}
+\begin{tikzpicture}[bb]
+  \bbBoard{24}
+  \bbDevKit{29}{25}
+  \bbPotD{8}{12}{10k}
+  \draw[wire=wblack] (8,14) -- (8,16);
+  \draw[wire=wred] (10,14) -- (10,17);
+  \draw[wire=wgreen] (dk-1) -- (39.5,22) -- (39.5,28.6) -- (9,28.6) -- (9,14);
+  \draw[wire=wred] (dk-3V3) -- (27.5,25) -- (27.5,17) -- (24,17);
+  \draw[wire=wblack] (dk-GND) -- (26.5,4) -- (26.5,16) -- (24,16);
+  \draw[wire=wblack] (1,16) -- (1,1);
+  \draw[wire=worange] (dk-5V) -- (28.1,5) -- (28.1,0) -- (24,0);
+  \draw[wire=wyellow] (dk-6) -- (27.7,19) -- (27.7,6) -- (18,6);
+  \bbServoBody{12}{-4.5}
+  \draw[line width=1.3pt,wbrown,-{Circle[length=3pt,fill=wbrown!70!black]}] (14,-4.5) -- (14,1);
+  \draw[line width=1.3pt,wred,-{Circle[length=3pt,fill=wred!70!black]}] (15,-4.5) -- (15,0);
+  \draw[line width=1.3pt,worange,-{Circle[length=3pt,fill=worange!70!black]}] (16,-4.5) -- (16,-2.5) -- (18,-2) -- (18,3);
+\end{tikzpicture}
+\nextview
+\begin{circuitikz}
+  \draw (0,3) node[vcc]{3,3 В} to[pR, n=pot, l_=\SI{10}{k\ohm}] (0,0) node[ground]{};
+  \draw (pot.wiper) -- ++(1,0) to[short,-o] ++(0.4,0) node[right]{\pin{1}};
+  \node[draw,thick,fill=blkper,minimum width=2.2cm,minimum height=1.8cm,font=\sffamily] (s) at (10,1.5) {Серво};
+  \draw[worange,thick] ($(s.west)+(0,0.5)$) -- ++(-3,0) node[left,text=black]{\pin{6}};
+  \draw[wred,thick] ($(s.west)+(0,0)$) -- ++(-3,0) node[left,text=black]{5V};
+  \draw[wbrown,thick] ($(s.west)+(0,-0.5)$) -- ++(-1,0) -- ++(0,-0.6) node[ground]{};
+\end{circuitikz}
+\end{twoview}
+
+\codecap{Ручка поворачивает сервопривод}
+\codeinput{l11_pot_servo}
+
+Функция \code{map(x, 0, 3100, 0, 180)} пересчитывает число из одного диапазона в другой: 0~мВ → 0°,
+3100~мВ → 180°. А проверка \code{abs(angle - lastAngle) >= 2} не даёт мотору дёргаться из-за шума.
+
+\begin{caution}
+Под нагрузкой сервопривод потребляет сотни миллиампер. Если при его движении плата перезагружается,
+питай сервопривод от отдельного источника 5~В (например, 4 батарейки АА), соединив его «минус» с GND платы.
+\end{caution}
+
+\subsection{Измеряем напряжение больше 3,3~В}
+
+Как измерить, например, батарейку 9~В, если на вход можно подать максимум 3,3~В? Нужно уменьшить
+напряжение в известное число раз. Для этого есть \textbf{делитель напряжения} --- два резистора подряд.
+Напряжение делится между ними пропорционально сопротивлениям:
+\[
+  U_\text{АЦП} = U_\text{вх}\cdot\frac{R_2}{R_1+R_2}
+  = 9 \cdot \frac{33}{100+33} \approx 2{,}23~\text{В}.
+\]
+С такими резисторами можно безопасно измерять до 12~В.
+
+\begin{twoview}{Делитель напряжения для измерения батарейки 9~В на выводе GPIO2}{fig:divider}
+\begin{tikzpicture}[bb]
+  \bbBoard{24}
+  \bbDevKit{29}{25}
+  \bbR{5}{12}{10}{12}{rn}{rk}{ry}
+  \bbR{10}{10}{10}{6}{ro}{ro}{ro}
+  \bbCC{(10,11)}{(10,5)}{(12.2,8.5)}{104}
+  \draw[wire=wblack] (10,3) -- (10,1);
+  \draw[wire=wpurple] (dk-2) -- (39.5,21) -- (39.5,28.6) -- (10,28.6) -- (10,14);
+  \draw[wire=wblack] (dk-GND) -- (26.5,4) -- (26.5,16) -- (24,16);
+  \draw[wire=wblack] (1,16) -- (1,1);
+  % батарейка
+  \fill[black!80,rounded corners=0.8mm] (2,19.5) rectangle (8,23.5);
+  \fill[gray!60] (2.6,23.5) rectangle (3.8,24.1);
+  \fill[gray!60] (6.2,23.5) rectangle (7.4,24.1);
+  \node[font=\sffamily\bfseries\tiny,text=white] at (5,21.5) {9 В};
+  \node[font=\sffamily\bfseries\tiny,text=wred] at (3.2,22.6) {+};
+  \node[font=\sffamily\bfseries\tiny,text=white] at (6.8,22.6) {−};
+  \draw[wire=wred] (3.2,19.5) -- (3.2,18.8) -- (5,18.8) -- (5,14);
+  \draw[wire=wblack] (6.8,19.5) -- (6.8,16);
+\end{tikzpicture}
+\nextview
+\begin{circuitikz}
+  \draw (0,4) node[left]{$U_\text{вх}$ (до 12 В)} to[short,o-] (1,4)
+        to[R, l=$R_1$, a=\SI{100}{k\ohm}] (1,2) coordinate(m)
+        to[R, l=$R_2$, a=\SI{33}{k\ohm}] (1,0) node[ground]{};
+  \draw (m) -- (3,2) coordinate(n) to[C, l=\SI{100}{nF}] (3,0) node[ground]{};
+  \draw (n) to[short,-o] (4.5,2) node[right]{\pin{2}};
+\end{circuitikz}
+\end{twoview}
+
+Конденсатор \SI{100}{nF} (маркировка «104») сглаживает помехи. \textbf{Важно:} «минус» батарейки обязательно
+соединяется с GND платы, иначе АЦП не с чем сравнивать напряжение.
+
+\codecap{Вольтметр с усреднением}
+\codeinput{l11_voltmeter}
+
+\begin{summary}
+\begin{itemize}[leftmargin=*]
+  \item \code{analogReadMilliVolts()} даёт напряжение в милливольтах с заводской поправкой; диапазон --- примерно 0--3,1~В.
+  \item Для проектов с Wi-Fi аналоговые датчики подключаем к ADC1 (\pin{1}--\pin{10}).
+  \item Шум убираем усреднением, а дрожание управления --- порогом.
+  \item Сервопривод управляется ШИМ 50~Гц: длительность импульса 1--2~мс задаёт угол 0--180°.
+  \item Большие напряжения измеряем через делитель: $U_\text{АЦП} = U_\text{вх}\cdot R_2/(R_1+R_2)$.
+\end{itemize}
+\end{summary}
+
+\begin{quiz}
+\begin{enumerate}
+  \item Какое число выдаст 12-битный АЦП на половине диапазона?
+  \item Почему в проекте с Wi-Fi нельзя подключить датчик к \pin{15}?
+  \item Какое напряжение будет на АЦП, если через делитель $100/33$~к\si{\ohm} измерять 5~В?
+\end{enumerate}
+\end{quiz}
+
+\begin{tasks}
+\begin{enumerate}
+  \item Управляй ручкой яркостью светодиода на \pin{4} (не забудь гамма-коррекцию из урока~\ref{les:pwm}).
+  \item Подключи фоторезистор вместо потенциометра и сделай ночник, который включается в темноте.
+  \item Сравни показания своего вольтметра и настоящего мультиметра в пяти точках. Построй график ошибки.
+  \item Сделай «шлагбаум»: при нажатии кнопки сервопривод поднимается на 90°, через 3 секунды опускается.
+\end{enumerate}
+\end{tasks}

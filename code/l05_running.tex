@@ -1,0 +1,24 @@
+\begin{CodeVerbatim}
+\PY{c+c1}{// Бегущий огонь: четыре светодиода загораются по очереди}
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{int}\PY{+w}{ }\PY{n}{LEDS}\PY{p}{[}\PY{p}{]}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{l+m+mi}{4}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{5}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{6}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{7}\PY{p}{\PYZcb{}}\PY{p}{;}\PY{+w}{             }\PY{c+c1}{// выводы светодиодов}
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{int}\PY{+w}{ }\PY{n}{COUNT}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{4}\PY{p}{;}\PY{+w}{                         }\PY{c+c1}{// сколько их}
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{uint32\PYZus{}t}\PY{+w}{ }\PY{n}{STEP\PYZus{}MS}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{150}\PY{p}{;}\PY{+w}{                }\PY{c+c1}{// время горения одного, мс}
+
+\PY{k+kt}{int}\PY{+w}{ }\PY{n}{current}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}\PY{+w}{                             }\PY{c+c1}{// какой светодиод горит сейчас}
+\PY{k+kt}{uint32\PYZus{}t}\PY{+w}{ }\PY{n}{lastStep}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}\PY{+w}{                       }\PY{c+c1}{// когда было последнее переключение}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{setup}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{k}{for}\PY{+w}{ }\PY{p}{(}\PY{k+kt}{int}\PY{+w}{ }\PY{n}{i}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}\PY{+w}{ }\PY{n}{i}\PY{+w}{ }\PY{o}{\PYZlt{}}\PY{+w}{ }\PY{n}{COUNT}\PY{p}{;}\PY{+w}{ }\PY{n}{i}\PY{o}{+}\PY{o}{+}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{    }\PY{n}{pinMode}\PY{p}{(}\PY{n}{LEDS}\PY{p}{[}\PY{n}{i}\PY{p}{]}\PY{p}{,}\PY{+w}{ }\PY{n}{OUTPUT}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{p}{\PYZcb{}}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{loop}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{millis}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{o}{\PYZhy{}}\PY{+w}{ }\PY{n}{lastStep}\PY{+w}{ }\PY{o}{\PYZgt{}}\PY{o}{=}\PY{+w}{ }\PY{n}{STEP\PYZus{}MS}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{      }\PY{c+c1}{// пора переключаться?}
+\PY{+w}{    }\PY{n}{lastStep}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{millis}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+\PY{+w}{    }\PY{n}{digitalWrite}\PY{p}{(}\PY{n}{LEDS}\PY{p}{[}\PY{n}{current}\PY{p}{]}\PY{p}{,}\PY{+w}{ }\PY{n}{LOW}\PY{p}{)}\PY{p}{;}\PY{+w}{        }\PY{c+c1}{// гасим текущий}
+\PY{+w}{    }\PY{n}{current}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{p}{(}\PY{n}{current}\PY{+w}{ }\PY{o}{+}\PY{+w}{ }\PY{l+m+mi}{1}\PY{p}{)}\PY{+w}{ }\PY{o}{\PYZpc{}}\PY{+w}{ }\PY{n}{COUNT}\PY{p}{;}\PY{+w}{         }\PY{c+c1}{// следующий: 0,1,2,3,0,1...}
+\PY{+w}{    }\PY{n}{digitalWrite}\PY{p}{(}\PY{n}{LEDS}\PY{p}{[}\PY{n}{current}\PY{p}{]}\PY{p}{,}\PY{+w}{ }\PY{n}{HIGH}\PY{p}{)}\PY{p}{;}\PY{+w}{       }\PY{c+c1}{// зажигаем его}
+\PY{+w}{  }\PY{p}{\PYZcb{}}
+\PY{p}{\PYZcb{}}
+\end{CodeVerbatim}

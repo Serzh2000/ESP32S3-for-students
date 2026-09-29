@@ -1,0 +1,384 @@
+% =====================================================================
+\section{ШИМ: яркость светодиода и частота}
+\label{les:pwm}
+% =====================================================================
+\lessonintro
+  {понять, почему быстрое мигание кажется ровным светом, освоить ШИМ и плавно менять яркость светодиода}
+  {урок~\ref{les:signals} (ШИМ, двоичные числа), урок~\ref{les:led} (светодиод, период и частота)}
+  {«дышащий» светодиод, плавная волна на четырёх светодиодах, мелодия на пищалке}
+  {схема из урока~\ref{les:led}; пассивная пьезопищалка (по желанию)}
+
+\subsection{Можно ли светить вполсилы?}
+
+Команда \code{digitalWrite()} умеет только две вещи: включить вывод (3,3~В) или выключить (0~В).
+Светодиод либо горит в полную силу, либо не горит совсем. Как же сделать ночник, который светит
+тускло? У ESP32-S3 нет выхода, который выдавал бы, скажем, 1,5~В. Зато есть глаз, который
+легко обмануть. Проведём опыт.
+
+\subsection{Опыт: мигаем всё быстрее}
+
+Возьми схему со светодиодом на \pin{4} из прошлого урока и загрузи программу, которая каждые
+6 вспышек сокращает время вдвое:
+
+\codecap{Опыт с частотой мигания}
+\codeinput{l06_flicker}
+
+Наблюдай за светодиодом и за сообщениями в Serial Monitor:
+
+\begin{table}[H]
+\centering\small
+\begin{tabular}{@{}cccl@{}}
+\toprule
+\code{delay()}, мс & Период $T$, мс & Частота $f$, Гц & Что видно\\
+\midrule
+500 & 1000 & 1 & спокойное мигание\\
+125 & 250 & 4 & быстрое мигание\\
+31 & 62 & 16 & дрожащий, мерцающий свет\\
+15 & 30 & 33 & лёгкое мерцание, особенно краем глаза\\
+7 & 14 & 71 & \textbf{ровный свет}, но слабее обычного\\
+3 & 6 & 167 & ровный свет\\
+\bottomrule
+\end{tabular}
+\caption{Что видит глаз при разной частоте мигания}
+\end{table}
+
+Удивительно: светодиод продолжает включаться и выключаться, но мы видим ровный свет --- примерно
+вполовину яркости! Почему так происходит?
+
+\subsection{Инерция зрения}
+
+Глаз --- не фотоаппарат с мгновенным затвором. Светочувствительные клетки сетчатки реагируют на свет
+не сразу и «остывают» тоже не сразу: каждое впечатление держится примерно $1/20$--$1/50$ секунды.
+Это называется \textbf{инерцией зрения}. Если вспышки следуют чаще, они сливаются, и мозг видит
+\emph{среднюю} яркость.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{groupplot}[
+  group style={group size=1 by 3, vertical sep=12mm},
+  width=0.9\textwidth, height=3.3cm,
+  /pgf/declare function={
+    tauE=0.012;
+    ymx(\P)=1/(1+exp(-(\P/2)/tauE));
+    md(\u,\P)=\u-\P*floor(\u/\P);
+    sq(\u,\P)=(md(\u,\P)<\P/2)?1:0;
+    eye(\u,\P)=(md(\u,\P)<\P/2) ? 1-ymx(\P)*exp(-md(\u,\P)/tauE)
+                               : ymx(\P)*exp(-(md(\u,\P)-\P/2)/tauE);
+  },
+  ymin=-0.15, ymax=1.3, ytick={0,1}, yticklabels={0,1},
+  xlabel={$t$, с}, xlabel style={font=\scriptsize,at={(1,0)},anchor=north west},
+  tick label style={font=\scriptsize}, title style={font=\sffamily\small,yshift=-1mm},
+  scaled x ticks=false, xticklabel style={/pgf/number format/fixed,/pgf/number format/use comma},
+]
+  \nextgroupplot[title={2 Гц: глаз успевает за каждой вспышкой}, xmin=0, xmax=1, samples=600, domain=0:1]
+    \addplot[thin,esp] {sq(x,0.5)};
+    \addplot[very thick,accent] {eye(x,0.5)};
+  \nextgroupplot[title={16 Гц: глаз едва успевает --- видно мерцание}, xmin=0, xmax=0.5, samples=800, domain=0:0.5]
+    \addplot[thin,esp] {sq(x,0.0625)};
+    \addplot[very thick,accent] {eye(x,0.0625)};
+  \nextgroupplot[title={100 Гц: вспышки сливаются в ровный свет половинной яркости}, xmin=0, xmax=0.1, samples=900, domain=0:0.1,
+                 xtick={0,0.02,...,0.1}]
+    \addplot[thin,esp] {sq(x,0.01)};
+    \addplot[very thick,accent] {eye(x,0.01)};
+    \addplot[dashed,gray] coordinates {(0,0.5) (0.1,0.5)};
+\end{groupplot}
+\end{tikzpicture}
+\caption{Один и тот же прямоугольный сигнал (\textcolor{esp}{красная линия}) с разной частотой.
+\textcolor{accent}{Синяя линия} --- упрощённая модель того, что «видит» глаз}
+\end{figure}
+
+\begin{fact}
+Инерция зрения --- основа кино и мультфильмов. Кинокадры сменяются 24 раза в секунду, а каждый кадр
+проецируется два-три раза, чтобы вспышки шли с частотой 48--72~Гц. Экран телефона обновляется
+60--120 раз в секунду. А обычные лампы в розетке мерцают 100 раз в секунду --- это можно увидеть,
+если посмотреть на них через камеру телефона в режиме замедленной съёмки.
+\end{fact}
+
+\subsection{ШИМ --- широтно-импульсная модуляция}
+
+Теперь понятна идея: будем мигать \emph{так быстро}, что глаз не видит мигания, а яркость менять,
+изменяя \emph{долю времени}, пока светодиод горит. Это и есть \textbf{ШИМ} --- широтно-импульсная
+модуляция (по-английски PWM, \emph{pulse-width modulation}): мы меняем («модулируем») ширину импульсов.
+
+Доля времени во включённом состоянии называется \textbf{коэффициентом заполнения} $D$ (англ. \emph{duty cycle}):
+\[
+  D = \frac{t_\text{вкл}}{T}\cdot 100\,\%, \qquad U_\text{среднее} = D \cdot 3{,}3~\text{В}.
+\]
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[x=0.9cm,y=0.75cm]
+  \foreach \d/\name [count=\row] in {0.1/10\%,0.5/50\%,0.9/90\%}{
+    \begin{scope}[yshift=-\row*1.9cm]
+      \draw[->] (0,0) -- (13,0) node[right,font=\scriptsize]{$t$};
+      \draw (0,0) -- (0,1.6);
+      \node[left,font=\sffamily\small,align=right] at (-0.1,0.7) {$D=\name$};
+      \foreach \k in {0,...,3}{
+        \pgfmathsetmacro{\s}{\k*3}
+        \pgfmathsetmacro{\e}{\k*3+3*\d}
+        \draw[very thick,esp] (\s,0) -- (\s,1.3) -- (\e,1.3) -- (\e,0) -- (\s+3,0);
+      }
+      \draw[dashed,accent,thick] (0,1.3*\d) -- (12,1.3*\d) node[right=3mm,font=\scriptsize,text=accent]{средний уровень};
+      % лампочка-индикатор яркости
+      \shade[ball color=red!\fpeval{round(\d*100)}!black!30] (16.5,0.7) circle (0.45);
+    \end{scope}
+  }
+  \draw[decorate,decoration={brace,amplitude=3pt}] (0,-1.9cm+1.1cm) -- (3,-1.9cm+1.1cm) node[midway,above=3pt,font=\scriptsize]{период $T$};
+  \node[font=\sffamily\scriptsize] at (16.5,-0.3) {яркость};
+\end{tikzpicture}
+\caption{ШИМ с разным коэффициентом заполнения: чем шире импульсы, тем ярче светодиод}
+\end{figure}
+
+\subsection{ШИМ в ESP32-S3: модуль LEDC}
+
+В ESP32-S3 ШИМ создаёт специальный блок \textbf{LEDC} (от англ. \emph{LED control} --- управление
+светодиодами). Он переключает вывод сам, аппаратно, и процессору не нужно этим заниматься.
+Нужно задать всего три вещи:
+\begin{itemize}
+  \item \textbf{вывод};
+  \item \textbf{частоту} ШИМ --- сколько раз в секунду вывод включается. Для светодиодов берут 5000~Гц:
+        это в 50 раз быстрее, чем может заметить глаз;
+  \item \textbf{разрешение} в битах --- на сколько ступенек делится период. 8 бит дают $2^8 = 256$ ступенек:
+        значения от 0 (всегда выключен) до 255 (всегда включён). Помнишь таблицу двоичных чисел из
+        урока~\ref{les:signals}?
+\end{itemize}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[x=0.55mm,y=1cm]
+  \draw[->] (0,0) -- (275,0) node[right,font=\scriptsize]{ступеньки};
+  \draw[very thick,esp] (0,0) -- (0,1) -- (64,1) -- (64,0) -- (256,0) -- (256,1);
+  \foreach \x in {0,64,128,192,256} \draw (\x,0.05) -- (\x,-0.05) node[below,font=\scriptsize]{\x};
+  \draw[decorate,decoration={brace,amplitude=4pt}] (0,1.15) -- (64,1.15) node[midway,above=4pt,font=\scriptsize]{\code{ledcWrite(pin, 64)}: 64 из 256 = 25\,\%};
+  \draw[{Stealth[length=2mm]}-{Stealth[length=2mm]}] (0,-0.7) -- node[below,font=\scriptsize]{один период = 1/5000~с = 0,2~мс = 200~мкс} (256,-0.7);
+\end{tikzpicture}
+\caption{8-битный ШИМ: период разделён на 256 ступенек. Значение \code{duty} говорит, сколько из них вывод включён}
+\end{figure}
+
+В Arduino-ESP32 для этого есть две функции: \code{ledcAttach(pin, частота, биты)} --- вместо
+\code{pinMode()}, и \code{ledcWrite(pin, duty)} --- вместо \code{digitalWrite()}.
+
+\subsection{Светодиод с линейно меняющейся яркостью}
+
+Сделаем «дыхание»: пусть значение \code{duty} равномерно растёт от 0 до 255, а потом так же
+равномерно падает.
+
+\codecap{«Дыхание» светодиода: \code{duty} меняется линейно}
+\codeinput{l06_breathe}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  width=0.8\textwidth, height=4.4cm,
+  xlabel={время, с}, ylabel={duty},
+  xmin=0, xmax=4.2, ymin=0, ymax=280, ytick={0,128,255},
+  grid=major, grid style={gray!25},
+  tick label style={font=\scriptsize}, label style={font=\small},
+]
+  \addplot[very thick,esp] coordinates {(0,0) (1.02,255) (2.04,0) (3.06,255) (4.08,0)};
+\end{axis}
+\end{tikzpicture}
+\caption{Как меняется \code{duty} в программе: 256 шагов по 4~мс вверх, столько же вниз --- «пила» с периодом около 2~с}
+\end{figure}
+
+Каждые 4~мс \code{duty} увеличивается на единицу. За это время ШИМ успевает сделать
+$5000 \cdot 0{,}004 = 20$ периодов --- глаз видит не мигание, а плавное изменение яркости.
+
+\subsection{Почему «линейно» выглядит нелинейно}
+
+Запусти пример и присмотрись. Светодиод очень быстро становится ярким, а потом долго почти не
+меняется --- хотя \code{duty} растёт равномерно! Дело снова в глазе.
+
+Глаз замечает не саму яркость, а \emph{во сколько раз} она изменилась. Разница между 1 и 2 лампочками
+огромна (вдвое!), а между 100 и 101 --- незаметна. Поэтому в тёмной части нужны очень маленькие шаги,
+а в яркой --- большие. Исправляется это \textbf{гамма-коррекцией}: вместо равномерного роста \code{duty}
+возводим «желаемую яркость» в степень 2,2:
+\[
+  \text{duty} = 255 \cdot \left(\frac{\text{яркость в \%}}{100}\right)^{2{,}2}.
+\]
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{groupplot}[
+  group style={group size=2 by 1, horizontal sep=18mm},
+  width=0.47\textwidth, height=5cm,
+  grid=major, grid style={gray!25},
+  tick label style={font=\scriptsize}, label style={font=\small},
+  title style={font=\sffamily\small},
+  legend style={font=\scriptsize,at={(0.03,0.97)},anchor=north west},
+]
+  \nextgroupplot[title={что подаём на вывод},
+    xlabel={желаемая яркость, \%}, ylabel={duty (0..255)}, xmin=0, xmax=100, ymin=0, ymax=260]
+    \addplot[very thick,gray,dashed,domain=0:100] {2.55*x};
+    \addlegendentry{линейно}
+    \addplot[very thick,esp,domain=0:100,samples=60] {255*(x/100)^2.2};
+    \addlegendentry{с гаммой 2,2}
+  \nextgroupplot[title={что видит глаз},
+    xlabel={желаемая яркость, \%}, ylabel={кажущаяся яркость, \%}, xmin=0, xmax=100, ymin=0, ymax=105]
+    \addplot[very thick,gray,dashed,domain=0:100,samples=80] {100*(x/100)^(1/2.2)};
+    \addlegendentry{линейно: «рывок» в начале}
+    \addplot[very thick,esp,domain=0:100] {x};
+    \addlegendentry{с гаммой: ровно}
+\end{groupplot}
+\end{tikzpicture}
+\caption{Гамма-коррекция: на вывод подаём «изогнутую» кривую, чтобы глаз увидел ровное изменение яркости}
+\end{figure}
+
+\codecap{«Дыхание» с гамма-коррекцией}
+\codeinput{l06_breathe_gamma}
+
+Функция \code{pow(x, y)} возводит $x$ в степень $y$. Сравни два примера: теперь светодиод
+разгорается и гаснет плавно по всей длине.
+
+\begin{fact}
+Глаз способен видеть и при свете луны, и на солнечном пляже, где света в миллион раз больше. Такой
+огромный диапазон возможен как раз потому, что зрение реагирует на \emph{отношения}, а не на разницу.
+Слух устроен так же, поэтому громкость звука измеряют в децибелах --- логарифмической шкале.
+Этот закон восприятия называют законом Вебера--Фехнера.
+\end{fact}
+
+\subsection{Какую частоту ШИМ выбрать}
+
+Частота и разрешение ШИМ связаны: блок LEDC работает от внутреннего «метронома» 80~МГц, и за один
+период ШИМ он должен успеть отсчитать все ступеньки. Чем выше частота, тем меньше ступенек помещается
+в период.
+
+\begin{table}[H]
+\centering\small
+\begin{tabular}{@{}lll@{}}
+\toprule
+Применение & Частота & Разрешение \\
+\midrule
+Светодиоды & \SI{5}{kHz} & 8--13 бит \\
+Сервопривод (урок~\ref{les:adc}) & \SI{50}{Hz} & 14 бит \\
+Моторчик через драйвер & \SIrange{10}{20}{kHz} & 10 бит \\
+Звук (пищалка) & \SIrange{100}{5000}{Hz} & 8 бит \\
+\bottomrule
+\end{tabular}
+\caption{Типичные настройки ШИМ}
+\end{table}
+
+\begin{tip}
+Если выбрать для светодиода частоту всего 50--100~Гц, глаз не заметит мерцания, если смотреть прямо.
+Но стоит быстро перевести взгляд или снять светодиод на камеру телефона --- появятся полосы и «пунктир».
+Поэтому для света берут тысячи герц.
+\end{tip}
+
+\subsection{ШИМ и звук}
+
+Звук --- это колебания воздуха. Если подключить к выводу \textbf{пьезопищалку} и включать-выключать
+его, например, 440 раз в секунду, пластинка внутри пищалки будет колебаться с той же частотой, и мы
+услышим ноту \emph{ля} первой октавы. Частота определяет \textbf{высоту звука}: чем больше герц, тем выше нота.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[x=1.4cm,y=0.7cm]
+  \foreach \n/\f/\per/\yy in {{до (262 Гц)}/262/1.0/0,{до следующей октавы (523 Гц)}/523/0.5/-2.4}{
+    \begin{scope}[yshift=\yy cm]
+      \draw[->] (0,0) -- (8.3,0) node[right,font=\scriptsize]{$t$};
+      \node[anchor=west,font=\sffamily\small] at (0,1.8) {\n};
+      \pgfmathsetmacro{\N}{int(8/\per)-1}
+      \foreach \k in {0,...,\N}{
+        \draw[very thick,okgreen!70!black] (\k*\per,0) -- (\k*\per,1.2) -- (\k*\per+\per/2,1.2) -- (\k*\per+\per/2,0) -- (\k*\per+\per,0);
+      }
+    \end{scope}
+  }
+\end{tikzpicture}
+\caption{Нота на октаву выше --- это ровно вдвое большая частота}
+\end{figure}
+
+Для звука используют функцию \code{ledcWriteTone(pin, частота)}: она сама настраивает ШИМ с
+коэффициентом заполнения 50\,\% и нужной частотой. Подключи \emph{пассивную} пищалку (без встроенного
+генератора) к \pin{15}:
+
+\begin{twoview}{Пьезопищалка на выводе GPIO15}{fig:buzzer}
+\begin{tikzpicture}[bb]
+  \bbBoard{24}
+  \bbDevKit{29}{25}
+  \bbBuzzer{10}{12}
+  \draw[wire=worange] (dk-15) -- (27.5,18) -- (27.5,23.5) -- (8,23.5) -- (8,14) -- (8,12) -- (10,12);
+  \draw[wire=wblack] (12,14) -- (12,16);
+  \draw[wire=wblack] (dk-GND) -- (26.5,4) -- (26.5,16) -- (24,16);
+\end{tikzpicture}
+\nextview
+\begin{circuitikz}
+  \draw (0,0) node[left]{\pin{15}} to[short,o-] (0.5,0) -- (1.5,0) to[buzzer,l=пищалка] (1.5,-2) node[ground]{};
+  \node[font=\sffamily\scriptsize] at (1.3,-0.3) {+};
+\end{circuitikz}
+\end{twoview}
+
+\codecap{Гамма «до-ре-ми» на пищалке}
+\codeinput{l06_melody}
+
+\begin{table}[H]
+\centering\small
+\begin{tabular}{@{}*{8}{c}@{}}
+\toprule
+до & ре & ми & фа & соль & ля & си & до\\
+\midrule
+262 & 294 & 330 & 349 & 392 & 440 & 494 & 523\\
+\bottomrule
+\end{tabular}
+\caption{Частоты нот первой октавы, Гц. Каждая следующая октава --- вдвое выше}
+\end{table}
+
+\subsection{Практика: плавная волна}
+
+Вернёмся к схеме из четырёх светодиодов (рис.~\ref{fig:led4}). Теперь у каждого будет свой ШИМ, и яркость
+будет меняться по синусоиде --- той самой волне из урока~\ref{les:signals}. Если сдвинуть волну каждого
+следующего светодиода на четверть периода, по ряду побежит мягкая световая волна.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  width=0.85\textwidth, height=4.6cm,
+  xlabel={время, с}, ylabel={яркость, \%},
+  xmin=0, xmax=2, ymin=0, ymax=105,
+  grid=major, grid style={gray!25},
+  tick label style={font=\scriptsize}, label style={font=\small},
+  legend style={font=\scriptsize,at={(0.5,1.03)},anchor=south,legend columns=4,draw=none},
+  trig format plots=rad, samples=120, domain=0:2,
+]
+  \addplot[very thick,red!80!black]    {50*(sin(2*pi*x)+1)};        \addlegendentry{GPIO4}
+  \addplot[very thick,yellow!70!black] {50*(sin(2*pi*(x-0.25))+1)}; \addlegendentry{GPIO5}
+  \addplot[very thick,green!60!black]  {50*(sin(2*pi*(x-0.5))+1)};  \addlegendentry{GPIO6}
+  \addplot[very thick,blue!70]         {50*(sin(2*pi*(x-0.75))+1)}; \addlegendentry{GPIO7}
+\end{axis}
+\end{tikzpicture}
+\caption{Яркость четырёх светодиодов: одна и та же волна, сдвинутая на четверть периода}
+\end{figure}
+
+\codecap{Световая волна}
+\codeinput{l06_wave}
+
+\begin{summary}
+\begin{itemize}[leftmargin=*]
+  \item Из-за инерции зрения вспышки чаще $\approx$50 раз в секунду сливаются в ровный свет.
+  \item ШИМ меняет долю времени, пока вывод включён (коэффициент заполнения), и этим --- среднюю яркость.
+  \item \code{ledcAttach(pin, freq, bits)} + \code{ledcWrite(pin, duty)}; при 8 битах \code{duty} от 0 до 255.
+  \item Глаз воспринимает яркость нелинейно, поэтому для плавности нужна гамма-коррекция.
+  \item Частота определяет, заметно ли мерцание, а для звука --- высоту ноты.
+\end{itemize}
+\end{summary}
+
+\begin{quiz}
+\begin{enumerate}
+  \item Почему при частоте мигания 100~Гц мы видим ровный свет?
+  \item Чему равен коэффициент заполнения, если вывод включён 150~мкс из периода 200~мкс?
+  \item Какое значение \code{duty} соответствует 50~\% при 10-битном разрешении?
+  \item Какая частота у ноты «ля» второй октавы, если у «ля» первой --- 440~Гц?
+\end{enumerate}
+\end{quiz}
+
+\begin{tasks}
+\begin{enumerate}
+  \item Сделай «дыхание» в два раза медленнее, не меняя \code{delay()}. Подсказка: шаг.
+  \item Попробуй функцию \code{ledcFade(pin, от, до, мс)}: она меняет яркость плавно и полностью сама.
+  \item Сыграй на пищалке «В траве сидел кузнечик» или любую другую мелодию.
+  \item Установи частоту ШИМ 30~Гц и посмотри на «дыхание». Что изменилось и почему?
+\end{enumerate}
+\end{tasks}

@@ -1,0 +1,39 @@
+\begin{CodeVerbatim}
+\PY{c+c1}{// Самый простой веб\PYZhy{}сервер: страница «Привет!»}
+\PY{c+cp}{\PYZsh{}}\PY{c+cp}{include}\PY{+w}{ }\PY{c+cpf}{\PYZlt{}WiFi.h\PYZgt{}}
+\PY{c+cp}{\PYZsh{}}\PY{c+cp}{include}\PY{+w}{ }\PY{c+cpf}{\PYZlt{}WebServer.h\PYZgt{}}
+\PY{c+cp}{\PYZsh{}}\PY{c+cp}{include}\PY{+w}{ }\PY{c+cpf}{\PYZlt{}ESPmDNS.h\PYZgt{}}
+
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{char}\PY{o}{*}\PY{+w}{ }\PY{n}{SSID}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{MyNetwork}\PY{l+s}{\PYZdq{}}\PY{p}{;}
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{char}\PY{o}{*}\PY{+w}{ }\PY{n}{PASS}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{MyPassword}\PY{l+s}{\PYZdq{}}\PY{p}{;}
+
+\PY{n}{WebServer}\PY{+w}{ }\PY{n+nf}{server}\PY{p}{(}\PY{l+m+mi}{80}\PY{p}{)}\PY{p}{;}\PY{+w}{                        }\PY{c+c1}{// 80 \PYZhy{}\PYZhy{} стандартный «порт» для HTTP}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{handleRoot}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{                          }\PY{c+c1}{// кто\PYZhy{}то открыл адрес \PYZdq{}/\PYZdq{}}
+\PY{+w}{  }\PY{n}{String}\PY{+w}{ }\PY{n}{html}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{\PYZlt{}h1\PYZgt{}Привет! Я ESP32\PYZhy{}S3\PYZlt{}/h1\PYZgt{}}\PY{l+s}{\PYZdq{}}\PY{p}{;}
+\PY{+w}{  }\PY{n}{html}\PY{+w}{ }\PY{o}{+}\PY{o}{=}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{\PYZlt{}p\PYZgt{}Я работаю уже }\PY{l+s}{\PYZdq{}}\PY{+w}{ }\PY{o}{+}\PY{+w}{ }\PY{n}{String}\PY{p}{(}\PY{n}{millis}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{o}{/}\PY{+w}{ }\PY{l+m+mi}{1000}\PY{p}{)}\PY{+w}{ }\PY{o}{+}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{ секунд.\PYZlt{}/p\PYZgt{}}\PY{l+s}{\PYZdq{}}\PY{p}{;}
+\PY{+w}{  }\PY{n}{server}\PY{p}{.}\PY{n}{send}\PY{p}{(}\PY{l+m+mi}{200}\PY{p}{,}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{text/html; charset=utf\PYZhy{}8}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{n}{html}\PY{p}{)}\PY{p}{;}\PY{+w}{  }\PY{c+c1}{// 200 = «всё хорошо»}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{handleNotFound}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{                      }\PY{c+c1}{// адрес, которого у нас нет}
+\PY{+w}{  }\PY{n}{server}\PY{p}{.}\PY{n}{send}\PY{p}{(}\PY{l+m+mi}{404}\PY{p}{,}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{text/plain; charset=utf\PYZhy{}8}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{Такой страницы нет}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{setup}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{n}{Serial}\PY{p}{.}\PY{n}{begin}\PY{p}{(}\PY{l+m+mi}{115200}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{WiFi}\PY{p}{.}\PY{n}{mode}\PY{p}{(}\PY{n}{WIFI\PYZus{}STA}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{WiFi}\PY{p}{.}\PY{n}{begin}\PY{p}{(}\PY{n}{SSID}\PY{p}{,}\PY{+w}{ }\PY{n}{PASS}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{k}{while}\PY{+w}{ }\PY{p}{(}\PY{n}{WiFi}\PY{p}{.}\PY{n}{status}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{o}{!}\PY{o}{=}\PY{+w}{ }\PY{n}{WL\PYZus{}CONNECTED}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{ }\PY{n}{delay}\PY{p}{(}\PY{l+m+mi}{300}\PY{p}{)}\PY{p}{;}\PY{+w}{ }\PY{n}{Serial}\PY{p}{.}\PY{n}{print}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{.}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{;}\PY{+w}{ }\PY{p}{\PYZcb{}}
+\PY{+w}{  }\PY{n}{Serial}\PY{p}{.}\PY{n}{printf}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s+se}{\PYZbs{}n}\PY{l+s}{Открой http://\PYZpc{}s или http://esp32.local}\PY{l+s+se}{\PYZbs{}n}\PY{l+s}{\PYZdq{}}\PY{p}{,}
+\PY{+w}{                }\PY{n}{WiFi}\PY{p}{.}\PY{n}{localIP}\PY{p}{(}\PY{p}{)}\PY{p}{.}\PY{n}{toString}\PY{p}{(}\PY{p}{)}\PY{p}{.}\PY{n}{c\PYZus{}str}\PY{p}{(}\PY{p}{)}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{MDNS}\PY{p}{.}\PY{n}{begin}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{esp32}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{;}
+
+\PY{+w}{  }\PY{n}{server}\PY{p}{.}\PY{n}{on}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{/}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{n}{handleRoot}\PY{p}{)}\PY{p}{;}\PY{+w}{                }\PY{c+c1}{// адрес \PYZhy{}\PYZgt{} функция\PYZhy{}обработчик}
+\PY{+w}{  }\PY{n}{server}\PY{p}{.}\PY{n}{onNotFound}\PY{p}{(}\PY{n}{handleNotFound}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{server}\PY{p}{.}\PY{n}{begin}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{loop}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{n}{server}\PY{p}{.}\PY{n}{handleClient}\PY{p}{(}\PY{p}{)}\PY{p}{;}\PY{+w}{                     }\PY{c+c1}{// ответить браузеру, если он что\PYZhy{}то спросил}
+\PY{p}{\PYZcb{}}
+\end{CodeVerbatim}

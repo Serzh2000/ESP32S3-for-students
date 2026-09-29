@@ -1,0 +1,474 @@
+% =====================================================================
+\section{Сигналы: аналоговые и цифровые}
+\label{les:signals}
+% =====================================================================
+\lessonintro
+  {понять, что такое сигнал, чем аналоговый сигнал отличается от цифрового и как один превращается в другой}
+  {урок~\ref{les:board}: мы видели на плате выводы с подписями ADC и GPIO}
+  {учимся читать графики сигналов и переводить числа в двоичную систему}
+  {карандаш, бумага и калькулятор --- паяльник сегодня не нужен}
+
+В прошлом уроке мы заметили, что у выводов платы разные подписи: одни умеют работать только
+с «включено/выключено», другие --- ещё и измерять напряжение (ADC). Чтобы понять, в чём разница,
+разберёмся, \emph{с чем} вообще работает микроконтроллер. Он не видит, не слышит и не чувствует --- он умеет только измерять
+\textbf{напряжение} на своих ножках и выдавать напряжение сам. Всё, что происходит вокруг ---
+свет, звук, нажатие кнопки, --- должно превратиться в напряжение, то есть в \textbf{электрический сигнал}.
+
+\subsection{Что такое сигнал}
+
+\textbf{Сигнал} --- это величина, которая меняется и этим что-то сообщает. Светофор сигналит цветом,
+учитель --- голосом, градусник --- высотой столбика. В электронике сигнал --- это почти всегда
+напряжение, которое меняется со временем.
+
+Сигналы удобно рисовать графиками. По горизонтали откладываем \textbf{время} $t$, по вертикали ---
+\textbf{напряжение} $U$. Каждая точка линии отвечает на вопрос: «какое напряжение было в этот момент?»
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  width=0.62\textwidth, height=4.6cm,
+  xlabel={время, часы}, ylabel={температура, °C},
+  xmin=0, xmax=24, ymin=0, ymax=25, xtick={0,6,12,18,24},
+  grid=major, grid style={gray!25},
+  tick label style={font=\scriptsize}, label style={font=\small},
+]
+  \addplot[very thick,accent,smooth,samples=80,domain=0:24] {13 - 7*cos(deg(2*pi*(x-3)/24))};
+  \node[circle,fill=esp,inner sep=1.6pt,label={[font=\scriptsize]above:в 15:00 было 20 °C}] at (axis cs:15,20) {};
+\end{axis}
+\end{tikzpicture}
+\caption{Температура на улице в течение суток. Это тоже сигнал: величина, которая меняется со временем}
+\end{figure}
+
+\subsection{Аналоговый сигнал}
+
+\textbf{Аналоговый} сигнал меняется \emph{плавно} и может принимать \emph{любое} значение: не только
+1 или 2 вольта, но и 1,5, и 1,537, и 1,53712\ldots\ Как температура: она не прыгает с 15 °C сразу
+на 16 °C, а проходит все промежуточные значения.
+
+Представь горку и лестницу. По горке можно съехать и остановиться на любой высоте --- это аналоговый
+сигнал. По лестнице можно стоять только на ступеньках --- это цифровой сигнал, о нём чуть ниже.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[x=1cm,y=1cm]
+  % горка
+  \fill[blkrf] (0,0) -- (0,2.4) .. controls (1.5,2.4) and (2.2,0) .. (4,0) -- cycle;
+  \draw[very thick,okgreen!70!black] (0,2.4) .. controls (1.5,2.4) and (2.2,0) .. (4,0);
+  \shade[ball color=esp] (1.95,1.62) circle (0.2);
+  \node[font=\sffamily\small\bfseries] at (2,-0.5) {Горка = аналоговый};
+  \node[font=\sffamily\scriptsize,align=center] at (2,-1.1) {можно остановиться\\ на любой высоте};
+  % лестница
+  \begin{scope}[xshift=6.5cm]
+    \fill[blkmem] (0,0) -- (0,2.4) -- (1,2.4) -- (1,1.8) -- (2,1.8) -- (2,1.2) -- (3,1.2) -- (3,0.6) -- (4,0.6) -- (4,0) -- cycle;
+    \draw[very thick,accent] (0,2.4) -- (1,2.4) -- (1,1.8) -- (2,1.8) -- (2,1.2) -- (3,1.2) -- (3,0.6) -- (4,0.6) -- (4,0);
+    \shade[ball color=esp] (1.5,2.0) circle (0.2);
+    \node[font=\sffamily\small\bfseries] at (2,-0.5) {Лестница = цифровой};
+    \node[font=\sffamily\scriptsize,align=center] at (2,-1.1) {можно стоять\\ только на ступеньках};
+  \end{scope}
+\end{tikzpicture}
+\caption{Аналоговый и цифровой сигнал --- как горка и лестница}
+\end{figure}
+
+Самый известный аналоговый сигнал --- \textbf{синусоида}. Такой сигнал выдаёт микрофон, когда
+рядом звучит чистая нота. У неё есть два главных параметра:
+\begin{itemize}
+  \item \textbf{амплитуда} $U_m$ --- насколько высоко поднимается волна (у звука --- громкость);
+  \item \textbf{период} $T$ --- через сколько времени волна повторяется. Сколько раз волна повторяется за
+        секунду, называют \textbf{частотой}: $f = 1/T$. Частоту измеряют в герцах (Гц): 1 Гц = одно повторение в секунду.
+\end{itemize}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  width=0.8\textwidth, height=5cm,
+  xlabel={$t$, мс}, ylabel={$U$, В},
+  xmin=0, xmax=4.2, ymin=-1.5, ymax=1.8,
+  axis lines=middle, axis line style={-{Stealth[length=2mm]}},
+  xlabel style={at={(ticklabel* cs:1)},anchor=north west},
+  ylabel style={at={(ticklabel* cs:1)},anchor=south},
+  xtick={1,2,3,4}, ytick={-1,1},
+  tick label style={font=\scriptsize}, label style={font=\small},
+  trig format plots=rad,
+]
+  \addplot[very thick,accent,samples=200,domain=0:4] {sin(2*pi*x)};
+  \draw[dashed,gray] (axis cs:0.25,1) -- (axis cs:0.25,0);
+  \draw[{Stealth[length=2mm]}-{Stealth[length=2mm]},esp,thick] (axis cs:0.25,0) -- node[right,font=\scriptsize]{$U_m$ --- амплитуда} (axis cs:0.25,1);
+  \draw[{Stealth[length=2mm]}-{Stealth[length=2mm]},okgreen!70!black,thick] (axis cs:1.25,1.35) -- node[above,font=\scriptsize]{$T$ --- период (1 мс)} (axis cs:2.25,1.35);
+  \draw[dashed,gray] (axis cs:1.25,1) -- (axis cs:1.25,1.35);
+  \draw[dashed,gray] (axis cs:2.25,1) -- (axis cs:2.25,1.35);
+\end{axis}
+\end{tikzpicture}
+\caption{Синусоида. Период 1 мс значит, что за секунду волна повторяется 1000 раз: частота $f = 1000$~Гц = 1~кГц.
+Такой звук похож на писк старого телефона}
+\end{figure}
+
+\begin{fact}
+Человек слышит звуки с частотой примерно от 20~Гц (очень низкий гул) до 20\,000~Гц (тонкий писк).
+С возрастом верхняя граница снижается, поэтому некоторые высокие звуки слышат только дети и подростки.
+\end{fact}
+
+\subsection{Цифровой сигнал}
+
+\textbf{Цифровой} сигнал может принимать только несколько заранее договорённых значений. Чаще всего
+значений всего два:
+\begin{itemize}
+  \item \textbf{0} --- «нет», низкий уровень, LOW, напряжение около 0~В;
+  \item \textbf{1} --- «да», высокий уровень, HIGH, для ESP32-S3 это около 3,3~В.
+\end{itemize}
+Одна такая «ячейка» со значением 0 или 1 называется \textbf{бит}. Выключатель света --- цифровой:
+свет либо горит, либо нет. А регулятор громкости у колонки --- аналоговый.
+
+Чтобы передать много информации, биты посылают по очереди, один за другим. Каждому биту отводится
+одинаковое время --- \emph{длительность бита}:
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[x=1.2cm,y=1cm]
+  \draw[-{Stealth[length=2mm]}] (0,0) -- (9.6,0) node[right,font=\small]{$t$};
+  \draw[-{Stealth[length=2mm]}] (0,0) -- (0,1.9) node[above,font=\small]{$U$};
+  \draw (0.07,1.2) -- (-0.07,1.2) node[left,font=\scriptsize]{3,3 В (1)};
+  \node[left,font=\scriptsize] at (-0.07,0) {0 В (0)};
+  \foreach \x in {1,...,8} \draw[gray!40,dashed] (\x,0) -- (\x,1.6);
+  \draw[very thick,esp] (0,1.2) -- (1,1.2) -- (1,0) -- (2,0) -- (2,1.2) -- (4,1.2) -- (4,0) -- (6,0) -- (6,1.2) -- (7,1.2) -- (7,0) -- (8,0) -- (9,0);
+  \foreach \x/\b in {0.5/1,1.5/0,2.5/1,3.5/1,4.5/0,5.5/0,6.5/1,7.5/0}
+    \node[font=\ttfamily\bfseries,text=accent] at (\x,1.6) {\b};
+  \draw[{Stealth[length=2mm]}-{Stealth[length=2mm]}] (2,-0.35) -- node[below,font=\scriptsize]{длительность бита} (3,-0.35);
+\end{tikzpicture}
+\caption{Цифровой сигнал: восемь бит \texttt{10110010} передаются по одному проводу друг за другом}
+\end{figure}
+
+\begin{table}[H]
+\centering\small
+\begin{tabularx}{\textwidth}{@{}X X@{}}
+\toprule
+\textbf{Аналоговые источники сигнала} & \textbf{Цифровые источники сигнала}\\
+\midrule
+микрофон (звук) & кнопка (нажата / не нажата)\\
+фоторезистор (освещённость) & датчик движения (есть движение / нет)\\
+термистор (температура) & геркон, концевой выключатель\\
+потенциометр --- «крутилка» (урок~\ref{les:adc}) & линия связи с компьютером (урок~\ref{les:serial})\\
+\bottomrule
+\end{tabularx}
+\caption{Примеры аналоговых и цифровых сигналов, с которыми мы встретимся}
+\end{table}
+
+\subsection{Логические уровни: где кончается ноль и начинается единица}
+
+Настоящее напряжение никогда не бывает ровно 0 или ровно 3,3~В: провода длинные, детали неидеальные.
+Поэтому микросхема договаривается: всё, что \emph{достаточно низко}, --- это 0, всё, что
+\emph{достаточно высоко}, --- это 1. Посередине остаётся «серая зона», где микросхема может
+ошибиться. Хорошая схема в эту зону никогда не попадает.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[x=1cm,y=1.35cm]
+  \fill[accent!18] (0,0) rectangle (2.4,0.825);
+  \fill[gray!20]   (0,0.825) rectangle (2.4,2.475);
+  \fill[esp!18]    (0,2.475) rectangle (2.4,3.3);
+  \fill[esp!45]    (0,3.3) rectangle (2.4,4.2);
+  \draw[thick] (0,0) rectangle (2.4,4.2);
+  \foreach \v/\l in {0/0,0.825/0{,}825,2.475/2{,}475,3.3/3{,}3,4.2/5{,}0}
+    \draw (0,\v) -- (-0.12,\v) node[left,font=\scriptsize]{\l~В};
+  \node[font=\sffamily\bfseries,text=accent] at (1.2,0.41) {это 0 (LOW)};
+  \node[font=\sffamily\small,align=center] at (1.2,1.65) {серая зона:\\ 0 или 1 ---\\ непонятно};
+  \node[font=\sffamily\bfseries,text=esp] at (1.2,2.89) {это 1 (HIGH)};
+  \node[font=\sffamily\small\bfseries,text=white,align=center] at (1.2,3.75) {ОПАСНО!};
+  \draw[decorate,decoration={brace,amplitude=4pt}] (2.6,4.2) -- (2.6,3.3)
+     node[midway,right=5pt,font=\sffamily\scriptsize,align=left]{выше 3,6~В ножку можно сжечь.\\ Никогда не подавай 5~В на выводы ESP32-S3!};
+  \draw[decorate,decoration={brace,amplitude=4pt}] (2.6,2.475) -- (2.6,0.825)
+     node[midway,right=5pt,font=\sffamily\scriptsize,align=left]{сюда сигнал попадать не должен};
+\end{tikzpicture}
+\caption{Как ESP32-S3 (питание 3,3~В) понимает напряжение на входе. Граница нуля --- четверть
+напряжения питания, граница единицы --- три четверти}
+\end{figure}
+
+\subsection{Почему цифровой сигнал надёжнее}
+
+По дороге к приёмнику любой сигнал обрастает \textbf{помехами}: рядом работает телефон, мигает лампа,
+моторчик создаёт искры. Помехи --- это маленькие случайные добавки к напряжению.
+
+Аналоговому сигналу от них не спастись: приёмник не знает, какая часть напряжения --- полезный сигнал,
+а какая --- помеха. А у цифрового сигнала всего два значения, и достаточно спросить: «напряжение выше
+середины или ниже?» Если помеха не слишком большая, ответ будет правильным, и сигнал восстановится
+\emph{в точности}.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{groupplot}[
+  group style={group size=2 by 2, horizontal sep=14mm, vertical sep=13mm},
+  width=0.47\textwidth, height=3.6cm,
+  xmin=0, xmax=8, ymin=-0.6, ymax=4.1,
+  xtick=\empty, ytick={0,3.3}, yticklabels={0,3{,}3},
+  tick label style={font=\scriptsize}, title style={font=\sffamily\small},
+  trig format plots=rad, samples=400, domain=0:8,
+]
+  \nextgroupplot[title={аналоговый: отправили}]
+    \addplot[very thick,accent] {1.65+1.3*sin(0.9*x)};
+  \nextgroupplot[title={цифровой: отправили}]
+    \addplot[very thick,esp,const plot,samples at={0,1,2,3,4,5,6,7,8}]
+      {x<1?3.3:(x<2?0:(x<4?3.3:(x<6?0:(x<7?3.3:0))))};
+  \nextgroupplot[title={аналоговый: приняли с помехой}]
+    \addplot[thick,accent] {1.65+1.3*sin(0.9*x)+0.35*sin(23*x)+0.25*sin(57*x+1)+0.15*sin(131*x)};
+  \nextgroupplot[title={цифровой: приняли с помехой}]
+    \addplot[thick,esp!60] {(x<1?3.3:(x<2?0:(x<4?3.3:(x<6?0:(x<7?3.3:0))))) +0.35*sin(23*x)+0.25*sin(57*x+1)+0.15*sin(131*x)};
+    \addplot[very thick,okgreen,const plot,samples at={0,1,2,3,4,5,6,7,8}]
+      {x<1?3.55:(x<2?-0.25:(x<4?3.55:(x<6?-0.25:(x<7?3.55:-0.25))))};
+    \addplot[dashed,gray,domain=0:8,samples=2] {1.65};
+\end{groupplot}
+\end{tikzpicture}
+\caption{Одна и та же помеха портит аналоговый сигнал навсегда, а цифровой легко восстановить:
+всё, что выше пунктирной линии, --- единица, ниже --- ноль (зелёная линия)}
+\end{figure}
+
+Именно поэтому музыку, фотографии и фильмы сегодня хранят и передают в цифровом виде: копия цифрового
+файла ничем не отличается от оригинала, сколько бы раз его ни копировали.
+
+\subsection{Двоичные числа}
+
+Один бит хранит всего два варианта: 0 или 1. Два бита --- уже четыре варианта (\texttt{00}, \texttt{01},
+\texttt{10}, \texttt{11}), три бита --- восемь. Каждый новый бит удваивает количество вариантов:
+\[
+  \text{количество вариантов} = 2^{N}, \quad N \text{ --- число бит}.
+\]
+
+Восемь бит называют \textbf{байтом}. Байт хранит числа от 0 до 255. Чтобы перевести двоичное число
+в обычное, подпишем над каждым битом его «вес» --- степень двойки --- и сложим веса тех битов, где стоит
+единица:
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[x=1.25cm]
+  \foreach \w/\b [count=\i] in {128/1,64/0,32/1,16/1,8/0,4/0,2/1,1/0}{
+    \node[font=\scriptsize,text=gray] at (\i,1.05) {$2^{\the\numexpr8-\i\relax}$};
+    \node[font=\sffamily\small] at (\i,0.6) {\w};
+    \ifnum\b=1
+      \node[draw=esp,fill=esp!15,thick,minimum size=9mm,font=\ttfamily\large\bfseries] at (\i,-0.2) {1};
+      \node[font=\sffamily\small,text=esp] at (\i,-1.0) {+\w};
+    \else
+      \node[draw=gray,fill=white,thick,minimum size=9mm,font=\ttfamily\large\bfseries,text=gray] at (\i,-0.2) {0};
+    \fi
+  }
+  \node[font=\sffamily\small,anchor=east] at (0.4,0.6) {вес бита:};
+  \node[font=\sffamily\small,anchor=east] at (0.4,-0.2) {бит:};
+  \node[font=\sffamily\small\bfseries,anchor=west] at (8.5,-1.0) {= 178};
+\end{tikzpicture}
+\caption{Двоичное число \texttt{10110010} равно $128 + 32 + 16 + 2 = 178$}
+\end{figure}
+
+\begin{table}[H]
+\centering\small
+\begin{tabular}{@{}ccc@{\hspace{15mm}}ccc@{}}
+\toprule
+Число бит & Вариантов & Диапазон & Число бит & Вариантов & Диапазон\\
+\midrule
+1 & 2 & 0--1 & 8 (байт) & 256 & 0--255\\
+2 & 4 & 0--3 & 10 & 1024 & 0--1023\\
+3 & 8 & 0--7 & 12 & 4096 & 0--4095\\
+4 & 16 & 0--15 & 16 & 65\,536 & 0--65\,535\\
+\bottomrule
+\end{tabular}
+\caption{Сколько разных чисел помещается в $N$ бит. Эти числа ещё не раз встретятся нам в курсе}
+\end{table}
+
+\subsection{Из аналогового в цифровой: АЦП}
+
+Процессор умеет работать только с числами. Чтобы он «услышал» микрофон или «узнал» положение
+ручки, аналоговый сигнал нужно превратить в числа. Этим занимается \textbf{АЦП} ---
+\emph{аналого-цифровой преобразователь}. Он делает два шага.
+
+\textbf{Шаг 1. Дискретизация} --- измеряем сигнал не всё время, а через одинаковые промежутки времени.
+Так работает кино: плавное движение снимают отдельными кадрами, 24 кадра в секунду, и глаз
+видит непрерывное движение. Сколько измерений делается за секунду, называют \textbf{частотой дискретизации}.
+
+\textbf{Шаг 2. Квантование} --- каждое измерение округляем до ближайшей «ступеньки». Это как измерять
+рост линейкой, на которой есть только сантиметровые деления: 152,7~см запишем как 153~см.
+Число ступенек зависит от числа бит АЦП: 3 бита --- 8 ступенек, 12 бит --- 4096 ступенек.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{groupplot}[
+  group style={group size=2 by 1, horizontal sep=16mm},
+  width=0.49\textwidth, height=5.4cm,
+  xmin=0, xmax=1, ymin=0, ymax=3.3,
+  xlabel={$t$, с}, tick label style={font=\scriptsize}, label style={font=\small},
+  title style={font=\sffamily\small},
+  trig format plots=rad,
+]
+  \nextgroupplot[title={1) дискретизация: 16 измерений}, ylabel={$U$, В},
+                 ytick={0,1,2,3}, grid=major, grid style={gray!20}]
+    \addplot[thick,accent!60,samples=200,domain=0:1] {1.65+1.4*sin(2*pi*x)};
+    \addplot[ycomb,very thick,esp,mark=*,mark size=1.6pt,samples at={0,0.0625,...,1.0}] {1.65+1.4*sin(2*pi*x)};
+  \nextgroupplot[title={2) квантование: 3 бита = 8 ступенек},
+                 ytick={0,0.4125,...,3.3},
+                 yticklabels={000,001,010,011,100,101,110,111},
+                 yticklabel style={font=\ttfamily\scriptsize},
+                 ymajorgrids, grid style={gray!30}]
+    \addplot[thin,accent!50,samples=200,domain=0:1] {1.65+1.4*sin(2*pi*x)};
+    \addplot[very thick,okgreen!70!black,const plot,samples at={0,0.0625,...,1.0}]
+      {0.4125*min(7,floor((1.65+1.4*sin(2*pi*x))/0.4125))};
+    \addplot[only marks,mark=*,mark size=1.6pt,esp,samples at={0,0.0625,...,1.0}]
+      {0.4125*min(7,floor((1.65+1.4*sin(2*pi*x))/0.4125))};
+\end{groupplot}
+\end{tikzpicture}
+\caption{Как АЦП превращает плавную волну в числа. Слева: измеряем 16 раз за период.
+Справа: каждое измерение округляем до одной из 8 ступенек и записываем номер ступеньки двоичным числом}
+\end{figure}
+
+Высота одной ступеньки называется \textbf{шагом квантования}:
+\[
+  q = \frac{U_\text{max}}{2^{N}}, \qquad
+  \text{для 12-битного АЦП и 3,3~В:}\quad q = \frac{3{,}3~\text{В}}{4096} \approx 0{,}8~\text{мВ}.
+\]
+Чем больше бит, тем мельче ступеньки и тем точнее цифровая копия. В ESP32-S3 стоит 12-битный АЦП ---
+с ним мы поработаем в уроке~\ref{les:adc}.
+
+\subsubsection{Как часто нужно измерять?}
+
+Если измерять слишком редко, можно получить совсем не тот сигнал. Посмотри на рисунок: быстрая волна
+(9 колебаний в секунду) измерена всего 10 раз в секунду, и точки измерений легли на медленную волну,
+которой на самом деле нет!
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  width=0.85\textwidth, height=4.6cm,
+  xmin=0, xmax=1, ymin=-1.3, ymax=1.3,
+  xlabel={$t$, с}, ytick=\empty,
+  tick label style={font=\scriptsize}, label style={font=\small},
+  legend style={font=\scriptsize,at={(0.5,1.03)},anchor=south,legend columns=3,draw=none},
+  trig format plots=rad,
+]
+  \addplot[thin,accent,samples=400,domain=0:1] {sin(2*pi*9*x)};
+  \addlegendentry{настоящий сигнал, 9 Гц}
+  \addplot[very thick,dashed,esp,samples=100,domain=0:1] {-sin(2*pi*x)};
+  \addlegendentry{что «увидел» АЦП, 1 Гц}
+  \addplot[only marks,mark=*,mark size=2.2pt,black,samples at={0,0.1,...,1.0}] {sin(2*pi*9*x)};
+  \addlegendentry{измерения}
+\end{axis}
+\end{tikzpicture}
+\caption{Слишком редкие измерения обманывают. Поэтому в кино колёса машин иногда
+кажутся крутящимися медленно или даже назад}
+\end{figure}
+
+Правило (его называют \textbf{теоремой Котельникова}): измерять нужно \emph{больше чем в два раза чаще},
+чем самая высокая частота в сигнале. Человек слышит до 20\,000~Гц, поэтому музыку записывают с частотой
+дискретизации 44\,100 измерений в секунду.
+
+\subsection{Из цифрового в аналоговый: ЦАП и ШИМ}
+
+Обратная задача --- из чисел получить плавное напряжение, например чтобы динамик заиграл музыку.
+Это делает \textbf{ЦАП} --- цифро-аналоговый преобразователь.
+
+В ESP32-S3 ЦАПа нет, но есть хитрый приём --- \textbf{ШИМ} (широтно-импульсная модуляция).
+Вывод очень быстро включается и выключается, тысячи раз в секунду. Если он половину времени
+включён, а половину выключен, то «в среднем» на нём половина напряжения. Светодиод при этом светит
+вполовину яркости: глаз не успевает заметить мигание. Подробно ШИМ разберём в уроке~\ref{les:pwm}.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[x=0.8cm,y=0.7cm]
+  \foreach \d/\name/\yy in {0.25/25\%/0,0.75/75\%/-2.6}{
+    \begin{scope}[yshift=\yy cm]
+      \draw[-{Stealth[length=2mm]}] (0,0) -- (12.6,0) node[right,font=\scriptsize]{$t$};
+      \draw (0,0) -- (0,1.7);
+      \node[left,font=\sffamily\small,align=right] at (-0.1,0.7) {включён\\ \name\ времени};
+      \foreach \k in {0,...,3}{
+        \pgfmathsetmacro{\s}{\k*3}
+        \pgfmathsetmacro{\e}{\k*3+3*\d}
+        \draw[very thick,esp] (\s,0) -- (\s,1.4) -- (\e,1.4) -- (\e,0) -- (\s+3,0);
+      }
+      \draw[dashed,accent,very thick] (0,1.4*\d) -- (12,1.4*\d) node[right=4mm,font=\scriptsize,text=accent,align=left]{в среднем\\ \pgfmathparse{3.3*\d}\pgfmathprintnumber[precision=2,use comma]{\pgfmathresult}~В};
+    \end{scope}
+  }
+\end{tikzpicture}
+\caption{ШИМ: чем дольше вывод включён, тем больше среднее напряжение (пунктир)}
+\end{figure}
+
+\subsection{Путь сигнала внутри устройства}
+
+Почти любое «умное» устройство устроено одинаково: \emph{аналоговый мир → цифровая обработка →
+аналоговый мир}. Вот, например, как работает цифровой диктофон:
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=4mm and 5mm,
+  st/.style={blk,minimum width=19mm,minimum height=12mm,font=\sffamily\scriptsize}]
+  \node[st,fill=blkrf] (mic) {Микрофон};
+  \node[st,fill=blkper,right=of mic] (adc) {АЦП};
+  \node[st,fill=blkcpu,right=of adc] (cpu) {Процессор\\ и память};
+  \node[st,fill=blkper,right=of cpu] (dac) {ЦАП\\ или ШИМ};
+  \node[st,fill=blkrf,right=of dac] (spk) {Динамик};
+  \draw[arr] (mic) -- (adc); \draw[arr] (adc) -- (cpu); \draw[arr] (cpu) -- (dac); \draw[arr] (dac) -- (spk);
+  % подписи-волны
+  \begin{scope}[shift={($(mic.south)!0.5!(adc.south)+(0,-0.75)$)},x=0.33cm,y=0.25cm]
+    \draw[accent,thick,domain=-1.5:1.5,samples=40] plot (\x,{sin(\x*240)});
+  \end{scope}
+  \begin{scope}[shift={($(adc.south)!0.5!(cpu.south)+(-0.55,-1.0)$)},x=0.14cm,y=0.45cm]
+    \draw[esp,thick] (0,0) -- (0,1) -- (1,1) -- (1,0) -- (2,0) -- (2,1) -- (4,1) -- (4,0) -- (6,0) -- (6,1) -- (7,1) -- (7,0) -- (8,0);
+  \end{scope}
+  \begin{scope}[shift={($(cpu.south)!0.5!(dac.south)+(-0.55,-1.0)$)},x=0.14cm,y=0.45cm]
+    \draw[esp,thick] (0,0) -- (0,1) -- (2,1) -- (2,0) -- (3,0) -- (3,1) -- (4,1) -- (4,0) -- (6,0) -- (6,1) -- (8,1);
+  \end{scope}
+  \begin{scope}[shift={($(dac.south)!0.5!(spk.south)+(0,-0.75)$)},x=0.33cm,y=0.25cm]
+    \draw[accent,thick,domain=-1.5:1.5,samples=40] plot (\x,{sin(\x*240)});
+  \end{scope}
+  \node[font=\sffamily\scriptsize,text=accent] at ($(mic.south)!0.5!(adc.south)+(0,-1.35)$) {аналоговый};
+  \node[font=\sffamily\scriptsize,text=esp] at ($(cpu.south)+(0,-1.35)$) {цифровой (числа)};
+  \node[font=\sffamily\scriptsize,text=accent] at ($(dac.south)!0.5!(spk.south)+(0,-1.35)$) {аналоговый};
+\end{tikzpicture}
+\caption{Путь звука в цифровом диктофоне}
+\end{figure}
+
+В нашем курсе ESP32-S3 будет работать с сигналами обоих видов:
+
+\begin{table}[H]
+\centering\small
+\begin{tabularx}{\textwidth}{@{}l X l@{}}
+\toprule
+Что делаем & Какой сигнал & Урок\\
+\midrule
+Включаем и выключаем светодиод & цифровой выход (0 или 1) & \ref{les:led}\\
+Разговариваем с компьютером & цифровой, биты друг за другом & \ref{les:serial}\\
+Читаем кнопку & цифровой вход & \ref{les:gpio-in}\\
+Плавно меняем яркость & цифровой ШИМ, который «притворяется» аналоговым & \ref{les:pwm}\\
+Измеряем положение ручки & аналоговый вход → АЦП → число & \ref{les:adc}\\
+Выводим картинку на экран & цифровой, два провода & \ref{les:i2c}\\
+Передаём данные по Wi-Fi & цифровые данные внутри радиоволны & \ref{les:radio}\\
+\bottomrule
+\end{tabularx}
+\caption{Какие сигналы встретятся в следующих уроках}
+\end{table}
+
+\begin{summary}
+\begin{itemize}[leftmargin=*]
+  \item Сигнал --- это величина, которая меняется со временем и несёт информацию. В электронике это напряжение.
+  \item Аналоговый сигнал плавный и принимает любые значения; цифровой --- только договорённые (обычно 0 и 1).
+  \item Цифровой сигнал устойчив к помехам: его легко восстановить по порогу.
+  \item АЦП превращает аналоговый сигнал в числа: измеряет (дискретизация) и округляет (квантование).
+  \item $N$ бит дают $2^N$ вариантов: 8 бит --- 256, 12 бит --- 4096.
+  \item ESP32-S3 понимает уровни 0 и 3,3~В. Напряжение 5~В для его выводов опасно.
+\end{itemize}
+\end{summary}
+
+\begin{quiz}
+\begin{enumerate}
+  \item Какой сигнал у обычного выключателя света, а какой --- у ручки громкости? Почему?
+  \item На вход ESP32-S3 подали 1,5~В. Это 0, 1 или «серая зона»?
+  \item Сколько вариантов можно закодировать 5 битами?
+  \item Переведи в обычное число двоичное \texttt{00101101}.
+\end{enumerate}
+\end{quiz}
+
+\begin{tasks}
+\begin{enumerate}
+  \item Найди дома по три аналоговых и три цифровых источника сигнала. Запиши, какую величину каждый из них передаёт.
+  \item Нарисуй график цифрового сигнала для буквы «A» (её код --- 65). Сначала переведи 65 в двоичное число из 8 бит.
+  \item Посчитай шаг квантования 10-битного АЦП при напряжении 3,3~В. Во сколько раз он крупнее, чем у 12-битного?
+  \item Сколько измерений в секунду должен делать АЦП, чтобы правильно записать свист с частотой 3000~Гц?
+\end{enumerate}
+\end{tasks}

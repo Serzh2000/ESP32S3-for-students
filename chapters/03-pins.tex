@@ -1,0 +1,256 @@
+% =====================================================================
+\section{Выводы платы: что есть что}
+\label{les:pins}
+% =====================================================================
+\lessonintro
+  {узнать назначение выводов платы: питание, земля, цифровые и аналоговые входы, особые выводы}
+  {урок~\ref{les:board} (как выглядит плата), урок~\ref{les:signals} (аналоговые и цифровые сигналы)}
+  {находим на плате выводы, которые понадобятся в курсе, и запоминаем, какие трогать нельзя}
+  {плата ESP32-S3-DevKitC-1}
+
+Теперь, когда мы знаем, чем аналоговый сигнал отличается от цифрового, вернёмся к выводам
+платы. Вот полная карта --- её стоит держать под рукой все уроки:
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[x=1mm,y=1mm,font=\sffamily\scriptsize]
+  \def\pitch{4.2}
+  \fill[black!80,rounded corners=2mm] (0,0) rectangle (46,98);
+  \fill[gray!55,rounded corners=0.6mm] (7,50) rectangle (39,94);
+  \fill[gray!35] (7,84) rectangle (39,94);
+  \node[white,font=\sffamily\bfseries\scriptsize] at (23,68) {ESP32-S3};
+  \node[white,font=\sffamily\tiny] at (23,64) {WROOM-1};
+  \node[black,font=\sffamily\tiny] at (23,89) {антенна};
+  \fill[gray!70] (8,-3) rectangle (18,5);  \node[white] at (13,8) {UART};
+  \fill[gray!70] (28,-3) rectangle (38,5); \node[white] at (33,8) {USB};
+  \fill[gray!40] (4,14) rectangle (10,20); \node[white] at (7,23) {BOOT};
+  \fill[gray!40] (36,14) rectangle (42,20); \node[white] at (39,23) {RST};
+  \fill[white] (21,30) rectangle (25,34);
+  \node[white] at (23,27) {RGB};
+  \foreach \lab [count=\i] in {3V3,3V3,RST,4,5,6,7,15,16,17,18,8,3,46,9,10,11,12,13,14,5V,GND}{
+    \pgfmathsetmacro{\yy}{96-(\i-1)*\pitch}
+    \fill[yellow!70!orange] (2.2,\yy) circle (1);
+    \node[anchor=east] (L\i) at (-2,\yy) {\lab};
+  }
+  \foreach \lab [count=\i] in {GND,43 TX,44 RX,1,2,42,41,40,39,38,37,36,35,0,45,48,47,21,20,19,GND,GND}{
+    \pgfmathsetmacro{\yy}{96-(\i-1)*\pitch}
+    \fill[yellow!70!orange] (43.8,\yy) circle (1);
+    \node[anchor=west] (R\i) at (48,\yy) {\lab};
+  }
+  \node[font=\sffamily\bfseries\small,anchor=south] at (-9,99) {J1};
+  \node[font=\sffamily\bfseries\small,anchor=south] at (55,99) {J3};
+  \foreach \i in {1,2,21}{\node[draw=esp,thick,rounded corners=1pt,fit=(L\i),inner sep=0.3pt]{};}
+  \foreach \i in {22}{\node[draw=gray,thick,rounded corners=1pt,fit=(L\i),inner sep=0.3pt]{};}
+  \foreach \i in {1,21,22}{\node[draw=gray,thick,rounded corners=1pt,fit=(R\i),inner sep=0.3pt]{};}
+  \foreach \i in {14,15}{\node[draw=warn,thick,rounded corners=1pt,fit=(R\i),inner sep=0.3pt]{};}
+  \foreach \i in {13,14}{\node[draw=warn,thick,rounded corners=1pt,fit=(L\i),inner sep=0.3pt]{};}
+  \foreach \i in {11,12,13}{\node[draw=blkrtc!40!black,thick,dashed,rounded corners=1pt,fit=(R\i),inner sep=0.3pt]{};}
+  \foreach \i in {19,20}{\node[draw=accent,thick,rounded corners=1pt,fit=(R\i),inner sep=0.3pt]{};}
+  % выводы, которые используются в курсе
+  \foreach \i in {4,5,6,7,8,12,15}{\node[fill=okgreen,circle,inner sep=1.3pt] at ($(L\i.west)+(-1.5,0)$) {};}
+  \foreach \i in {4,5}{\node[fill=okgreen,circle,inner sep=1.3pt] at ($(R\i.east)+(1.5,0)$) {};}
+  \node[anchor=west,align=left,font=\sffamily\scriptsize] at (68,80) {%
+    \textcolor{esp}{\rule{3mm}{2mm}} питание (3V3, 5V)\\[1pt]
+    \textcolor{gray}{\rule{3mm}{2mm}} земля (GND)\\[1pt]
+    \textcolor{warn}{\rule{3mm}{2mm}} «загрузочные» выводы\\[1pt]
+    \textcolor{accent}{\rule{3mm}{2mm}} USB (19, 20)\\[1pt]
+    \textcolor{blkrtc!40!black}{\rule{3mm}{2mm}} могут быть заняты памятью\\[1pt]
+    \textcolor{okgreen}{$\bullet$} выводы, которые нужны в курсе\\[6pt]
+    АЦП (аналоговые входы):\\ \quad ADC1: GPIO1--10\\ \quad ADC2: GPIO11--20\\[4pt]
+    Сенсорные входы: GPIO1--14\\[4pt]
+    RGB-светодиод:\\ \quad GPIO48 (или GPIO38)\\[4pt]
+    Кнопка BOOT = GPIO0\\[4pt]
+    Уровни только \textbf{3,3 В}!};
+\end{tikzpicture}
+\caption{Карта выводов ESP32-S3-DevKitC-1 (вид сверху). Числа --- номера GPIO.
+У разных версий платы бывают отличия --- сверяйся с документацией своей платы}
+\label{fig:pinout}
+\end{figure}
+
+\subsection{Питание и земля}
+
+Электрический ток течёт только по \textbf{замкнутому кругу}: от «плюса» источника через нагрузку
+(например, светодиод) и обратно к «минусу». Если круг где-то разорван --- тока нет. Это похоже на
+воду в трубах: насос гонит воду по кругу, а если перекрыть трубу, течение прекратится.
+
+\begin{figure}[H]
+\centering
+\begin{circuitikz}
+  \draw (0,0) to[battery1,l=батарейка,invert] (0,2.5) -- (3,2.5) to[lamp,l=лампочка] (3,0) -- (0,0);
+  \draw[->,thick,esp] (0.6,2.8) -- node[above,font=\sffamily\scriptsize]{ток} (2.4,2.8);
+  \draw[->,thick,esp] (3.35,1.9) -- (3.35,0.6);
+  \draw[->,thick,esp] (2.4,-0.3) -- (0.6,-0.3);
+  \node[font=\sffamily\small,align=center] at (1.5,-1.1) {цепь замкнута --- лампочка горит};
+  \begin{scope}[xshift=8.5cm]
+  \draw (0,0) to[battery1,l=батарейка,invert] (0,2.5) -- (1.5,2.5) to[nos,l=выключатель,-] (3,2.5) to[lamp] (3,0) -- (0,0);
+  \node[font=\sffamily\small,align=center] at (1.5,-1.1) {цепь разорвана --- тока нет};
+  \end{scope}
+\end{circuitikz}
+\caption{Электрическая цепь: ток течёт только по замкнутому кругу}
+\end{figure}
+
+На плате для этого есть выводы питания:
+\begin{itemize}
+  \item \textbf{GND} (англ. \emph{ground} --- земля) --- общий «минус». От него отсчитывают все напряжения,
+        как высоту гор отсчитывают от уровня моря. На плате несколько выводов GND, все они соединены.
+  \item \textbf{3V3} --- «плюс» 3,3~В. Отсюда будем питать датчики и экраны.
+  \item \textbf{5V} --- 5~В прямо от USB. Подходит для питания моторчиков и модулей на 5~В, но
+        \emph{никогда} не подключай 5~В к GPIO!
+\end{itemize}
+
+\begin{caution}
+Никогда не соединяй проводом 3V3 или 5V с GND напрямую. Это \textbf{короткое замыкание}: ток станет
+огромным, плата нагреется и может сгореть, а USB-порт компьютера --- отключиться.
+\end{caution}
+
+\subsection{Цифровые выводы GPIO}
+
+Любой пронумерованный вывод может быть \textbf{цифровым}:
+\begin{itemize}
+  \item \textbf{выходом} --- программа выдаёт на нём 0 (0~В) или 1 (3,3~В). Так мы будем зажигать
+        светодиоды (урок~\ref{les:led});
+  \item \textbf{входом} --- программа узнаёт, что на выводе: 0 или 1. Так мы будем читать кнопки
+        (урок~\ref{les:gpio-in}).
+\end{itemize}
+
+Вывод-выход похож на переключатель, который подсоединяет ножку либо к 3,3~В, либо к земле:
+
+\begin{figure}[H]
+\centering
+\begin{circuitikz}[scale=0.95,transform shape]
+  \draw (0,2.5) node[vcc]{3,3 В} -- (0,1.7) coordinate(t);
+  \draw (0,-1.2) node[ground]{} -- (0,-0.4) coordinate(b);
+  \draw (t) -- (0.8,1.7) node[circ]{};
+  \draw (b) -- (0.8,-0.4) node[circ]{};
+  \draw (2,0.65) node[circ](c){} -- (3.8,0.65) to[short,-o] (4.3,0.65) node[right]{вывод GPIO};
+  \draw[thick] (c) -- (0.95,1.6);
+  \node[font=\sffamily\small,align=center] at (2,-2) {\code{HIGH} (1): ножка\\ подключена к 3,3~В};
+  \begin{scope}[xshift=8cm]
+  \draw (0,2.5) node[vcc]{3,3 В} -- (0,1.7) coordinate(t2);
+  \draw (0,-1.2) node[ground]{} -- (0,-0.4) coordinate(b2);
+  \draw (t2) -- (0.8,1.7) node[circ]{};
+  \draw (b2) -- (0.8,-0.4) node[circ]{};
+  \draw (2,0.65) node[circ](c2){} -- (3.8,0.65) to[short,-o] (4.3,0.65) node[right]{вывод GPIO};
+  \draw[thick] (c2) -- (0.95,-0.3);
+  \node[font=\sffamily\small,align=center] at (2,-2) {\code{LOW} (0): ножка\\ подключена к земле};
+  \end{scope}
+\end{circuitikz}
+\caption{Цифровой выход можно представить как переключатель. На самом деле внутри
+чипа стоят два крошечных транзистора, и переключаются они миллионы раз в секунду}
+\end{figure}
+
+\begin{caution}
+Один вывод может отдать ток не больше $\approx$\SI{20}{mA} (максимум \SI{40}{mA}). Этого хватает
+для светодиода, но мотор, реле или мощную лампу подключать напрямую \textbf{нельзя} --- только через
+транзистор или специальный модуль-драйвер.
+\end{caution}
+
+\subsection{Аналоговые входы (АЦП)}
+
+Выводы \pin{1}--\pin{20} умеют не только отличать 0 от 1, но и \textbf{измерять напряжение}: внутри
+чипа к ним можно подключить АЦП, о котором мы говорили в уроке~\ref{les:signals}. АЦП в ESP32-S3
+12-битный: он превращает напряжение от 0 до $\approx$3,1~В в число от 0 до 4095.
+
+АЦП в чипе два:
+\begin{itemize}
+  \item \textbf{ADC1} --- выводы \pin{1}--\pin{10}. Работает всегда;
+  \item \textbf{ADC2} --- выводы \pin{11}--\pin{20}. \emph{Не работает, когда включён Wi-Fi}, потому что
+        его использует радиомодуль.
+\end{itemize}
+Поэтому для аналоговых датчиков лучше сразу брать выводы ADC1. Мы будем использовать \pin{1} и \pin{2}.
+
+\subsection{Сенсорные входы}
+
+Выводы \pin{1}--\pin{14} умеют чувствовать \textbf{прикосновение пальца}. Человеческое тело немного
+проводит ток и работает как маленький конденсатор, поэтому, если коснуться провода, подключённого к
+такому выводу, чип это заметит. Так устроены сенсорные кнопки на плитах и лампах.
+
+\subsection{Выводы для связи и особые выводы}
+
+\begin{table}[H]
+\centering\small
+\begin{tabularx}{\textwidth}{@{}l X@{}}
+\toprule
+Выводы & Для чего нужны \\
+\midrule
+\pin{43} (TX), \pin{44} (RX) & связь с компьютером через разъём UART (урок~\ref{les:serial})\\
+\pin{19}, \pin{20} & разъём USB --- лучше не занимать\\
+\pin{0}, \pin{3}, \pin{45}, \pin{46} & \textbf{«загрузочные»}: чип смотрит на них при включении, чтобы понять,
+      запускать программу или ждать прошивку. \pin{0} --- это кнопка BOOT. Не подключай к ним кнопки
+      и датчики\\
+\pin{35}, \pin{36}, \pin{37} & на многих модулях заняты памятью PSRAM --- не использовать\\
+\pin{48} (или \pin{38}) & встроенный RGB-светодиод\\
+\pin{26}--\pin{32} & заняты памятью программ, на гребёнку не выведены\\
+\bottomrule
+\end{tabularx}
+\caption{Выводы с особыми обязанностями}
+\end{table}
+
+А где же выводы для экранов (I\textsuperscript{2}C) и других модулей? У ESP32-S3 есть удобная особенность ---
+\textbf{матрица GPIO}. Это как старинный телефонный коммутатор: внутренний блок связи можно
+«соединить» почти с любым выводом. Поэтому мы сами выбираем, какие выводы использовать, и
+просто сообщаем об этом программе.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=2.5mm]
+  \node[blk,fill=blkper,minimum width=26mm] (u) {UART};
+  \node[blk,fill=blkper,minimum width=26mm,below=of u] (i) {I\textsuperscript{2}C};
+  \node[blk,fill=blkper,minimum width=26mm,below=of i] (p) {ШИМ};
+  \node[blk,fill=blkper,minimum width=26mm,below=of p] (s) {SPI};
+  \node[blk,fill=gray!15,minimum width=24mm,minimum height=33mm,right=18mm of i.south east,anchor=south west,yshift=-8mm] (m) {};
+  \node[font=\sffamily\small\bfseries,above=1mm of m] {Матрица GPIO};
+  \foreach \n/\l [count=\k] in {a/GPIO4,b/GPIO8,c/GPIO9,d/GPIO17,e/GPIO18}{
+    \node[blk,fill=blkrf,minimum width=18mm,font=\sffamily\scriptsize] (\n) at ($(m.east)+(3.2,2.4-\k*0.8)$) {\l};
+    \draw[thick,gray] (m.east |- \n) -- (\n);
+  }
+  \foreach \b in {u,i,p,s} \draw[thick,gray] (\b.east) -- (m.west |- \b);
+  \draw[very thick,esp,dashed] ($(m.west |- i)+(0.05,0)$) -- ($(m.east |- b)+(-0.05,0)$);
+  \draw[very thick,esp,dashed] ($(m.west |- i)+(0.05,0)$) -- ($(m.east |- c)+(-0.05,0)$);
+  \draw[very thick,accent,dashed] ($(m.west |- u)+(0.05,0)$) -- ($(m.east |- d)+(-0.05,0)$);
+  \draw[very thick,accent,dashed] ($(m.west |- u)+(0.05,0)$) -- ($(m.east |- e)+(-0.05,0)$);
+  \draw[very thick,okgreen,dashed] ($(m.west |- p)+(0.05,0)$) -- ($(m.east |- a)+(-0.05,0)$);
+\end{tikzpicture}
+\caption{Матрица GPIO соединяет внутренние блоки с выводами, которые мы выбрали}
+\end{figure}
+
+\subsection{Выводы, которые мы будем использовать}
+
+Чтобы не путаться, во всех уроках одни и те же детали подключаются к одним и тем же выводам:
+
+\begin{table}[H]
+\centering\small
+\begin{tabular}{@{}lll@{}}
+\toprule
+Вывод & Что подключаем & Уроки\\
+\midrule
+\pin{4} & светодиод & \ref{les:led}, \ref{les:pwm}, \ref{les:web}, \ref{les:serial}, \ref{les:gpio-in}, \ref{les:sleep}\\
+\pin{5}, \pin{6}, \pin{7} & ещё три светодиода для «бегущего огня» & \ref{les:led}, \ref{les:pwm}\\
+\pin{5} & кнопка & \ref{les:gpio-in}, \ref{les:sleep}\\
+\pin{6} & сервопривод & \ref{les:adc}\\
+\pin{15} & пьезопищалка & \ref{les:pwm}\\
+\pin{1} & потенциометр (аналоговый вход) & \ref{les:adc}, \ref{les:i2c}, \ref{les:sleep}\\
+\pin{2} & делитель напряжения (аналоговый вход) & \ref{les:adc}\\
+\pin{8}, \pin{9} & экран: SDA и SCL & \ref{les:i2c}\\
+\pin{17}, \pin{18} & второй UART & \ref{les:serial}\\
+\bottomrule
+\end{tabular}
+\caption{Кто куда подключается в этом курсе}
+\end{table}
+
+\begin{summary}
+\begin{itemize}[leftmargin=*]
+  \item Ток течёт по замкнутой цепи. GND --- общий «минус», 3V3 --- «плюс» 3,3~В, 5V --- питание от USB.
+  \item Любой GPIO может быть цифровым входом или выходом; \pin{1}--\pin{20} ещё и измеряют напряжение (АЦП).
+  \item При работе Wi-Fi аналоговые входы ADC2 (\pin{11}--\pin{20}) не работают.
+  \item Загрузочные выводы, выводы USB и памяти лучше не занимать.
+\end{itemize}
+\end{summary}
+
+\begin{quiz}
+\begin{enumerate}
+  \item Почему нельзя соединять 3V3 и GND проводом?
+  \item Какие выводы подойдут для измерения напряжения, если в проекте нужен Wi-Fi?
+  \item Можно ли подключить мотор прямо к выводу GPIO? Почему?
+\end{enumerate}
+\end{quiz}

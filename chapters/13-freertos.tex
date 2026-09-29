@@ -1,0 +1,174 @@
+% =====================================================================
+\section{FreeRTOS: несколько дел одновременно}
+\label{les:rtos}
+% =====================================================================
+\lessonintro
+  {разделить программу на независимые задачи, безопасно передавать данные между ними, задействовать оба ядра}
+  {урок~\ref{les:led} (\code{millis()} вместо \code{delay()}), урок~\ref{les:gpio-in} (прерывания), урок~\ref{les:adc} (АЦП)}
+  {две задачи мигают светодиодами; две задачи по очереди «говорят» в Serial Monitor}
+  {схема из четырёх светодиодов (рис.~\ref{fig:led4}), потенциометр на \pin{1} (рис.~\ref{fig:pot})}
+
+\subsection{Зачем нужна операционная система}
+
+Чем больше умеет устройство, тем больше дел в \code{loop()}: проверить кнопку, измерить напряжение,
+обновить экран, ответить браузеру\ldots\ Приходится следить, чтобы ни одно дело не задерживало
+остальные. Представь повара, который варит суп, жарит котлеты и печёт пирог: если он будет стоять
+над супом, котлеты сгорят.
+
+\textbf{FreeRTOS} --- это маленькая \textbf{операционная система реального времени}, встроенная в ESP32-S3.
+Она позволяет написать каждое дело как отдельную программу --- \textbf{задачу} (task) --- со своим бесконечным
+циклом. А специальный «диспетчер» --- \textbf{планировщик} --- сам переключает процессор между задачами
+тысячу раз в секунду. Кажется, будто всё выполняется одновременно. А у ESP32-S3 два ядра, поэтому
+две задачи действительно могут работать одновременно!
+
+\begin{fact}
+Ты уже пользовался FreeRTOS, не зная об этом: \code{setup()} и \code{loop()} выполняются внутри задачи
+\code{loopTask} на ядре~1, Wi-Fi работает в своих задачах на ядре~0, а \code{delay()} --- это
+команда FreeRTOS «я пока отдохну, отдай процессор другим».
+\end{fact}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[x=0.9cm,y=0.9cm]
+  \node[left,font=\sffamily\small] at (0,1.5) {Ядро 0};
+  \node[left,font=\sffamily\small] at (0,0) {Ядро 1};
+  \draw[->] (0,-0.8) -- (15,-0.8) node[right,font=\scriptsize]{$t$};
+  \foreach \s/\e/\c/\l in {0/2/blkrf/Wi-Fi,2/4/blkper/задача 1,4/5/blkrf/Wi-Fi,5/9/gray!20/отдых,9/11/blkper/задача 1,11/12/blkrf/Wi-Fi,12/14.5/gray!20/отдых}
+    \draw[fill=\c] (\s,1.2) rectangle (\e,1.8) node[midway,font=\scriptsize]{\l};
+  \foreach \s/\e/\c/\l in {0/2.4/blkcpu/loop,2.4/4/blkmem/задача 2,4/6.4/blkcpu/loop,6.4/8/blkmem/задача 2,8/10.4/blkcpu/loop,10.4/12/blkmem/задача 2,12/14.5/blkcpu/loop}
+    \draw[fill=\c] (\s,-0.3) rectangle (\e,0.3) node[midway,font=\scriptsize]{\l};
+\end{tikzpicture}
+\caption{Как задачи делят два ядра: пока одна отдыхает, процессор занят другой}
+\end{figure}
+
+\subsection{Жизнь задачи}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[state/.style={blk,circle,minimum size=19mm,fill=blkmem}]
+  \node[state,fill=blkrf] (run) at (0,0) {Работает};
+  \node[state] (ready) at (-4,0) {Готова};
+  \node[state,fill=blkper] (blk) at (4,0) {Ждёт};
+  \node[state,fill=blkrtc] (susp) at (0,-4.8) {Усыплена};
+  \draw[arr] (ready) to[bend left=25] node[above,font=\scriptsize]{её очередь} (run);
+  \draw[arr] (run) to[bend left=25] node[below,font=\scriptsize]{очередь другой} (ready);
+  \draw[arr] (run) to[bend left=25] node[above,font=\scriptsize,align=center]{\code{vTaskDelay()},\\ ждёт данных} (blk);
+  \draw[arr] (blk.south) .. controls (3,-2.6) and (-3,-2.6) .. node[below,font=\scriptsize,pos=0.5]{время вышло / данные пришли} (ready.south);
+  \draw[arr] (run) -- node[right,font=\scriptsize,pos=0.85]{\code{vTaskSuspend}} (susp);
+  \draw[arr] (susp.west) to[bend left=25] node[below left,font=\scriptsize]{\code{vTaskResume}} (ready.south west);
+\end{tikzpicture}
+\caption{Состояния задачи. Задача, которая ждёт, не тратит процессорное время}
+\end{figure}
+
+\subsection{Первые задачи}
+
+Вспомни задание из урока~\ref{les:led}: два светодиода мигают с разной частотой. С \code{millis()} это
+требовало аккуратности. С задачами всё проще: каждая задача мигает своим светодиодом и просто «спит»
+сколько нужно. Используй схему из четырёх светодиодов (рис.~\ref{fig:led4}): нам понадобятся
+\pin{4} и \pin{7}.
+
+\codecap{Две задачи мигают светодиодами на разных ядрах}
+\codeinput{l13_two_tasks}
+
+Функция \code{xTaskCreatePinnedToCore()} создаёт задачу. Её параметры: функция задачи, имя,
+размер стека (память для переменных задачи), параметр, приоритет (кто важнее), дескриптор и номер ядра.
+
+\subsection{Очередь: передаём данные между задачами}
+
+Задачи часто работают вместе: одна измеряет, другая показывает. Передавать данные удобно через
+\textbf{очередь} --- как через ленту конвейера: одна задача кладёт значения с одного конца, другая забирает
+с другого. Если лента пуста, забирающая задача спит и не тратит время.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  \node[blk,fill=blkper,minimum width=3cm,minimum height=1.2cm] (p) {Задача «датчик»\\ \scriptsize измеряет АЦП};
+  \foreach \i/\v in {0/1820,1/1835,2/1790,3/,4/}{
+    \node[draw,minimum width=11mm,minimum height=8mm,fill=\ifx\v\empty white\else blkmem\fi,font=\ttfamily\scriptsize]
+      (c\i) at ($(p.east)+(3.0+\i*1.1,0)$) {\v};
+  }
+  \node[blk,fill=blkcpu,minimum width=3cm,minimum height=1.2cm,right=24mm of c4] (c) {Задача «печать»\\ \scriptsize выводит в Serial};
+  \draw[arr] (p) -- node[above,font=\ttfamily\scriptsize]{xQueueSend} (c0);
+  \draw[arr] (c4) -- node[above,font=\ttfamily\scriptsize]{xQueueReceive} (c);
+  \node[font=\sffamily\scriptsize,below=1mm of c2] {очередь на 5 мест};
+\end{tikzpicture}
+\caption{Очередь развязывает задачи: каждая работает в своём темпе}
+\end{figure}
+
+\codecap{Производитель и потребитель (потенциометр на \pin{1})}
+\codeinput{l13_queue}
+
+\subsection{Практика: мьютекс --- «ключ» от общего ресурса}
+
+Когда две задачи пользуются одной вещью --- например, \code{Serial}, --- они могут мешать друг другу. Проверим!
+Две задачи печатают свои фразы по одной букве. Сначала поставь в программе \code{USE\_MUTEX = false}:
+
+\codecap{Две задачи и мьютекс}
+\codeinput{l13_mutex}
+
+Без мьютекса в Serial Monitor получится каша: «Кошка говСобака говорит: гаорит: мяу\ldots». Задачи
+перебивают друг друга на полуслове. Теперь поставь \code{true}: фразы идут ровно, по очереди.
+
+\textbf{Мьютекс} (от англ. \emph{mutual exclusion} --- взаимное исключение) работает как ключ от единственной
+комнаты: задача берёт ключ (\code{xSemaphoreTake}), делает свою работу и возвращает ключ
+(\code{xSemaphoreGive}). Пока ключ у одной задачи, другая ждёт.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[x=1cm,y=1cm]
+  \node[font=\sffamily\small,anchor=east] at (-0.2,1) {без мьютекса};
+  \foreach \s/\e/\c in {0/0.5/esp,0.5/1/accent,1/1.5/esp,1.5/2/accent,2/2.5/esp,2.5/3/accent,3/3.5/esp,3.5/4/accent,4/4.5/esp,4.5/5/accent}
+    \fill[\c!40] (\s,0.8) rectangle (\e,1.2);
+  \node[font=\sffamily\scriptsize,anchor=west] at (5.2,1) {буквы вперемешку};
+  \node[font=\sffamily\small,anchor=east] at (-0.2,0) {с мьютексом};
+  \fill[esp!40] (0,-0.2) rectangle (2.5,0.2) node[midway,font=\sffamily\scriptsize]{кошка};
+  \fill[accent!40] (2.5,-0.2) rectangle (5,0.2) node[midway,font=\sffamily\scriptsize]{собака};
+  \node[font=\sffamily\scriptsize,anchor=west] at (5.2,0) {фразы целиком, по очереди};
+\end{tikzpicture}
+\caption{Мьютекс не даёт задачам перебивать друг друга}
+\end{figure}
+
+\begin{table}[H]
+\centering\small
+\begin{tabularx}{\textwidth}{@{}l X@{}}
+\toprule
+Инструмент FreeRTOS & Когда пригодится \\
+\midrule
+Задача (\code{xTaskCreate}) & отдельное дело со своим циклом \\
+Очередь (\code{xQueue\ldots}) & передать данные из одной задачи в другую (или из прерывания) \\
+Мьютекс (\code{xSemaphoreCreateMutex}) & не дать двум задачам одновременно пользоваться \code{Serial}, экраном, общей переменной \\
+Уведомление (\code{xTaskNotify}) & разбудить конкретную задачу: «событие произошло» \\
+Программный таймер (\code{xTimerCreate}) & вызывать короткую функцию периодически \\
+\bottomrule
+\end{tabularx}
+\caption{Главные инструменты FreeRTOS}
+\end{table}
+
+\begin{caution}
+Если задаче не хватает памяти стека, плата перезагружается с сообщением \code{Stack canary watchpoint triggered}.
+Тогда увеличь третий параметр \code{xTaskCreatePinnedToCore()} --- например, с 2048 до 4096.
+\end{caution}
+
+\begin{summary}
+\begin{itemize}[leftmargin=*]
+  \item Задача --- функция с бесконечным циклом; \code{vTaskDelay()} отдаёт процессор другим.
+  \item Данные между задачами передаём через очередь.
+  \item Общий ресурс (Serial, экран) защищаем мьютексом, а ещё лучше --- закрепляем за одной задачей.
+\end{itemize}
+\end{summary}
+
+\begin{quiz}
+\begin{enumerate}
+  \item Чем задача, которая ждёт в \code{vTaskDelay()}, отличается от программы в \code{delay()} без FreeRTOS?
+  \item Для чего нужна очередь?
+  \item Что произойдёт, если задача взяла мьютекс и забыла его вернуть?
+\end{enumerate}
+\end{quiz}
+
+\begin{tasks}
+\begin{enumerate}
+  \item Запусти четыре задачи --- по одной на каждый светодиод «бегущего огня», с разными периодами.
+  \item Добавь в программу с очередью третью задачу, которая зажигает светодиод, если напряжение больше 2~В.
+  \item Переведи кнопку на прерывание (урок~\ref{les:gpio-in}): обработчик будит задачу через \code{vTaskNotifyGiveFromISR()}.
+\end{enumerate}
+\end{tasks}

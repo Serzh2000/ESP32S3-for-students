@@ -1,0 +1,64 @@
+\begin{CodeVerbatim}
+\PY{c+c1}{// Управляем светодиодом через GET\PYZhy{}запросы: /toggle и /level?v=...}
+\PY{c+cp}{\PYZsh{}}\PY{c+cp}{include}\PY{+w}{ }\PY{c+cpf}{\PYZlt{}WiFi.h\PYZgt{}}
+\PY{c+cp}{\PYZsh{}}\PY{c+cp}{include}\PY{+w}{ }\PY{c+cpf}{\PYZlt{}WebServer.h\PYZgt{}}
+\PY{c+cp}{\PYZsh{}}\PY{c+cp}{include}\PY{+w}{ }\PY{c+cpf}{\PYZlt{}ESPmDNS.h\PYZgt{}}
+
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{char}\PY{o}{*}\PY{+w}{ }\PY{n}{SSID}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{MyNetwork}\PY{l+s}{\PYZdq{}}\PY{p}{;}\PY{+w}{              }\PY{c+c1}{// имя твоей Wi\PYZhy{}Fi сети}
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{char}\PY{o}{*}\PY{+w}{ }\PY{n}{PASS}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{MyPassword}\PY{l+s}{\PYZdq{}}\PY{p}{;}\PY{+w}{             }\PY{c+c1}{// и пароль}
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{int}\PY{+w}{ }\PY{n}{LED\PYZus{}PIN}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{4}\PY{p}{;}
+
+\PY{n}{WebServer}\PY{+w}{ }\PY{n+nf}{server}\PY{p}{(}\PY{l+m+mi}{80}\PY{p}{)}\PY{p}{;}
+\PY{k+kt}{bool}\PY{+w}{ }\PY{n}{ledOn}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n+nb}{false}\PY{p}{;}
+\PY{k+kt}{int}\PY{+w}{ }\PY{n}{level}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{50}\PY{p}{;}\PY{+w}{                              }\PY{c+c1}{// яркость, \PYZpc{}}
+
+\PY{k+kt}{uint32\PYZus{}t}\PY{+w}{ }\PY{n+nf}{gammaDuty}\PY{p}{(}\PY{k+kt}{int}\PY{+w}{ }\PY{n}{percent}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{k}{return}\PY{+w}{ }\PY{p}{(}\PY{k+kt}{uint32\PYZus{}t}\PY{p}{)}\PY{p}{(}\PY{l+m+mi}{255}\PY{+w}{ }\PY{o}{*}\PY{+w}{ }\PY{n}{pow}\PY{p}{(}\PY{n}{percent}\PY{+w}{ }\PY{o}{/}\PY{+w}{ }\PY{l+m+mf}{100.0}\PY{p}{,}\PY{+w}{ }\PY{l+m+mf}{2.2}\PY{p}{)}\PY{+w}{ }\PY{o}{+}\PY{+w}{ }\PY{l+m+mf}{0.5}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{applyLed}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{ }\PY{n}{ledcWrite}\PY{p}{(}\PY{n}{LED\PYZus{}PIN}\PY{p}{,}\PY{+w}{ }\PY{n}{ledOn}\PY{+w}{ }\PY{o}{?}\PY{+w}{ }\PY{n}{gammaDuty}\PY{p}{(}\PY{n}{level}\PY{p}{)}\PY{+w}{ }\PY{o}{:}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{;}\PY{+w}{ }\PY{p}{\PYZcb{}}
+
+\PY{n}{String}\PY{+w}{ }\PY{n+nf}{page}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{                              }\PY{c+c1}{// собираем HTML\PYZhy{}страницу}
+\PY{+w}{  }\PY{n}{String}\PY{+w}{ }\PY{n}{html}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{\PYZlt{}!DOCTYPE html\PYZgt{}\PYZlt{}html\PYZgt{}\PYZlt{}head\PYZgt{}\PYZlt{}meta charset=\PYZsq{}utf\PYZhy{}8\PYZsq{}\PYZgt{}}\PY{l+s}{\PYZdq{}}
+\PY{+w}{                }\PY{l+s}{\PYZdq{}}\PY{l+s}{\PYZlt{}meta name=\PYZsq{}viewport\PYZsq{} content=\PYZsq{}width=device\PYZhy{}width\PYZsq{}\PYZgt{}}\PY{l+s}{\PYZdq{}}
+\PY{+w}{                }\PY{l+s}{\PYZdq{}}\PY{l+s}{\PYZlt{}title\PYZgt{}Светодиод\PYZlt{}/title\PYZgt{}\PYZlt{}/head\PYZgt{}\PYZlt{}body style=\PYZsq{}font\PYZhy{}family:sans\PYZhy{}serif\PYZsq{}\PYZgt{}}\PY{l+s}{\PYZdq{}}\PY{p}{;}
+\PY{+w}{  }\PY{n}{html}\PY{+w}{ }\PY{o}{+}\PY{o}{=}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{\PYZlt{}h1\PYZgt{}Светодиод: }\PY{l+s}{\PYZdq{}}\PY{p}{;}
+\PY{+w}{  }\PY{n}{html}\PY{+w}{ }\PY{o}{+}\PY{o}{=}\PY{+w}{ }\PY{n}{ledOn}\PY{+w}{ }\PY{o}{?}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{ВКЛ}\PY{l+s}{\PYZdq{}}\PY{+w}{ }\PY{o}{:}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{ВЫКЛ}\PY{l+s}{\PYZdq{}}\PY{p}{;}
+\PY{+w}{  }\PY{n}{html}\PY{+w}{ }\PY{o}{+}\PY{o}{=}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{\PYZlt{}/h1\PYZgt{}\PYZlt{}p\PYZgt{}\PYZlt{}a href=\PYZsq{}/toggle\PYZsq{}\PYZgt{}\PYZlt{}button\PYZgt{}Вкл/выкл\PYZlt{}/button\PYZgt{}\PYZlt{}/a\PYZgt{}\PYZlt{}/p\PYZgt{}}\PY{l+s}{\PYZdq{}}
+\PY{+w}{          }\PY{l+s}{\PYZdq{}}\PY{l+s}{\PYZlt{}form action=\PYZsq{}/level\PYZsq{}\PYZgt{}Яркость: \PYZlt{}input type=\PYZsq{}range\PYZsq{} name=\PYZsq{}v\PYZsq{} }\PY{l+s}{\PYZdq{}}
+\PY{+w}{          }\PY{l+s}{\PYZdq{}}\PY{l+s}{min=\PYZsq{}0\PYZsq{} max=\PYZsq{}100\PYZsq{} value=\PYZsq{}}\PY{l+s}{\PYZdq{}}\PY{+w}{ }\PY{o}{+}\PY{+w}{ }\PY{n}{String}\PY{p}{(}\PY{n}{level}\PY{p}{)}\PY{+w}{ }\PY{o}{+}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{\PYZsq{} }\PY{l+s}{\PYZdq{}}
+\PY{+w}{          }\PY{l+s}{\PYZdq{}}\PY{l+s}{onchange=\PYZsq{}this.form.submit()\PYZsq{}\PYZgt{}\PYZlt{}/form\PYZgt{}\PYZlt{}/body\PYZgt{}\PYZlt{}/html\PYZgt{}}\PY{l+s}{\PYZdq{}}\PY{p}{;}
+\PY{+w}{  }\PY{k}{return}\PY{+w}{ }\PY{n}{html}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{goHome}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{                              }\PY{c+c1}{// «перейди на главную страницу»}
+\PY{+w}{  }\PY{n}{server}\PY{p}{.}\PY{n}{sendHeader}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{Location}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{/}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{server}\PY{p}{.}\PY{n}{send}\PY{p}{(}\PY{l+m+mi}{303}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{setup}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{n}{Serial}\PY{p}{.}\PY{n}{begin}\PY{p}{(}\PY{l+m+mi}{115200}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{ledcAttach}\PY{p}{(}\PY{n}{LED\PYZus{}PIN}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{5000}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{8}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{applyLed}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+
+\PY{+w}{  }\PY{n}{WiFi}\PY{p}{.}\PY{n}{mode}\PY{p}{(}\PY{n}{WIFI\PYZus{}STA}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{WiFi}\PY{p}{.}\PY{n}{begin}\PY{p}{(}\PY{n}{SSID}\PY{p}{,}\PY{+w}{ }\PY{n}{PASS}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{k}{while}\PY{+w}{ }\PY{p}{(}\PY{n}{WiFi}\PY{p}{.}\PY{n}{status}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{o}{!}\PY{o}{=}\PY{+w}{ }\PY{n}{WL\PYZus{}CONNECTED}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{ }\PY{n}{delay}\PY{p}{(}\PY{l+m+mi}{300}\PY{p}{)}\PY{p}{;}\PY{+w}{ }\PY{n}{Serial}\PY{p}{.}\PY{n}{print}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{.}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{;}\PY{+w}{ }\PY{p}{\PYZcb{}}
+\PY{+w}{  }\PY{n}{Serial}\PY{p}{.}\PY{n}{printf}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s+se}{\PYZbs{}n}\PY{l+s}{Открой http://\PYZpc{}s или http://esp32\PYZhy{}led.local}\PY{l+s+se}{\PYZbs{}n}\PY{l+s}{\PYZdq{}}\PY{p}{,}
+\PY{+w}{                }\PY{n}{WiFi}\PY{p}{.}\PY{n}{localIP}\PY{p}{(}\PY{p}{)}\PY{p}{.}\PY{n}{toString}\PY{p}{(}\PY{p}{)}\PY{p}{.}\PY{n}{c\PYZus{}str}\PY{p}{(}\PY{p}{)}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{MDNS}\PY{p}{.}\PY{n}{begin}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{esp32\PYZhy{}led}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{;}
+
+\PY{+w}{  }\PY{n}{server}\PY{p}{.}\PY{n}{on}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{/}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{       }\PY{p}{[}\PY{p}{]}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{ }\PY{n}{server}\PY{p}{.}\PY{n}{send}\PY{p}{(}\PY{l+m+mi}{200}\PY{p}{,}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{text/html; charset=utf\PYZhy{}8}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{n}{page}\PY{p}{(}\PY{p}{)}\PY{p}{)}\PY{p}{;}\PY{+w}{ }\PY{p}{\PYZcb{}}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{server}\PY{p}{.}\PY{n}{on}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{/toggle}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{p}{[}\PY{p}{]}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{ }\PY{n}{ledOn}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{o}{!}\PY{n}{ledOn}\PY{p}{;}\PY{+w}{ }\PY{n}{applyLed}\PY{p}{(}\PY{p}{)}\PY{p}{;}\PY{+w}{ }\PY{n}{goHome}\PY{p}{(}\PY{p}{)}\PY{p}{;}\PY{+w}{ }\PY{p}{\PYZcb{}}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{server}\PY{p}{.}\PY{n}{on}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{/level}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{  }\PY{p}{[}\PY{p}{]}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{    }\PY{n}{level}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{constrain}\PY{p}{(}\PY{n}{server}\PY{p}{.}\PY{n}{arg}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{v}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{.}\PY{n}{toInt}\PY{p}{(}\PY{p}{)}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{100}\PY{p}{)}\PY{p}{;}
+\PY{+w}{    }\PY{n}{applyLed}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+\PY{+w}{    }\PY{n}{goHome}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{p}{\PYZcb{}}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{server}\PY{p}{.}\PY{n}{begin}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{loop}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{n}{server}\PY{p}{.}\PY{n}{handleClient}\PY{p}{(}\PY{p}{)}\PY{p}{;}\PY{+w}{                     }\PY{c+c1}{// ответить браузеру, если он что\PYZhy{}то спросил}
+\PY{p}{\PYZcb{}}
+\end{CodeVerbatim}

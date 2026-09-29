@@ -1,0 +1,161 @@
+% =====================================================================
+\section{Сон и энергосбережение}
+\label{les:sleep}
+% =====================================================================
+\lessonintro
+  {разобраться в режимах сна ESP32-S3, научиться будить чип таймером и кнопкой, посчитать, сколько проработает батарейка}
+  {урок~\ref{les:gpio-in} (кнопка), урок~\ref{les:adc} (измерение напряжения), урок~\ref{les:radio} (Wi-Fi как главный потребитель)}
+  {«датчик на батарейке»: просыпается раз в 30 секунд или от кнопки, измеряет и снова засыпает}
+  {кнопка и светодиод (рис.~\ref{fig:button}), потенциометр (рис.~\ref{fig:pot}), мультиметр (по желанию)}
+
+\subsection{Зачем устройству спать}
+
+Метеостанция на даче, датчик протечки под ванной, умный ошейник для кота --- все они работают от батареек
+месяцами. Секрет прост: почти всё время они \textbf{спят}, а просыпаются на секунду --- измерить, отправить
+данные --- и снова засыпают. Работающая ESP32-S3 с Wi-Fi потребляет в десятки тысяч раз больше, чем спящая.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  xbar, width=0.8\textwidth, height=5.8cm,
+  xmode=log, log basis x=10, log origin x=infty,
+  xmin=0.002, xmax=20000,
+  xlabel={потребление, мА (каждое деление --- в 10 раз больше)},
+  symbolic y coords={Hibernation,Deep-sleep,Light-sleep,Работа без Wi-Fi,Работа + Wi-Fi},
+  ytick=data, y tick label style={font=\sffamily\small},
+  tick label style={font=\scriptsize},
+  nodes near coords, nodes near coords align={horizontal},
+  every node near coord/.append style={font=\scriptsize,anchor=west,xshift=1pt},
+  point meta=explicit symbolic,
+  bar width=5mm, enlarge y limits=0.15,
+  xmajorgrids, grid style={gray!25},
+]
+\addplot[fill=esp!70,draw=espdark] coordinates {
+  (0.007,Hibernation) [$\approx$ 7 мкА]
+  (0.008,Deep-sleep) [$\approx$ 8 мкА]
+  (0.24,Light-sleep) [$\approx$ 240 мкА]
+  (30,Работа без Wi-Fi) [$\approx$ 30--50 мА]
+  (300,Работа + Wi-Fi) [$\approx$ 100--300 мА]
+};
+\end{axis}
+\end{tikzpicture}
+\caption{Сколько потребляет сам чип в разных режимах (примерно, по документации).
+Отладочная плата с преобразователем питания и светодиодом питания потребляет заметно больше}
+\end{figure}
+
+\begin{center}\small
+\begin{tabularx}{\textwidth}{@{}l X X@{}}
+\toprule
+Режим & Что работает & Что при пробуждении \\
+\midrule
+Light-sleep (лёгкий сон) & всё «заморожено», память сохранена & программа продолжается со следующей строки \\
+Deep-sleep (глубокий сон) & только часы и маленькая память RTC & \textbf{перезапуск}: \code{setup()} начинается заново \\
+Hibernation (спячка) & только часы & перезапуск \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+Главное о глубоком сне: при пробуждении программа начинается сначала, а обычные переменные забываются.
+Сохранить данные можно в маленькой памяти RTC --- для этого переменную помечают \code{RTC\_DATA\_ATTR}.
+
+\subsection{Сколько проработает батарейка}
+
+Типичный «датчик на батарейке» живёт по такому расписанию:
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=6mm]
+  \node[blk,fill=blkrtc] (wake) {Проснуться};
+  \node[blk,fill=blkper,right=of wake] (meas) {Измерить};
+  \node[blk,fill=blkrf,right=of meas] (wifi) {Отправить\\ по Wi-Fi};
+  \node[blk,fill=blkcpu,right=of wifi] (sleep) {Спать\\ 10 минут};
+  \draw[arr] (wake) -- (meas); \draw[arr] (meas) -- (wifi); \draw[arr] (wifi) -- (sleep);
+  \draw[arr] (sleep.south) -- ++(0,-6mm) -| node[pos=0.25,below,font=\scriptsize]{будильник-таймер} (wake.south);
+\end{tikzpicture}
+
+\vspace{4mm}
+\begin{tikzpicture}[x=0.9cm,y=1cm]
+  \draw[->] (0,0) -- (15.5,0) node[right,font=\scriptsize]{$t$};
+  \draw[->] (0,0) -- (0,2.4) node[above,font=\scriptsize]{ток};
+  \draw[very thick,esp] (0,0.05) -- (1,0.05) -- (1,1.9) -- (1.7,1.9) -- (1.7,0.05) -- (7.5,0.05) -- (7.5,1.9) -- (8.2,1.9) -- (8.2,0.05) -- (14,0.05) -- (14,1.9) -- (14.7,1.9) -- (14.7,0.05) -- (15.2,0.05);
+  \node[font=\scriptsize,align=center] at (4.4,0.6) {сон: микроамперы};
+  \node[font=\scriptsize,align=center,anchor=south] at (1.35,1.95) {работа: 1--3 с,\\ 100+ мА};
+\end{tikzpicture}
+\caption{Устройство почти всё время спит. Похоже на ШИМ из урока~\ref{les:pwm} с очень маленьким коэффициентом заполнения!}
+\end{figure}
+
+Средний ток считается так же, как среднее напряжение ШИМ:
+\[
+  I_\text{ср} = \frac{I_\text{работа}\cdot t_\text{работа} + I_\text{сон}\cdot t_\text{сон}}{t_\text{работа}+t_\text{сон}}
+  = \frac{120~\text{мА}\cdot 2~\text{с} + 0{,}01~\text{мА}\cdot 598~\text{с}}{600~\text{с}}
+  \approx 0{,}41~\text{мА}.
+\]
+Аккумулятор ёмкостью 2000~мА·ч прослужит $2000 / 0{,}41 \approx 4900$ часов --- около \textbf{полугода}.
+А без сна, при 120~мА, --- меньше суток!
+
+\subsection{Сон по будильнику-таймеру}
+
+\codecap{Пробуждение по таймеру со счётчиком в RTC-памяти}
+\codeinput{l14_timer_sleep}
+
+\begin{caution}
+При подключении через разъём USB плата во сне «исчезает» из компьютера, и Serial Monitor отключается.
+Это нормально. Если новая прошивка не загружается, войди в режим прошивки вручную (BOOT + RST, урок~\ref{les:ide}).
+\end{caution}
+
+\subsection{Пробуждение кнопкой}
+
+Разбудить чип может и уровень на выводе (подходят \pin{0}--\pin{21}). Кнопка на \pin{5} подходит. Во сне
+обычная подтяжка из урока~\ref{les:gpio-in} отключается, поэтому включаем специальную подтяжку, которая
+работает и во сне:
+
+\codeinput{l14_ext0}
+
+\subsection{Практика: датчик на батарейке}
+
+Соберём всё вместе. Используем кнопку и светодиод (рис.~\ref{fig:button}) и потенциометр вместо
+«настоящего» датчика (рис.~\ref{fig:pot}). Плата просыпается раз в 30 секунд \emph{или} от кнопки,
+измеряет напряжение, коротко мигает светодиодом и снова засыпает. Счётчики пробуждений хранятся в RTC-памяти.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=7mm and 9mm]
+  \node[blk,fill=blkrtc] (wk) {Пробуждение};
+  \node[blk,fill=blkper,right=of wk] (why) {Кто разбудил?\\ \scriptsize\code{esp\_sleep\_get\_wakeup\_cause()}};
+  \node[blk,fill=blkrf,right=of why] (work) {Измерить,\\ мигнуть, напечатать};
+  \node[blk,fill=blkcpu,below=of work] (sl) {Deep-sleep};
+  \node[blk,fill=blkmem,below=of wk,align=center] (t) {таймер 30 с\\ или кнопка};
+  \draw[arr] (wk) -- (why); \draw[arr] (why) -- (work); \draw[arr] (work) -- (sl);
+  \draw[arr] (sl) -- (t); \draw[arr] (t) -- (wk);
+\end{tikzpicture}
+\caption{Жизненный цикл «датчика на батарейке»}
+\end{figure}
+
+\codecap{Датчик на батарейке}
+\codeinput{l14_sensor_node}
+
+\begin{summary}
+\begin{itemize}[leftmargin=*]
+  \item Глубокий сон снижает ток до микроампер, но пробуждение --- это перезапуск программы.
+  \item Нужные данные храним в \code{RTC\_DATA\_ATTR}, причину пробуждения узнаём через \code{esp\_sleep\_get\_wakeup\_cause()}.
+  \item Будить можно таймером, кнопкой, сенсорным входом.
+  \item Время жизни от батареи определяется долей времени, которую устройство не спит.
+\end{itemize}
+\end{summary}
+
+\begin{quiz}
+\begin{enumerate}
+  \item Что произойдёт с обычной переменной после глубокого сна?
+  \item Во сколько раз работающая с Wi-Fi плата потребляет больше спящей?
+  \item Как изменится время работы батарейки, если просыпаться раз в минуту, а не раз в 10 минут?
+\end{enumerate}
+\end{quiz}
+
+\begin{tasks}
+\begin{enumerate}
+  \item Измерь ток платы мультиметром в работе и во сне.
+  \item Добавь отправку измерения на веб-сервер или в Serial по Wi-Fi и посчитай, сколько проработает батарейка.
+  \item Показывай число пробуждений на OLED-экране (урок~\ref{les:i2c}) и гаси экран перед сном.
+\end{enumerate}
+\end{tasks}

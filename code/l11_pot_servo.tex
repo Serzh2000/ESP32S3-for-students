@@ -1,0 +1,34 @@
+\begin{CodeVerbatim}
+\PY{c+c1}{// Ручка\PYZhy{}потенциометр поворачивает сервопривод}
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{int}\PY{+w}{ }\PY{n}{POT\PYZus{}PIN}\PY{+w}{   }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{1}\PY{p}{;}\PY{+w}{                     }\PY{c+c1}{// ADC1}
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{int}\PY{+w}{ }\PY{n}{SERVO\PYZus{}PIN}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{6}\PY{p}{;}
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{uint8\PYZus{}t}\PY{+w}{ }\PY{n}{RES}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{14}\PY{p}{;}\PY{+w}{                      }\PY{c+c1}{// 0..16383 на период 20 мс}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{servoWrite}\PY{p}{(}\PY{k+kt}{int}\PY{+w}{ }\PY{n}{angle}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{                 }\PY{c+c1}{// 0..180 градусов}
+\PY{+w}{  }\PY{k+kt}{uint32\PYZus{}t}\PY{+w}{ }\PY{n}{us}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{map}\PY{p}{(}\PY{n}{angle}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{180}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{1000}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{2000}\PY{p}{)}\PY{p}{;}\PY{+w}{        }\PY{c+c1}{// длина импульса, мкс}
+\PY{+w}{  }\PY{n}{ledcWrite}\PY{p}{(}\PY{n}{SERVO\PYZus{}PIN}\PY{p}{,}\PY{+w}{ }\PY{n}{us}\PY{+w}{ }\PY{o}{*}\PY{+w}{ }\PY{p}{(}\PY{p}{(}\PY{l+m+mi}{1}\PY{+w}{ }\PY{o}{\PYZlt{}}\PY{o}{\PYZlt{}}\PY{+w}{ }\PY{n}{RES}\PY{p}{)}\PY{+w}{ }\PY{o}{\PYZhy{}}\PY{+w}{ }\PY{l+m+mi}{1}\PY{p}{)}\PY{+w}{ }\PY{o}{/}\PY{+w}{ }\PY{l+m+mi}{20000}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{int}\PY{+w}{ }\PY{n+nf}{readPot}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{                              }\PY{c+c1}{// среднее из 8 измерений, мВ}
+\PY{+w}{  }\PY{k+kt}{uint32\PYZus{}t}\PY{+w}{ }\PY{n}{sum}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}
+\PY{+w}{  }\PY{k}{for}\PY{+w}{ }\PY{p}{(}\PY{k+kt}{int}\PY{+w}{ }\PY{n}{i}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}\PY{+w}{ }\PY{n}{i}\PY{+w}{ }\PY{o}{\PYZlt{}}\PY{+w}{ }\PY{l+m+mi}{8}\PY{p}{;}\PY{+w}{ }\PY{n}{i}\PY{o}{+}\PY{o}{+}\PY{p}{)}\PY{+w}{ }\PY{n}{sum}\PY{+w}{ }\PY{o}{+}\PY{o}{=}\PY{+w}{ }\PY{n}{analogReadMilliVolts}\PY{p}{(}\PY{n}{POT\PYZus{}PIN}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{k}{return}\PY{+w}{ }\PY{n}{sum}\PY{+w}{ }\PY{o}{/}\PY{+w}{ }\PY{l+m+mi}{8}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{int}\PY{+w}{ }\PY{n}{lastAngle}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{\PYZhy{}100}\PY{p}{;}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{setup}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{n}{Serial}\PY{p}{.}\PY{n}{begin}\PY{p}{(}\PY{l+m+mi}{115200}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{ledcAttach}\PY{p}{(}\PY{n}{SERVO\PYZus{}PIN}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{50}\PY{p}{,}\PY{+w}{ }\PY{n}{RES}\PY{p}{)}\PY{p}{;}\PY{+w}{            }\PY{c+c1}{// 50 Гц \PYZhy{}\PYZhy{} как любит серво}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{loop}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{k+kt}{int}\PY{+w}{ }\PY{n}{angle}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{constrain}\PY{p}{(}\PY{n}{map}\PY{p}{(}\PY{n}{readPot}\PY{p}{(}\PY{p}{)}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{3100}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{180}\PY{p}{)}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{180}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{abs}\PY{p}{(}\PY{n}{angle}\PY{+w}{ }\PY{o}{\PYZhy{}}\PY{+w}{ }\PY{n}{lastAngle}\PY{p}{)}\PY{+w}{ }\PY{o}{\PYZgt{}}\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{2}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{         }\PY{c+c1}{// не дёргаемся из\PYZhy{}за шума}
+\PY{+w}{    }\PY{n}{lastAngle}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{angle}\PY{p}{;}
+\PY{+w}{    }\PY{n}{servoWrite}\PY{p}{(}\PY{n}{angle}\PY{p}{)}\PY{p}{;}
+\PY{+w}{    }\PY{n}{Serial}\PY{p}{.}\PY{n}{printf}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{угол: \PYZpc{}d}\PY{l+s+se}{\PYZbs{}n}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{n}{angle}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{p}{\PYZcb{}}
+\PY{+w}{  }\PY{n}{delay}\PY{p}{(}\PY{l+m+mi}{20}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+\end{CodeVerbatim}

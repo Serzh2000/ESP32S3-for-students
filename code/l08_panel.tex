@@ -1,0 +1,102 @@
+\begin{CodeVerbatim}
+\PY{c+c1}{// Красивая панель управления светодиодом: HTML + CSS + немного JavaScript}
+\PY{c+cp}{\PYZsh{}}\PY{c+cp}{include}\PY{+w}{ }\PY{c+cpf}{\PYZlt{}WiFi.h\PYZgt{}}
+\PY{c+cp}{\PYZsh{}}\PY{c+cp}{include}\PY{+w}{ }\PY{c+cpf}{\PYZlt{}WebServer.h\PYZgt{}}
+\PY{c+cp}{\PYZsh{}}\PY{c+cp}{include}\PY{+w}{ }\PY{c+cpf}{\PYZlt{}ESPmDNS.h\PYZgt{}}
+
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{char}\PY{o}{*}\PY{+w}{ }\PY{n}{SSID}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{MyNetwork}\PY{l+s}{\PYZdq{}}\PY{p}{;}
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{char}\PY{o}{*}\PY{+w}{ }\PY{n}{PASS}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{MyPassword}\PY{l+s}{\PYZdq{}}\PY{p}{;}
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{int}\PY{+w}{ }\PY{n}{LED\PYZus{}PIN}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{4}\PY{p}{;}
+
+\PY{n}{WebServer}\PY{+w}{ }\PY{n+nf}{server}\PY{p}{(}\PY{l+m+mi}{80}\PY{p}{)}\PY{p}{;}
+\PY{k+kt}{bool}\PY{+w}{ }\PY{n}{ledOn}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n+nb}{false}\PY{p}{;}
+\PY{k+kt}{int}\PY{+w}{ }\PY{n}{level}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{50}\PY{p}{;}\PY{+w}{                              }\PY{c+c1}{// яркость, \PYZpc{}}
+
+\PY{c+c1}{// Вся страница \PYZhy{}\PYZhy{} одна большая строка. R\PYZdq{}rawliteral( ... )rawliteral\PYZdq{}}
+\PY{c+c1}{// позволяет писать кавычки и переносы строк без лишних значков.}
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{char}\PY{+w}{ }\PY{n}{PAGE}\PY{p}{[}\PY{p}{]}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+s+sa}{R}\PY{l+s}{\PYZdq{}}\PY{l+s+dl}{rawliteral}\PY{l+s+dl}{(}
+\PY{l+s}{\PYZlt{}!DOCTYPE html\PYZgt{}}
+\PY{l+s}{\PYZlt{}html lang=\PYZdq{}ru\PYZdq{}\PYZgt{}}
+\PY{l+s}{\PYZlt{}head\PYZgt{}}
+\PY{l+s}{\PYZlt{}meta charset=\PYZdq{}utf\PYZhy{}8\PYZdq{}\PYZgt{}}
+\PY{l+s}{\PYZlt{}meta name=\PYZdq{}viewport\PYZdq{} content=\PYZdq{}width=device\PYZhy{}width, initial\PYZhy{}scale=1\PYZdq{}\PYZgt{}}
+\PY{l+s}{\PYZlt{}title\PYZgt{}Светодиод\PYZlt{}/title\PYZgt{}}
+\PY{l+s}{\PYZlt{}style\PYZgt{}}
+\PY{l+s}{  body  \PYZob{} font\PYZhy{}family: sans\PYZhy{}serif; background: \PYZsh{}eef2f7;}
+\PY{l+s}{          display: flex; justify\PYZhy{}content: center; padding\PYZhy{}top: 40px; \PYZcb{}}
+\PY{l+s}{  .card \PYZob{} background: white; border\PYZhy{}radius: 20px; padding: 24px 32px; width: 260px;}
+\PY{l+s}{          box\PYZhy{}shadow: 0 6px 20px rgba(0,0,0,.12); text\PYZhy{}align: center; \PYZcb{}}
+\PY{l+s}{  h1    \PYZob{} color: \PYZsh{}7b241c; font\PYZhy{}size: 24px; \PYZcb{}}
+\PY{l+s}{  .led \PYZob{} width: 90px; height: 90px; border\PYZhy{}radius: 50\PYZpc{}; margin: 10px auto 20px;}
+\PY{l+s}{          background: \PYZsh{}ccc; transition: .3s; \PYZcb{}}
+\PY{l+s}{  .led.on \PYZob{} background: \PYZsh{}ff5a4f; box\PYZhy{}shadow: 0 0 30px \PYZsh{}ff5a4f; \PYZcb{}}
+\PY{l+s}{  button \PYZob{} background: \PYZsh{}1f618d; color: white; border: none; border\PYZhy{}radius: 12px;}
+\PY{l+s}{           font\PYZhy{}size: 18px; padding: 10px 28px; \PYZcb{}}
+\PY{l+s}{  input  \PYZob{} width: 100\PYZpc{}; margin\PYZhy{}top: 20px; \PYZcb{}}
+\PY{l+s}{\PYZlt{}/style\PYZgt{}}
+\PY{l+s}{\PYZlt{}/head\PYZgt{}}
+\PY{l+s}{\PYZlt{}body\PYZgt{}}
+\PY{l+s}{\PYZlt{}div class=\PYZdq{}card\PYZdq{}\PYZgt{}}
+\PY{l+s}{  \PYZlt{}h1\PYZgt{}Мой светодиод\PYZlt{}/h1\PYZgt{}}
+\PY{l+s}{  \PYZlt{}div id=\PYZdq{}led\PYZdq{} class=\PYZdq{}led\PYZdq{}\PYZgt{}\PYZlt{}/div\PYZgt{}}
+\PY{l+s}{  \PYZlt{}button onclick=\PYZdq{}send(\PYZsq{}toggle\PYZsq{})\PYZdq{}\PYZgt{}Вкл / выкл\PYZlt{}/button\PYZgt{}}
+\PY{l+s}{  \PYZlt{}input id=\PYZdq{}lvl\PYZdq{} type=\PYZdq{}range\PYZdq{} min=\PYZdq{}0\PYZdq{} max=\PYZdq{}100\PYZdq{} onchange=\PYZdq{}send(\PYZsq{}level=\PYZsq{} + this.value)\PYZdq{}\PYZgt{}}
+\PY{l+s}{  \PYZlt{}p\PYZgt{}Яркость: \PYZlt{}b id=\PYZdq{}txt\PYZdq{}\PYZgt{}?\PYZlt{}/b\PYZgt{} \PYZpc{}\PYZlt{}/p\PYZgt{}}
+\PY{l+s}{\PYZlt{}/div\PYZgt{}}
+\PY{l+s}{\PYZlt{}script\PYZgt{}}
+\PY{l+s}{function show(s) \PYZob{}                     // нарисовать состояние светодиода}
+\PY{l+s}{  document.getElementById(\PYZsq{}led\PYZsq{}).className = s.on ? \PYZsq{}led on\PYZsq{} : \PYZsq{}led\PYZsq{};}
+\PY{l+s}{  document.getElementById(\PYZsq{}lvl\PYZsq{}).value = s.level;}
+\PY{l+s}{  document.getElementById(\PYZsq{}txt\PYZsq{}).textContent = s.level;}
+\PY{l+s}{\PYZcb{}}
+\PY{l+s}{function send(cmd) \PYZob{}                   // POST\PYZhy{}запрос без перезагрузки страницы}
+\PY{l+s}{  fetch(\PYZsq{}/api\PYZsq{}, \PYZob{} method: \PYZsq{}POST\PYZsq{}, body: new URLSearchParams(cmd) \PYZcb{})}
+\PY{l+s}{    .then(r =\PYZgt{} r.json()).then(show);}
+\PY{l+s}{\PYZcb{}}
+\PY{l+s}{fetch(\PYZsq{}/api\PYZsq{}).then(r =\PYZgt{} r.json()).then(show);   // GET: узнать состояние при открытии}
+\PY{l+s}{\PYZlt{}/script\PYZgt{}}
+\PY{l+s}{\PYZlt{}/body\PYZgt{}}
+\PY{l+s}{\PYZlt{}/html\PYZgt{}}
+\PY{l+s+dl}{)rawliteral}\PY{l+s}{\PYZdq{}}\PY{p}{;}
+
+\PY{k+kt}{uint32\PYZus{}t}\PY{+w}{ }\PY{n+nf}{gammaDuty}\PY{p}{(}\PY{k+kt}{int}\PY{+w}{ }\PY{n}{percent}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{k}{return}\PY{+w}{ }\PY{p}{(}\PY{k+kt}{uint32\PYZus{}t}\PY{p}{)}\PY{p}{(}\PY{l+m+mi}{255}\PY{+w}{ }\PY{o}{*}\PY{+w}{ }\PY{n}{pow}\PY{p}{(}\PY{n}{percent}\PY{+w}{ }\PY{o}{/}\PY{+w}{ }\PY{l+m+mf}{100.0}\PY{p}{,}\PY{+w}{ }\PY{l+m+mf}{2.2}\PY{p}{)}\PY{+w}{ }\PY{o}{+}\PY{+w}{ }\PY{l+m+mf}{0.5}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{applyLed}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{ }\PY{n}{ledcWrite}\PY{p}{(}\PY{n}{LED\PYZus{}PIN}\PY{p}{,}\PY{+w}{ }\PY{n}{ledOn}\PY{+w}{ }\PY{o}{?}\PY{+w}{ }\PY{n}{gammaDuty}\PY{p}{(}\PY{n}{level}\PY{p}{)}\PY{+w}{ }\PY{o}{:}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{;}\PY{+w}{ }\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{handleApi}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{server}\PY{p}{.}\PY{n}{method}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{o}{=}\PY{o}{=}\PY{+w}{ }\PY{n}{HTTP\PYZus{}POST}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{        }\PY{c+c1}{// POST \PYZhy{}\PYZhy{} команда изменить состояние}
+\PY{+w}{    }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{server}\PY{p}{.}\PY{n}{hasArg}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{toggle}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{)}\PY{+w}{ }\PY{n}{ledOn}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{o}{!}\PY{n}{ledOn}\PY{p}{;}
+\PY{+w}{    }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{server}\PY{p}{.}\PY{n}{hasArg}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{level}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{      }\PY{n}{level}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{constrain}\PY{p}{(}\PY{n}{server}\PY{p}{.}\PY{n}{arg}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{level}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{.}\PY{n}{toInt}\PY{p}{(}\PY{p}{)}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{100}\PY{p}{)}\PY{p}{;}
+\PY{+w}{      }\PY{n}{ledOn}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n+nb}{true}\PY{p}{;}
+\PY{+w}{    }\PY{p}{\PYZcb{}}
+\PY{+w}{    }\PY{n}{applyLed}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{p}{\PYZcb{}}
+\PY{+w}{  }\PY{c+c1}{// и на GET, и на POST отвечаем текущим состоянием в формате JSON}
+\PY{+w}{  }\PY{n}{String}\PY{+w}{ }\PY{n}{json}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{String}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{\PYZob{}}\PY{l+s+se}{\PYZbs{}\PYZdq{}}\PY{l+s}{on}\PY{l+s+se}{\PYZbs{}\PYZdq{}}\PY{l+s}{:}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{+w}{ }\PY{o}{+}\PY{+w}{ }\PY{p}{(}\PY{n}{ledOn}\PY{+w}{ }\PY{o}{?}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{true}\PY{l+s}{\PYZdq{}}\PY{+w}{ }\PY{o}{:}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{false}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{+w}{ }\PY{o}{+}
+\PY{+w}{                }\PY{l+s}{\PYZdq{}}\PY{l+s}{,}\PY{l+s+se}{\PYZbs{}\PYZdq{}}\PY{l+s}{level}\PY{l+s+se}{\PYZbs{}\PYZdq{}}\PY{l+s}{:}\PY{l+s}{\PYZdq{}}\PY{+w}{ }\PY{o}{+}\PY{+w}{ }\PY{n}{level}\PY{+w}{ }\PY{o}{+}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{\PYZcb{}}\PY{l+s}{\PYZdq{}}\PY{p}{;}
+\PY{+w}{  }\PY{n}{server}\PY{p}{.}\PY{n}{send}\PY{p}{(}\PY{l+m+mi}{200}\PY{p}{,}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{application/json}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{n}{json}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{setup}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{n}{Serial}\PY{p}{.}\PY{n}{begin}\PY{p}{(}\PY{l+m+mi}{115200}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{ledcAttach}\PY{p}{(}\PY{n}{LED\PYZus{}PIN}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{5000}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{8}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{applyLed}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{WiFi}\PY{p}{.}\PY{n}{mode}\PY{p}{(}\PY{n}{WIFI\PYZus{}STA}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{WiFi}\PY{p}{.}\PY{n}{begin}\PY{p}{(}\PY{n}{SSID}\PY{p}{,}\PY{+w}{ }\PY{n}{PASS}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{k}{while}\PY{+w}{ }\PY{p}{(}\PY{n}{WiFi}\PY{p}{.}\PY{n}{status}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{o}{!}\PY{o}{=}\PY{+w}{ }\PY{n}{WL\PYZus{}CONNECTED}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{ }\PY{n}{delay}\PY{p}{(}\PY{l+m+mi}{300}\PY{p}{)}\PY{p}{;}\PY{+w}{ }\PY{n}{Serial}\PY{p}{.}\PY{n}{print}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{.}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{;}\PY{+w}{ }\PY{p}{\PYZcb{}}
+\PY{+w}{  }\PY{n}{Serial}\PY{p}{.}\PY{n}{printf}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s+se}{\PYZbs{}n}\PY{l+s}{Открой http://\PYZpc{}s или http://esp32\PYZhy{}led.local}\PY{l+s+se}{\PYZbs{}n}\PY{l+s}{\PYZdq{}}\PY{p}{,}
+\PY{+w}{                }\PY{n}{WiFi}\PY{p}{.}\PY{n}{localIP}\PY{p}{(}\PY{p}{)}\PY{p}{.}\PY{n}{toString}\PY{p}{(}\PY{p}{)}\PY{p}{.}\PY{n}{c\PYZus{}str}\PY{p}{(}\PY{p}{)}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{MDNS}\PY{p}{.}\PY{n}{begin}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{esp32\PYZhy{}led}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{;}
+
+\PY{+w}{  }\PY{n}{server}\PY{p}{.}\PY{n}{on}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{/}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{p}{[}\PY{p}{]}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{ }\PY{n}{server}\PY{p}{.}\PY{n}{send}\PY{p}{(}\PY{l+m+mi}{200}\PY{p}{,}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{text/html; charset=utf\PYZhy{}8}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{n}{PAGE}\PY{p}{)}\PY{p}{;}\PY{+w}{ }\PY{p}{\PYZcb{}}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{server}\PY{p}{.}\PY{n}{on}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{/api}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{n}{handleApi}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{server}\PY{p}{.}\PY{n}{begin}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{loop}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{n}{server}\PY{p}{.}\PY{n}{handleClient}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+\end{CodeVerbatim}

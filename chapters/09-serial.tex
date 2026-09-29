@@ -1,0 +1,168 @@
+% =====================================================================
+\section{Последовательный порт: разговор с компьютером}
+\label{les:serial}
+% =====================================================================
+\lessonintro
+  {понять, как биты путешествуют по одному проводу, и научиться принимать команды с компьютера}
+  {урок~\ref{les:signals} (биты и байты), урок~\ref{les:ide} (\code{Serial.print}), урок~\ref{les:pwm} (яркость)}
+  {светодиод слушается команд \code{on}, \code{off} и \code{level 30} из Serial Monitor}
+  {схема со светодиодом на \pin{4} (рис.~\ref{fig:led}); для последнего раздела --- модуль GPS или вторая плата (по желанию)}
+
+С самого первого урока мы пользуемся Serial Monitor: плата присылает сообщения, и мы их читаем.
+Пора разобраться, как это устроено, и научиться разговаривать в обратную сторону --- отправлять
+плате команды.
+
+\subsection{Как передать букву по одному проводу}
+
+Внутри компьютера каждая буква --- это число. Например, латинская «A» --- это 65, а в двоичном виде
+\code{01000001}. Эти 8 бит (1 байт) можно передать по одному проводу друг за другом, как в
+уроке~\ref{les:signals}. Такой способ называют \textbf{последовательной передачей}, а устройство внутри
+чипа, которое этим занимается, --- \textbf{UART} (англ. \emph{Universal Asynchronous Receiver-Transmitter},
+универсальный асинхронный приёмопередатчик).
+
+Слово «асинхронный» значит, что у передатчика и приёмника нет общего «метронома». Поэтому они заранее
+договариваются о \textbf{скорости}: сколько бит в секунду передавать. Эту скорость называют
+\textbf{бодами}; мы используем 115\,200 бод.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[x=1.05cm,y=1cm]
+  \def\hi{1}
+  \draw[very thick,accent] (0,\hi) -- (1,\hi) -- (1,0) -- (2,0) -- (2,\hi) -- (3,\hi) -- (3,0) -- (8,0) -- (8,\hi) -- (9,\hi) -- (9,0) -- (10,0) -- (10,\hi) -- (12,\hi);
+  \foreach \x in {1,...,11} \draw[gray!50,dashed] (\x,-0.3) -- (\x,1.4);
+  \foreach \x/\l in {1.5/Старт,2.5/D0,3.5/D1,4.5/D2,5.5/D3,6.5/D4,7.5/D5,8.5/D6,9.5/D7,10.5/Стоп}
+    \node[font=\sffamily\scriptsize] at (\x,1.65) {\l};
+  \foreach \x/\b in {2.5/1,3.5/0,4.5/0,5.5/0,6.5/0,7.5/0,8.5/1,9.5/0}
+    \node[font=\ttfamily\small,text=esp] at (\x,-0.5) {\b};
+  \node[font=\sffamily\scriptsize] at (0.5,1.65) {покой};
+  \node[font=\sffamily\scriptsize] at (11.5,1.65) {покой};
+  \draw[decorate,decoration={brace,mirror,amplitude=4pt}] (2,-0.8) -- (10,-0.8)
+    node[midway,below=5pt,font=\sffamily\small]{8 бит данных, младший бит первым: \texttt{01000001} = 65 = «A»};
+  \draw[<->] (1,-1.8) -- node[below,font=\scriptsize]{$t_\text{бита} = 1/115\,200~\text{с} \approx 8{,}7$~мкс} (2,-1.8);
+\end{tikzpicture}
+\caption{Передача буквы «A». В покое линия в состоянии 1. Старт-бит (0) говорит «внимание, начинаю!»,
+стоп-бит (1) --- «закончил»}
+\end{figure}
+
+\begin{fact}
+При скорости 115\,200 бод на один символ уходит 10 бит (8 бит данных + старт + стоп), значит, за
+секунду можно передать 11\,520 символов --- примерно 5 страниц этой книги.
+\end{fact}
+
+\subsection{Serial и Serial Monitor}
+
+В ESP32-S3 три UART. В Arduino им соответствуют объекты:
+
+\begin{center}\small
+\begin{tabular}{@{}llll@{}}
+\toprule
+Объект Arduino & Блок & Выводы & Для чего \\
+\midrule
+\code{Serial} & USB или UART0 & разъём USB / 43, 44 & связь с компьютером \\
+\code{Serial1} & UART1 & любые, задаются в \code{begin()} & свободен \\
+\code{Serial2} & UART2 & любые, задаются в \code{begin()} & свободен \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=10mm]
+  \node[blk,fill=blkmem,minimum width=30mm,minimum height=12mm] (pc) {Компьютер\\ \scriptsize Serial Monitor};
+  \node[blk,fill=blkcpu,minimum width=30mm,minimum height=12mm,right=40mm of pc] (esp) {ESP32-S3\\ \scriptsize \code{Serial}};
+  \draw[arr,accent] ($(pc.east)+(0,0.25)$) -- node[above,font=\ttfamily\scriptsize]{"on\textbackslash n"} ($(esp.west)+(0,0.25)$);
+  \draw[arr,okgreen] ($(esp.west)+(0,-0.25)$) -- node[below,font=\ttfamily\scriptsize]{"OK\textbackslash n"} ($(pc.east)+(0,-0.25)$);
+  \node[font=\sffamily\scriptsize,below=1mm of pc] {поле ввода вверху окна};
+  \node[font=\sffamily\scriptsize,below=1mm of esp] {\code{Serial.readStringUntil()}};
+\end{tikzpicture}
+\caption{Разговор в две стороны: команда от компьютера и ответ платы}
+\end{figure}
+
+Основные функции:
+\begin{itemize}
+  \item \code{Serial.begin(115200)} --- включить порт; скорость в Serial Monitor должна совпадать;
+  \item \code{Serial.print()}, \code{println()}, \code{printf()} --- отправить текст;
+  \item \code{Serial.available()} --- сколько байт пришло и ждёт чтения;
+  \item \code{Serial.readStringUntil('\textbackslash n')} --- прочитать строку до символа «новая строка».
+\end{itemize}
+
+\begin{tip}
+В Serial Monitor выбери окончание строки \textsf{New Line}: тогда каждая команда будет
+заканчиваться символом \code{\textbackslash n}, и \code{readStringUntil()} сразу поймёт, где конец команды.
+\end{tip}
+
+\subsection{Практика: светодиод слушается команд}
+
+Используем схему со светодиодом на \pin{4} (рис.~\ref{fig:led}) и ШИМ из урока~\ref{les:pwm}. Функция
+\code{handleSerial()} ничего не ждёт: если команды нет, она сразу возвращается, и \code{loop()} может
+заниматься другими делами.
+
+\codecap{Управление светодиодом командами}
+\codeinput{l09_commands}
+
+Попробуй: \code{on}, \code{level 10}, \code{level 100}, \code{status}, \code{off}.
+Метод \code{cmd.startsWith("level ")} проверяет, начинается ли строка с этих букв, а
+\code{cmd.substring(6)} вырезает всё, что после шестого символа, --- то есть число.
+
+\subsection{Второй UART: связь с другими устройствами}
+
+На том же языке «разговаривают» GPS-приёмники, модули связи и другие микроконтроллеры. Благодаря
+матрице GPIO (урок~\ref{les:pins}) UART1 можно вывести на любые выводы, например \pin{17} и \pin{18}.
+Главное правило: \textbf{TX одного устройства соединяется с RX другого} (что один говорит --- другой
+слушает), а земли объединяются.
+
+\begin{twoview}{Подключение модуля GPS ко второму UART}{fig:uart}
+\begin{tikzpicture}[bb]
+  \bbBoard{24}
+  \bbDevKit{29}{25}
+  \bbModule{8}{7}{4}{7}{green!40!black}{GPS}{VCC,GND,TX,RX}
+  \draw[wire=wblue]  (dk-17) -- (27.3,16) -- (27.3,5) -- (11,5);
+  \draw[wire=wgreen] (dk-18) -- (27.9,15) -- (27.9,3) -- (10,3);
+  \draw[wire=wblack] (9,4) -- (9,1);
+  \draw[wire=wblack] (dk-GND) -- (28.6,4) -- (28.6,1) -- (24,1);
+  \draw[wire=wred]   (dk-3V3) -- (28.3,25) -- (28.3,27.3) -- (-1.5,27.3) -- (-1.5,6) -- (8,6);
+\end{tikzpicture}
+\nextview
+\begin{circuitikz}
+  \node[draw,thick,fill=blkcpu,minimum width=2.6cm,minimum height=3.2cm,label={[font=\sffamily\bfseries]above:ESP32-S3}] (a) at (0,0) {};
+  \node[draw,thick,fill=blkper,minimum width=2.6cm,minimum height=3.2cm,label={[font=\sffamily\bfseries]above:Модуль GPS}] (b) at (7,0) {};
+  \draw ($(a.east)+(0,1.1)$) node[left,font=\scriptsize]{3V3} -- ($(b.west)+(0,1.1)$) node[right,font=\scriptsize]{VCC};
+  \draw ($(a.east)+(0,0.4)$) node[left,font=\scriptsize]{TX \pin{17}} -- ++(2.5,0) -- ($(b.west)+(-1,-0.3)$) -- ($(b.west)+(0,-0.3)$) node[right,font=\scriptsize]{RX};
+  \draw ($(a.east)+(0,-0.3)$) node[left,font=\scriptsize]{RX \pin{18}} -- ++(2.5,0) -- ($(b.west)+(-1,0.4)$) -- ($(b.west)+(0,0.4)$) node[right,font=\scriptsize]{TX};
+  \draw ($(a.east)+(0,-1.1)$) node[left,font=\scriptsize]{GND} -- ($(b.west)+(0,-1.1)$) node[right,font=\scriptsize]{GND};
+\end{circuitikz}
+\end{twoview}
+
+\codecap{Мост: всё, что пришло с модуля, пересылается на компьютер, и наоборот}
+\codeinput{l09_bridge}
+
+\begin{caution}
+Некоторые модули (часть Arduino, старые GPS) работают с логикой 5~В. Их TX нельзя подключать к RX
+ESP32-S3 напрямую --- помнишь «опасную зону» из урока~\ref{les:signals}? Нужен делитель напряжения
+или преобразователь уровней.
+\end{caution}
+
+\begin{summary}
+\begin{itemize}[leftmargin=*]
+  \item UART передаёт байты по одному проводу: старт-бит, 8 бит данных, стоп-бит.
+  \item Скорость (бод) у обеих сторон должна совпадать.
+  \item Команды читаем, не останавливая программу: сначала \code{available()}, потом \code{readStringUntil()}.
+  \item TX одного устройства --- к RX другого, земли --- вместе.
+\end{itemize}
+\end{summary}
+
+\begin{quiz}
+\begin{enumerate}
+  \item Зачем нужен старт-бит?
+  \item Что будет, если в Serial Monitor выбрать скорость 9600, а в программе --- 115\,200?
+  \item Как соединить TX и RX двух плат?
+\end{enumerate}
+\end{quiz}
+
+\begin{tasks}
+\begin{enumerate}
+  \item Добавь команду \code{blink N}: мигнуть светодиодом N раз (без \code{delay()}).
+  \item Раз в 10 секунд выводи время работы платы, не мешая приёму команд.
+  \item Соедини две платы по UART: команды, набранные на одной, пусть управляют светодиодом другой.
+\end{enumerate}
+\end{tasks}

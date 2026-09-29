@@ -1,0 +1,259 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{esp32s3-bb}[2026/09/29 Монтажные схемы на макетной плате]
+% ---------------------------------------------------------------------
+% Рисование макетной платы (breadboard), отладочной платы ESP32-S3-DevKitC-1
+% и деталей. Единица координат = шаг отверстий 2,54 мм (стиль bb).
+%
+% Геометрия макетной платы \bbBoard{N} (N столбцов, x = 1..N):
+%   y = 0  -- нижняя шина «+»,   y = 1  -- нижняя шина «−»
+%   y = 3..7   -- ряды j..f (каждый столбец из 5 отверстий соединён)
+%   y = 10..14 -- ряды e..a (каждый столбец из 5 отверстий соединён)
+%   y = 16 -- верхняя шина «−»,  y = 17 -- верхняя шина «+»
+%   (шины «−» ближе к деталям: землю подключают чаще всего)
+%   между y = 7 и y = 10 -- центральная канавка
+% ---------------------------------------------------------------------
+\RequirePackage{tikz}
+\usetikzlibrary{arrows.meta,calc}
+
+\definecolor{bbboard}{HTML}{F3F0E6}
+\definecolor{bbhole}{HTML}{4A4640}
+\definecolor{bbred}{HTML}{D62828}
+\definecolor{bbblue}{HTML}{1D5FD8}
+\definecolor{pcb}{HTML}{2B2B2B}
+\definecolor{pinmetal}{HTML}{E0B43C}
+% цвета проводов
+\definecolor{wred}{HTML}{E03131}
+\definecolor{wblack}{HTML}{262626}
+\definecolor{wyellow}{HTML}{F0B400}
+\definecolor{wgreen}{HTML}{2F9E44}
+\definecolor{wblue}{HTML}{1971C2}
+\definecolor{worange}{HTML}{F76707}
+\definecolor{wpurple}{HTML}{7048E8}
+\definecolor{wwhite}{HTML}{BDBDBD}
+\definecolor{wbrown}{HTML}{8B4A1C}
+% цвета полос резисторов
+\colorlet{rk}{black}
+\definecolor{rn}{HTML}{8B4513}
+\definecolor{rr}{HTML}{D00000}
+\definecolor{ro}{HTML}{FF8C00}
+\definecolor{ry}{HTML}{FFD700}
+\definecolor{rg}{HTML}{228B22}
+\definecolor{rb}{HTML}{1E50D0}
+\definecolor{rv}{HTML}{8A2BE2}
+\definecolor{rgold}{HTML}{C9A227}
+\definecolor{resbody}{HTML}{D9C6A0}
+
+\tikzset{
+  bb/.style={x=2.8mm,y=2.8mm,line cap=round,line join=round},
+  wire/.style={line width=1.4pt,draw=#1,rounded corners=1.1mm,
+               {Circle[length=3pt,fill=#1!70!black]}-{Circle[length=3pt,fill=#1!70!black]}},
+  wire/.default=wgreen,
+  leg/.style={line width=0.9pt,draw=black!45},
+  bblabel/.style={font=\sffamily\tiny,inner sep=0.5pt},
+}
+
+% ---------- Макетная плата ----------
+% \bbBoard{N}
+\newcommand{\bbBoard}[1]{%
+  \fill[bbboard,draw=black!30,rounded corners=1mm] (0,-1.4) rectangle (#1+1,18.4);
+  \fill[black!10] (0,8.2) rectangle (#1+1,8.8);
+  \draw[bbred,line width=0.9pt]  (0.8,-0.75) -- (#1+0.2,-0.75);
+  \draw[bbblue,line width=0.9pt] (0.8,1.75)  -- (#1+0.2,1.75);
+  \draw[bbblue,line width=0.9pt] (0.8,15.25) -- (#1+0.2,15.25);
+  \draw[bbred,line width=0.9pt]  (0.8,17.75) -- (#1+0.2,17.75);
+  \foreach \yy/\s/\c in {0/+/bbred,1/−/bbblue,16/−/bbblue,17/+/bbred}{
+    \node[font=\sffamily\bfseries\scriptsize,text=\c,inner sep=0] at (0.4,\yy) {\s};
+    \node[font=\sffamily\bfseries\scriptsize,text=\c,inner sep=0] at (#1+0.6,\yy) {\s};
+  }
+  \foreach \yy/\r in {3/j,4/i,5/h,6/g,7/f,10/e,11/d,12/c,13/b,14/a}{
+    \node[font=\sffamily\tiny,text=black!50,inner sep=0] at (0.4,\yy) {\r};
+    \node[font=\sffamily\tiny,text=black!50,inner sep=0] at (#1+0.6,\yy) {\r};
+  }
+  \foreach \x in {1,...,#1}{
+    \foreach \yy in {0,1,3,4,5,6,7,10,11,12,13,14,16,17}
+      \fill[bbhole] (\x-0.16,\yy-0.16) rectangle (\x+0.16,\yy+0.16);
+  }
+  \foreach \x in {1,5,10,...,#1}{
+    \node[font=\sffamily\tiny,text=black!50,inner sep=0] at (\x,2.35) {\x};
+    \node[font=\sffamily\tiny,text=black!50,inner sep=0] at (\x,14.65) {\x};
+  }
+}
+
+% Подсветка соединённых групп отверстий (для объяснения устройства платы)
+% \bbStrip{цвет}{x}{нижний y}{верхний y}  -- вертикальная полоска
+% \bbRail{цвет}{y}{N}                      -- шина по всей длине
+\newcommand{\bbStrip}[4]{%
+  \draw[#1,line width=2.2mm,opacity=0.35,line cap=round] (#2,#3) -- (#2,#4);}
+\newcommand{\bbRail}[3]{%
+  \draw[#1,line width=2.2mm,opacity=0.35,line cap=round] (1,#2) -- (#3,#2);}
+
+% ---------- Отладочная плата ESP32-S3-DevKitC-1 ----------
+% \bbDevKit{x}{y}: левая гребёнка J1 в столбце x, правая J3 -- в x+9;
+% верхний вывод -- на высоте y. Создаёт координаты (dk-<имя>):
+% dk-3V3, dk-4 ... dk-GND (J1) и dk-GNDt, dk-1, dk-2 ... (J3).
+\newcommand{\bbDevKit}[2]{%
+  \begin{scope}[shift={(#1,#2)}]
+    \fill[pcb,rounded corners=1.2mm] (-1,-24.6) rectangle (10,2.6);
+    % модуль WROOM
+    \fill[black!55,rounded corners=0.4mm] (2.3,-10.5) rectangle (6.7,2.3);
+    \fill[black!30] (2.3,-0.4) rectangle (6.7,2.3);
+    \draw[white!70,line width=0.5pt] (2.8,1.8) -- (2.8,0.1) -- (3.5,0.1) -- (3.5,1.8) -- (4.2,1.8) -- (4.2,0.1)
+       -- (4.9,0.1) -- (4.9,1.8) -- (5.6,1.8) -- (5.6,0.1) -- (6.2,0.1);
+    \fill[gray!55,rounded corners=0.3mm] (2.6,-10.1) rectangle (6.4,-0.9);
+    \node[font=\sffamily\bfseries\tiny,rotate=90] at (4.5,-5.5) {ESP32-S3};
+    % RGB-светодиод и кнопки
+    \fill[white] (4.1,-13.9) rectangle (4.9,-13.1);
+    \node[bblabel,text=white] at (4.5,-14.6) {RGB};
+    \foreach \bx/\bl in {3.2/BOOT,5.8/RST}{
+      \fill[gray!50] (\bx-0.6,-17.6) rectangle (\bx+0.6,-16.4);
+      \fill[black!70] (\bx,-17) circle (0.35);
+      \node[bblabel,text=white] at (\bx,-18.3) {\bl};
+    }
+    % разъёмы USB
+    \foreach \ux/\ul in {2.2/UART,6.8/USB}{
+      \fill[gray!70,rounded corners=0.3mm] (\ux-1.1,-25.7) rectangle (\ux+1.1,-23.6);
+      \node[bblabel,text=white] at (\ux+0.2,-22.7) {\ul};
+    }
+    \node[font=\sffamily\bfseries\tiny,text=white] at (4.5,-11.5) {DevKitC-1};
+    % выводы J1
+    \foreach \n/\l [count=\i] in {3V3/3V3,3V3b/3V3,RST/RST,4/4,5/5,6/6,7/7,15/15,16/16,17/17,18/18,
+                                  8/8,3/3,46/46,9/9,10/10,11/11,12/12,13/13,14/14,5V/5V,GND/GND}{
+      \coordinate (dk-\n) at (0,1-\i);
+      \fill[pinmetal] (-0.3,0.7-\i) rectangle (0.3,1.3-\i);
+      \node[bblabel,text=white,anchor=west] at (0.55,1-\i) {\l};
+    }
+    % выводы J3
+    \foreach \n/\l [count=\i] in {GNDt/GND,43/TX,44/RX,1/1,2/2,42/42,41/41,40/40,39/39,38/38,37/37,
+                                  36/36,35/35,0/0,45/45,48/48,47/47,21/21,20/20,19/19,GNDb/GND,GNDc/GND}{
+      \coordinate (dk-\n) at (9,1-\i);
+      \fill[pinmetal] (8.7,0.7-\i) rectangle (9.3,1.3-\i);
+      \node[bblabel,text=white,anchor=east] at (8.45,1-\i) {\l};
+    }
+  \end{scope}
+}
+
+% ---------- Детали ----------
+% Светодиод: \bbLED{цвет}{x}{y}{dy}
+%   анод (длинная ножка) в (x,y), катод в (x+1,y), корпус смещён на dy по вертикали
+\newcommand{\bbLED}[4]{%
+  \draw[leg] (#2,#3) -- ++(0,#4*0.35) -- ++(0.25,#4*0.25) -- (#2+0.3,#3+#4*0.85);
+  \draw[leg] (#2+1,#3) -- (#2+0.7,#3+#4*0.85);
+  \fill[#1!80!black] (#2+0.5,#3+#4) ++(-1.05,0) arc[start angle=180,end angle=-110,radius=1.05]
+       -- cycle;
+  \shade[ball color=#1!90!white,opacity=0.9] (#2+0.5,#3+#4) circle (0.85);
+  \fill[white,opacity=0.55] (#2+0.2,#3+#4+0.3) circle (0.22);
+}
+% Резистор: \bbR{x1}{y1}{x2}{y2}{полоса1}{полоса2}{множитель}
+\newcommand{\bbR}[7]{%
+  \draw[leg] (#1,#2) -- (#3,#4);
+  \path (#1,#2) -- coordinate[pos=0.5] (rmid) (#3,#4);
+  \pgfmathsetmacro{\bbang}{atan2(#4-#2,#3-#1)}%
+  \begin{scope}[shift={(rmid)},rotate=\bbang]
+    \fill[resbody,draw=black!45,line width=0.3pt,rounded corners=0.8mm] (-1.35,-0.45) rectangle (1.35,0.45);
+    \fill[#5] (-0.85,-0.45) rectangle (-0.6,0.45);
+    \fill[#6] (-0.4,-0.45) rectangle (-0.15,0.45);
+    \fill[#7] (0.05,-0.45) rectangle (0.3,0.45);
+    \fill[rgold] (0.75,-0.45) rectangle (1.0,0.45);
+  \end{scope}
+}
+% Кнопка поверх канавки: \bbButton{x}
+%   выводы в (x,7), (x+2,7), (x,10), (x+2,10); нажатие соединяет столбцы x и x+2
+\newcommand{\bbButton}[1]{%
+  \foreach \px in {#1,#1+2}{\foreach \py in {7,10}{\fill[black!55] (\px-0.2,\py-0.2) rectangle (\px+0.2,\py+0.2);}}
+  \fill[black!75,rounded corners=0.4mm] (#1-0.55,7.3) rectangle (#1+2.55,9.7);
+  \fill[black!40] (#1+1,8.5) circle (0.85);
+  \fill[black!20] (#1+0.8,8.7) circle (0.25);
+}
+% Потенциометр: \bbPot{x}{y}{подпись}; выводы в (x,y), (x+1,y), (x+2,y); средний -- движок
+\newcommand{\bbPot}[3]{%
+  \foreach \k in {0,1,2}\draw[leg] (#1+\k,#2) -- (#1+\k,#2+0.9);
+  \fill[blue!55!black,rounded corners=0.5mm] (#1-0.6,#2+0.8) rectangle (#1+2.6,#2+4.7);
+  \fill[white] (#1+1,#2+3.2) circle (1.2);
+  \fill[gray!35] (#1+1,#2+3.2) circle (0.95);
+  \draw[black!70,line width=1pt] (#1+1,#2+3.2) -- ++(55:0.85);
+  \node[bblabel,text=white] at (#1+1,#2+1.4) {#3};
+}
+% Потенциометр «вниз головой»: \bbPotD{x}{y}{подпись}; корпус ниже выводов
+\newcommand{\bbPotD}[3]{%
+  \foreach \k in {0,1,2}\draw[leg] (#1+\k,#2) -- (#1+\k,#2-0.9);
+  \fill[blue!55!black,rounded corners=0.5mm] (#1-0.6,#2-0.8) rectangle (#1+2.6,#2-4.7);
+  \fill[white] (#1+1,#2-2.9) circle (1.2);
+  \fill[gray!35] (#1+1,#2-2.9) circle (0.95);
+  \draw[black!70,line width=1pt] (#1+1,#2-2.9) -- ++(55:0.85);
+  \node[bblabel,text=white] at (#1+1,#2-4.35) {#3};
+}
+% Керамический конденсатор: \bbC{x}{y}{подпись}; выводы в (x,y), (x+1,y)
+\newcommand{\bbC}[3]{%
+  \draw[leg] (#1,#2) -- (#1+0.3,#2+1);
+  \draw[leg] (#1+1,#2) -- (#1+0.7,#2+1);
+  \fill[orange!75!yellow,draw=orange!60!black,line width=0.3pt] (#1+0.5,#2+1.5) ellipse (0.8 and 0.7);
+  \node[bblabel] at (#1+0.5,#2+1.5) {#3};
+}
+% Конденсатор с выводами в любых отверстиях: \bbCC{(p1)}{(p2)}{(корпус)}{подпись}
+\newcommand{\bbCC}[4]{%
+  \draw[leg] #1 -- #3; \draw[leg] #2 -- #3;
+  \fill[orange!75!yellow,draw=orange!60!black,line width=0.3pt] #3 ellipse (0.8 and 0.7);
+  \node[bblabel] at #3 {#4};
+}
+% Сервопривод под платой: \bbServoBody{x}{y} -- корпус с верхним краем на высоте y
+\newcommand{\bbServoBody}[2]{%
+  \fill[blue!60!black,rounded corners=0.8mm] (#1,#2) rectangle (#1+9,#2-5);
+  \fill[white] (#1+7,#2-2.5) circle (1.3);
+  \fill[white,rounded corners=0.6mm] (#1+2.6,#2-2.1) rectangle (#1+7.4,#2-2.9);
+  \fill[gray!60] (#1+7,#2-2.5) circle (0.45);
+  \node[font=\sffamily\bfseries\tiny,text=white] at (#1+1.5,#2-4.2) {SG90};
+}
+% Модуль с гребёнкой выводов: \bbModule{x}{y}{ширина}{высота}{цвет}{название}{подписи выводов}
+%   выводы в ряду y, начиная со столбца x; корпус уходит вверх
+\newcommand{\bbModule}[7]{%
+  \fill[#5,rounded corners=0.8mm] (#1-0.9,#2-0.6) rectangle (#1+#3-0.1,#2+#4);
+  \foreach \l [count=\i from 0] in {#7}{
+    \fill[pinmetal] (#1+\i-0.25,#2-0.25) rectangle (#1+\i+0.25,#2+0.25);
+    \node[bblabel,text=white,rotate=90,anchor=west] at (#1+\i,#2+0.5) {\l};
+  }
+  \node[font=\sffamily\bfseries\scriptsize,text=white,align=center] at (#1+#3/2-0.5,#2+#4-1.4) {#6};
+}
+% OLED-дисплей 128×64: \bbOLED{x}{y}; выводы GND, VCC, SCL, SDA в ряду y
+\newcommand{\bbOLED}[2]{%
+  \fill[blue!45!black,rounded corners=0.8mm] (#1-3.6,#2-0.7) rectangle (#1+6.6,#2+10.5);
+  \fill[black] (#1-3.1,#2+2.8) rectangle (#1+6.1,#2+8.6);
+  \fill[black!70] (#1-3.1,#2+8.6) rectangle (#1+6.1,#2+9.7);
+  \node[font=\ttfamily\tiny,text=cyan!60] at (#1+1.5,#2+6.6) {Hello!};
+  \fill[cyan!60] (#1-2.4,#2+3.4) rectangle (#1+3.2,#2+4.1);
+  \draw[cyan!60,line width=0.3pt] (#1-2.4,#2+3.4) rectangle (#1+5.4,#2+4.1);
+  \foreach \l [count=\i from 0] in {GND,VCC,SCL,SDA}{
+    \fill[pinmetal] (#1+\i-0.25,#2-0.25) rectangle (#1+\i+0.25,#2+0.25);
+    \node[bblabel,text=white,rotate=90,anchor=west] at (#1+\i,#2+0.45) {\l};
+  }
+}
+% Сервопривод рядом с платой: \bbServo{x}{y}
+%   разъём из трёх выводов (x,y) коричневый GND, (x+1,y) красный +, (x+2,y) оранжевый сигнал
+\newcommand{\bbServo}[2]{%
+  \fill[blue!60!black,rounded corners=0.8mm] (#1-1.5,#2+5) rectangle (#1+3.5,#2+13);
+  \fill[white] (#1+1,#2+11) circle (1.3);
+  \fill[white,rounded corners=0.6mm] (#1+0.6,#2+7.2) rectangle (#1+1.4,#2+11.6);
+  \fill[gray!60] (#1+1,#2+11) circle (0.45);
+  \node[font=\sffamily\bfseries\tiny,text=white] at (#1+1,#2+6) {SG90};
+  \draw[wbrown,line width=1.1pt] (#1,#2+0.6) -- (#1+0.6,#2+5);
+  \draw[wred,line width=1.1pt] (#1+1,#2+0.6) -- (#1+1,#2+5);
+  \draw[worange,line width=1.1pt] (#1+2,#2+0.6) -- (#1+1.4,#2+5);
+  \fill[black!80] (#1-0.5,#2-0.4) rectangle (#1+2.5,#2+0.8);
+}
+% Пьезопищалка: \bbBuzzer{x}{y}; «+» в (x,y), «−» в (x+2,y)
+\newcommand{\bbBuzzer}[2]{%
+  \fill[black!85] (#1+1,#2) circle (1.55);
+  \fill[black!65] (#1+1,#2) circle (0.35);
+  \node[font=\sffamily\bfseries\tiny,text=white] at (#1+0.1,#2+0.9) {+};
+}
+% Батарейный отсек / внешний источник: \bbSupply{x}{y}{подпись}
+%   координаты выводов: (sup+) и (sup-)
+\newcommand{\bbSupply}[3]{%
+  \fill[black!75,rounded corners=0.8mm] (#1,#2) rectangle (#1+8,#2+4);
+  \node[font=\sffamily\bfseries\tiny,text=white] at (#1+4,#2+2) {#3};
+  \coordinate (sup+) at (#1+2,#2+4);
+  \coordinate (sup-) at (#1+6,#2+4);
+  \node[font=\sffamily\bfseries\tiny,text=wred] at (#1+2,#2+3.2) {+};
+  \node[font=\sffamily\bfseries\tiny,text=white] at (#1+6,#2+3.2) {−};
+}
+
+\endinput

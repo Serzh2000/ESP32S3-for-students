@@ -1,17 +1,26 @@
 \NeedsTeXFormat{LaTeX2e}
-\ProvidesPackage{esp32s3-course}[2026/09/25 Оформление курса ESP32-S3]
+\ProvidesPackage{esp32s3-course}[2026/09/29 Оформление курса ESP32-S3]
 
 % ---------- Язык и шрифты ----------
 \RequirePackage{fontspec}
 \RequirePackage{polyglossia}
 \setdefaultlanguage{russian}
 \setotherlanguage{english}
-\setmainfont{Cambria}
-\setsansfont{Calibri}
-\setmonofont{Consolas}[Scale=0.92]
-\newfontfamily\cyrillicfont{Cambria}[Ligatures=TeX]
-\newfontfamily\cyrillicfontsf{Calibri}[Ligatures=TeX]
-\newfontfamily\cyrillicfonttt{Consolas}[Scale=0.92]
+% Шрифты Windows (Cambria, Calibri, Consolas); если их нет --- свободные PT Serif, PT Sans, DejaVu Sans Mono
+\IfFontExistsTF{Cambria}{\def\coursemain{Cambria}}{\def\coursemain{PT Serif}}
+\IfFontExistsTF{Calibri}{\def\coursesans{Calibri}}{\def\coursesans{PT Sans}}
+\IfFontExistsTF{Consolas}{\def\coursemono{Consolas}}{\def\coursemono{DejaVu Sans Mono}}
+\setmainfont{\coursemain}
+\setsansfont{\coursesans}
+\setmonofont{\coursemono}[Scale=0.88]
+\newfontfamily\cyrillicfont{\coursemain}[Ligatures=TeX]
+\newfontfamily\cyrillicfontsf{\coursesans}[Ligatures=TeX]
+\newfontfamily\cyrillicfonttt{\coursemono}[Scale=0.88]
+
+% Символы, которых нет в части шрифтов
+\RequirePackage{newunicodechar}
+\newunicodechar{→}{\ensuremath{\rightarrow}}
+\newunicodechar{■}{\rule[0.1ex]{0.9ex}{0.9ex}}
 
 % ---------- Вёрстка ----------
 \RequirePackage[margin=2.2cm,top=2.4cm,bottom=2.4cm]{geometry}
@@ -19,6 +28,7 @@
 \RequirePackage{amsmath}
 \RequirePackage{booktabs,tabularx,array}
 \RequirePackage{enumitem}
+\RequirePackage{multicol}
 \setlist{itemsep=2pt,topsep=4pt}
 \RequirePackage{xcolor}
 \RequirePackage{titlesec}
@@ -27,13 +37,21 @@
 \RequirePackage{float}
 \RequirePackage{caption}
 \captionsetup{font=small,labelfont={bf,sf}}
+\RequirePackage{subcaption}
+\renewcommand{\thesubfigure}{\ifcase\value{subfigure}\or а\or б\or в\or г\or д\fi}
+\DeclareCaptionLabelFormat{rparen}{#2)}
+\captionsetup[subfigure]{labelformat=rparen,labelsep=space,font=small}
+\renewcommand{\p@subfigure}{\thefigure}
 
 % ---------- Графика ----------
 \RequirePackage{tikz}
 \usetikzlibrary{arrows.meta,positioning,calc,shapes.geometric,shapes.misc,fit,backgrounds,decorations.pathreplacing}
 \RequirePackage[siunitx,RPvoltages]{circuitikz}
+\RequirePackage{esp32s3-bb}
 \RequirePackage{pgfplots}
 \pgfplotsset{compat=1.18}
+\usepgfplotslibrary{groupplots}
+\usetikzlibrary{fadings}
 \sisetup{output-decimal-marker={,},range-phrase={\,--\,},range-units=single}
 \RequirePackage{etoolbox,needspace}
 \pretocmd{\section}{\needspace{18\baselineskip}}{}{}
@@ -56,11 +74,11 @@
 \titleformat{\section}{\sffamily\LARGE\bfseries\color{espdark}}{Урок \thesection.}{0.6em}{}[{\color{esp}\titlerule[1.2pt]}]
 \titleformat{\subsection}{\sffamily\large\bfseries\color{accent}}{\thesubsection}{0.6em}{}
 \titleformat{\subsubsection}{\sffamily\normalsize\bfseries}{}{0em}{}
-\setcounter{section}{-1}
+% уроки нумеруются с 1
 
 \pagestyle{fancy}
 \fancyhf{}
-\fancyhead[L]{\sffamily\small\color{gray}Базовый курс ESP32-S3}
+\fancyhead[L]{\sffamily\small\color{gray}ESP32-S3 для начинающих}
 \fancyhead[R]{\sffamily\small\color{gray}\nouppercase{\leftmark}}
 \fancyfoot[C]{\sffamily\small\thepage}
 \renewcommand{\headrulewidth}{0.4pt}
@@ -72,10 +90,13 @@
 \RequirePackage{newfloat}
 \DeclareFloatingEnvironment[name=Листинг,fileext=lol]{listing}
 \input{code/pygments-style.tex}
-\DefineVerbatimEnvironment{CodeVerbatim}{Verbatim}{
-  commandchars=\\\{\}, fontsize=\small, numbers=none,
-  bgcolor=codebg, breaklines, tabsize=2,
-}
+% Фон листинга рисует tcolorbox: так работает и со старыми версиями fvextra (без bgcolor)
+\newenvironment{CodeVerbatim}{%
+  \VerbatimEnvironment
+  \begin{tcolorbox}[enhanced,breakable,colback=codebg,colframe=codebg,boxrule=0pt,arc=0pt,
+    left=4pt,right=4pt,top=2pt,bottom=2pt]%
+  \begin{Verbatim}[commandchars=\\\{\},fontsize=\small,breaklines,tabsize=2]}%
+ {\end{Verbatim}\end{tcolorbox}}
 \newcommand{\codeinput}[1]{\input{code/#1.tex}}
 \newcommand{\codecap}[1]{\needspace{8\baselineskip}\captionof{listing}{#1}}
 
@@ -89,7 +110,7 @@
 \begin{tabularx}{\linewidth}{@{}p{27mm} X@{}}
 \introlabel{Цель} & #1\\
 \introlabel{Опирается на} & #2\\
-\introlabel{Шаг проекта} & #3\\
+\introlabel{Практика} & #3\\
 \introlabel{Понадобится} & #4
 \end{tabularx}
 \end{introbox}}
@@ -101,6 +122,25 @@
   title=Итоги урока,boxrule=0.8pt,arc=2pt,left=6pt,right=6pt}
 \newtcolorbox{tasks}{enhanced,colback=esp!4,colframe=esp,fonttitle=\sffamily\bfseries,
   title=Задания для самостоятельной работы,boxrule=0.8pt,arc=2pt,left=6pt,right=6pt}
+\newtcolorbox{fact}{enhanced,colback=blkrtc!35,colframe=blkrtc!50!black,fonttitle=\sffamily\bfseries,
+  title=Это интересно,boxrule=0.8pt,arc=2pt,left=6pt,right=6pt}
+\newtcolorbox{quiz}{enhanced,colback=accent!4,colframe=accent!70,fonttitle=\sffamily\bfseries,
+  title=Проверь себя,boxrule=0.8pt,arc=2pt,left=6pt,right=6pt}
+
+% Рисунок из двух частей: монтажная схема (на макетной плате) и принципиальная схема.
+% \begin{twoview}{подпись}{метка} <монтажная> \nextview <принципиальная> \end{twoview}
+\newenvironment{twoview}[2]{%
+  \def\twoviewcap{#1}\def\twoviewlabel{#2}%
+  \begin{figure}[H]\centering
+  \begin{subfigure}{\textwidth}\centering}{%
+  \caption{Принципиальная электрическая схема}
+  \end{subfigure}
+  \caption{\twoviewcap}\label{\twoviewlabel}
+  \end{figure}}
+\newcommand{\nextview}{%
+  \caption{Монтажная схема: как собрать на макетной плате}
+  \end{subfigure}\par\medskip
+  \begin{subfigure}{\textwidth}\centering}
 
 \newcommand{\code}[1]{\texttt{#1}}
 \newcommand{\pin}[1]{\textsf{\bfseries GPIO#1}}
@@ -110,20 +150,6 @@
   arr/.style={-{Stealth[length=2.2mm]},thick},
   darr/.style={{Stealth[length=2.2mm]}-{Stealth[length=2.2mm]},thick},
 }
-
-% Индикатор прогресса проекта: \progress{номер шага}
-\newcommand{\progress}[1]{%
-\begin{center}
-\begin{tikzpicture}[x=11mm]
-  \node[anchor=east,font=\sffamily\scriptsize\bfseries,text=okgreen] at (0.85,0.17) {Умная лампа:};
-  \foreach \i/\l in {1/LED,2/Serial,3/кнопка,4/ШИМ,5/ручка,6/экран,7/задачи,8/Wi-Fi,9/сон}{
-    \ifnum\i>#1\relax \def\c{white}\def\t{gray}\else\def\c{okgreen!55}\def\t{black}\fi
-    \draw[fill=\c,draw=okgreen,rounded corners=1pt] (\i,0) rectangle ++(0.9,0.34);
-    \node[font=\sffamily\tiny,text=\t] at (\i+0.45,0.17) {\i};
-    \node[font=\sffamily\tiny,text=\t] at (\i+0.45,-0.18) {\l};
-  }
-\end{tikzpicture}
-\end{center}}
 
 % ---------- Приложения ----------
 \newcommand{\courseappendix}{%

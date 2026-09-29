@@ -1,0 +1,136 @@
+% =====================================================================
+\section{Arduino IDE и первая программа}
+\label{les:ide}
+% =====================================================================
+\lessonintro
+  {установить среду программирования, загрузить в плату первую программу и увидеть её ответ}
+  {урок~\ref{les:board} (разъёмы и кнопки платы)}
+  {плата присылает на компьютер приветствие и рассказывает о себе}
+  {плата, USB-кабель \textbf{с передачей данных} (некоторые кабели умеют только заряжать!), компьютер}
+
+\subsection{Как программа попадает в плату}
+
+Микроконтроллер не понимает текст на человеческом языке. Мы пишем программу на языке C++, а
+специальная программа --- \textbf{компилятор} --- переводит её в машинный код: длинную цепочку
+нулей и единиц. Затем этот код по USB записывается во Flash-память платы. Это называется
+\textbf{прошивкой}.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=6mm and 7mm]
+  \node[blk,fill=blkmem] (src) {Программа\\ (скетч) \code{.ino}};
+  \node[blk,fill=blkmem,right=of src] (cc) {Компилятор\\ \scriptsize переводит в\\ \scriptsize машинный код};
+  \node[blk,fill=blkmem,right=of cc] (bin) {Файл\\ прошивки \code{.bin}};
+  \node[blk,fill=blkper,right=of bin] (tool) {Загрузчик\\ esptool};
+  \node[blk,fill=blkcpu,right=of tool] (chip) {Память\\ ESP32-S3};
+  \draw[arr] (src) -- (cc);
+  \draw[arr] (cc) -- (bin);
+  \draw[arr] (bin) -- (tool);
+  \draw[arr] (tool) -- node[above,font=\sffamily\scriptsize]{USB} (chip);
+  \node[blk,fill=blkrf,below=8mm of cc] (lib) {Библиотеки\\ \scriptsize готовые функции};
+  \draw[arr] (lib) -- (cc);
+\end{tikzpicture}
+\caption{Путь от текста программы до платы. Всё это Arduino IDE делает по одной кнопке}
+\end{figure}
+
+Программы для Arduino называют \textbf{скетчами} (англ. \emph{sketch} --- набросок).
+
+\subsection{Установка Arduino IDE}
+
+Мы будем писать программы в Arduino IDE 2.x --- бесплатной и простой среде.
+
+\begin{enumerate}
+  \item Скачай Arduino IDE 2 с сайта \url{https://www.arduino.cc/en/software} и установи.
+  \item Открой \textsf{File → Preferences} (Файл → Настройки) и в поле
+        \textsf{Additional boards manager URLs} вставь адрес:\\
+    {\small\url{https://espressif.github.io/arduino-esp32/package_esp32_index.json}}
+  \item Открой \textsf{Tools → Board → Boards Manager} (Инструменты → Плата → Менеджер плат),
+        найди \textbf{esp32 by Espressif Systems} и установи версию 3.x. Скачивание займёт несколько минут.
+  \item Подключи плату кабелем. В \textsf{Tools → Board} выбери \textbf{ESP32S3 Dev Module},
+        а в \textsf{Tools → Port} --- появившийся порт (\code{COM3}, \code{/dev/ttyUSB0} или похожий).
+  \item Если плата подключена через разъём \textbf{USB}, включи \textsf{Tools → USB CDC On Boot: Enabled}.
+        Иначе сообщения от платы не дойдут до компьютера. Для разъёма UART эта настройка не нужна.
+\end{enumerate}
+
+\begin{tip}
+Если порт не появился, попробуй другой кабель: очень часто виноват кабель «только для зарядки».
+Для разъёма UART на Windows может понадобиться драйвер CP210x или CH343 --- его название обычно
+написано на маленькой микросхеме рядом с разъёмом.
+\end{tip}
+
+\subsection{Из чего состоит скетч}
+
+Любой скетч состоит из двух главных частей --- \textbf{функций}:
+\begin{itemize}
+  \item \code{setup()} (англ. «настройка») выполняется \emph{один раз} после включения. Здесь мы
+        настраиваем выводы и готовимся к работе;
+  \item \code{loop()} (англ. «петля») повторяется \emph{бесконечно}, пока есть питание. Здесь
+        находится основная работа.
+\end{itemize}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=6mm]
+  \node[blk,fill=blkrtc] (rst) {Включение питания или кнопка RST};
+  \node[blk,fill=blkmem,below=of rst] (boot) {Загрузчик запускает программу};
+  \node[blk,fill=blkper,below=of boot] (setup) {\code{setup()} --- один раз};
+  \node[blk,fill=blkper,below=of setup,minimum width=40mm] (loop) {\code{loop()} --- снова и снова};
+  \draw[arr] (rst)--(boot); \draw[arr] (boot)--(setup); \draw[arr] (setup)--(loop);
+  \draw[arr] (loop.east) -- ++(8mm,0) |- node[pos=0.25,right,font=\sffamily\scriptsize]{повторить} ($(loop.north east)+(0,1.5mm)$);
+\end{tikzpicture}
+\caption{Порядок работы программы}
+\end{figure}
+
+\subsection{Первая программа}
+
+Первая программа ничего не подключает: она только сообщает о себе через USB. Набери её (лучше
+именно набрать, а не скопировать --- так быстрее запоминается):
+
+\codecap{Первый скетч: «Привет, ESP32-S3»}
+\codeinput{l04_hello}
+
+Что здесь написано:
+\begin{itemize}
+  \item \code{Serial.begin(115200)} --- включить связь с компьютером на скорости 115\,200 бит в секунду;
+  \item \code{Serial.println("...")} --- отправить строку текста на компьютер;
+  \item \code{Serial.printf(...)} --- отправить текст, подставив в него числа (вместо \code{\%lu});
+  \item \code{delay(1000)} --- подождать 1000 миллисекунд, то есть одну секунду;
+  \item \code{millis()} --- сколько миллисекунд прошло с момента включения.
+\end{itemize}
+
+Нажми кнопку \textsf{Upload} (стрелка вправо). Когда внизу появится \code{Done uploading}, открой
+\textsf{Tools → Serial Monitor}, выбери скорость 115200 --- и увидишь сообщения от платы.
+Как именно устроена эта связь, узнаем в уроке~\ref{les:serial}.
+
+\subsubsection{Если прошивка не начинается}
+
+Чтобы принять новую прошивку, чип должен войти в специальный режим. Обычно Arduino IDE делает это
+сама, но если ты видишь ошибку \code{Failed to connect}, помоги ей кнопками:
+
+\begin{center}
+\begin{tikzpicture}[node distance=4mm]
+  \node[blk,fill=blkper] (a) {Зажать\\ BOOT};
+  \node[blk,fill=blkper,right=of a] (b) {Нажать и\\ отпустить RST};
+  \node[blk,fill=blkper,right=of b] (c) {Отпустить\\ BOOT};
+  \node[blk,fill=blkrf,right=of c] (d) {Нажать\\ «Upload»};
+  \node[blk,fill=blkcpu,right=of d] (e) {После прошивки\\ нажать RST};
+  \draw[arr] (a)--(b); \draw[arr] (b)--(c); \draw[arr] (c)--(d); \draw[arr] (d)--(e);
+\end{tikzpicture}
+\end{center}
+
+\begin{summary}
+\begin{itemize}[leftmargin=*]
+  \item Программа (скетч) пишется в Arduino IDE, переводится компилятором в машинный код и загружается по USB.
+  \item \code{setup()} выполняется один раз, \code{loop()} --- бесконечно.
+  \item \code{Serial} позволяет плате отправлять сообщения на компьютер.
+  \item Если прошивка не идёт --- кнопки BOOT и RST.
+\end{itemize}
+\end{summary}
+
+\begin{tasks}
+\begin{enumerate}
+  \item Добавь в программу вывод своего имени и возраста.
+  \item Сделай так, чтобы плата печатала время работы не в миллисекундах, а в секундах.
+  \item Узнай, сколько памяти (Flash и PSRAM) у твоей платы, и сравни с надписью на модуле.
+\end{enumerate}
+\end{tasks}

@@ -1,0 +1,184 @@
+% =====================================================================
+\section{Знакомство с платой}
+\label{les:board}
+% =====================================================================
+\lessonintro
+  {рассмотреть плату ESP32-S3-DevKitC-1, узнать, из каких частей она состоит и что такое микроконтроллер}
+  {ничего --- это первый урок}
+  {находим на своей плате все детали, о которых говорится в уроке}
+  {плата ESP32-S3-DevKitC-1 (или похожая) и любопытство}
+
+\subsection{Смотрим на плату}
+
+Возьми плату в руки и рассмотри её. Сначала кажется, что на ней очень много всего, но всё
+устроено вполне понятно: в центре --- «мозг», по краям --- «ножки» для подключения, снизу ---
+разъёмы для связи с компьютером.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[bb,x=3.7mm,y=3.7mm]
+  \bbDevKit{0}{0}
+  \tikzset{callout/.style={font=\sffamily\small,align=left,inner sep=2pt},
+           cl/.style={thick,accent,-{Circle[length=4pt]}}}
+  % слева
+  \node[callout,anchor=east] (a) at (-6,1.2) {\textbf{Антенна Wi-Fi}\\ \scriptsize зигзаг на плате};
+  \draw[cl] (a.east) -- (3.3,1.2);
+  \node[callout,anchor=east] (m) at (-6,-5) {\textbf{Модуль ESP32-S3}\\ \scriptsize «мозг»: процессор, память,\\ \scriptsize радио под железной крышкой};
+  \draw[cl] (m.east) -- (3,-5);
+  \node[callout,anchor=east] (j1) at (-6,-11) {\textbf{Гребёнка выводов J1}\\ \scriptsize 22 «ножки» слева};
+  \draw[cl] (j1.east) -- (-0.3,-11);
+  \node[callout,anchor=east] (bt) at (-6,-17) {\textbf{Кнопка BOOT}\\ \scriptsize вход в режим прошивки};
+  \draw[cl] (bt.east) -- (3.2,-17);
+  \node[callout,anchor=east] (u1) at (-6,-23.5) {\textbf{Разъём UART}\\ \scriptsize связь с компьютером\\ \scriptsize через переходник};
+  \draw[cl] (u1.east) -- (2.2,-23.5);
+  % справа
+  \node[callout,anchor=west] (j3) at (15,-8) {\textbf{Гребёнка выводов J3}\\ \scriptsize 22 «ножки» справа};
+  \draw[cl] (j3.west) -- (9.3,-8);
+  \node[callout,anchor=west] (rgb) at (15,-13.5) {\textbf{RGB-светодиод}\\ \scriptsize светится любым цветом};
+  \draw[cl] (rgb.west) -- (4.9,-13.5);
+  \node[callout,anchor=west] (rs) at (15,-17) {\textbf{Кнопка RST}\\ \scriptsize перезапуск программы};
+  \draw[cl] (rs.west) -- (5.8,-17);
+  \node[callout,anchor=west] (u2) at (15,-23.5) {\textbf{Разъём USB}\\ \scriptsize прямое подключение\\ \scriptsize к чипу};
+  \draw[cl] (u2.west) -- (6.8,-23.5);
+\end{tikzpicture}
+\caption{Отладочная плата ESP32-S3-DevKitC-1, вид сверху. Цифры у выводов --- их номера}
+\end{figure}
+
+\begin{itemize}
+  \item \textbf{Модуль} с надписью ESP32-S3 --- главная часть. Под металлической крышкой спрятаны
+        сам чип, память и детали для радиосвязи. Зигзаг на краю --- антенна Wi-Fi, её нельзя закрывать
+        металлом и руками.
+  \item \textbf{Две гребёнки выводов} по бокам --- через них к плате подключают светодиоды, кнопки,
+        датчики и экраны. Выводы подписаны: цифрами (номера) или буквами (питание, земля).
+  \item \textbf{Два разъёма USB} снизу --- для питания и связи с компьютером. Подойдёт любой из них.
+  \item \textbf{Две кнопки} --- BOOT и RST (от англ. \emph{reset} --- сброс).
+  \item \textbf{RGB-светодиод} --- маленький квадратик, который умеет светиться любым цветом.
+\end{itemize}
+
+\begin{tip}
+Отладочная плата создана для экспериментов: всё, что нужно для работы чипа (питание, связь, кнопки),
+уже распаяно. В готовом устройстве, например в умной розетке, стоит только сам модуль, без лишнего.
+\end{tip}
+
+\subsection{Что такое микроконтроллер}
+
+ESP32-S3 --- это \textbf{микроконтроллер}: маленький компьютер, целиком помещённый в одну микросхему.
+В обычном компьютере процессор, память и видеокарта --- отдельные детали, а здесь всё на одном
+кусочке кремния размером с ноготь.
+
+Микроконтроллер работает как человек, который выполняет инструкции: «органы чувств» получают
+сигналы из окружающего мира, «мозг» принимает решение, а «руки» что-то делают.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=6mm and 20mm,
+  st/.style={blk,minimum width=31mm,minimum height=24mm,align=center}]
+  \node[st,fill=blkrf] (in) {\textbf{Входы}\\[1mm] \scriptsize кнопки\\ \scriptsize датчики света, температуры\\ \scriptsize ручки-потенциометры};
+  \node[st,fill=blkcpu,right=of in] (mcu) {\textbf{Микроконтроллер}\\[1mm] \scriptsize выполняет программу:\\ \scriptsize «если нажата кнопка ---\\ \scriptsize зажги свет»};
+  \node[st,fill=blkper,right=of mcu] (out) {\textbf{Выходы}\\[1mm] \scriptsize светодиоды\\ \scriptsize моторы, пищалки\\ \scriptsize экраны};
+  \draw[arr] (in) -- node[above,font=\scriptsize]{сигналы} (mcu);
+  \draw[arr] (mcu) -- node[above,font=\scriptsize]{сигналы} (out);
+  \node[font=\sffamily\scriptsize,text=gray,below=1mm of in] {как органы чувств};
+  \node[font=\sffamily\scriptsize,text=gray,below=1mm of mcu] {как мозг};
+  \node[font=\sffamily\scriptsize,text=gray,below=1mm of out] {как руки};
+\end{tikzpicture}
+\caption{Любое устройство с микроконтроллером: входы → обработка → выходы}
+\end{figure}
+
+Микроконтроллеры окружают нас повсюду: они есть в стиральной машине, микроволновке, пульте от
+телевизора, игрушках, автомобиле (там их десятки!). Каждый выполняет одну программу, которую в него
+однажды записали. В этом курсе программу будем писать мы сами.
+
+\subsection{Что умеет ESP32-S3}
+
+ESP32-S3 выпускает китайская компания Espressif. Это мощный микроконтроллер, который
+особенно любят за встроенный Wi-Fi:
+
+\begin{itemize}
+  \item \textbf{два ядра} с частотой до 240 миллионов операций в секунду --- два «мозга», которые
+        могут работать одновременно;
+  \item \textbf{512 КБ оперативной памяти} (для переменных) и 8--16 МБ памяти для программы;
+  \item \textbf{Wi-Fi} и \textbf{Bluetooth} --- можно подключиться к интернету или к телефону;
+  \item \textbf{45 выводов общего назначения} (GPIO), АЦП для измерения напряжения, сенсорные входы, USB.
+\end{itemize}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=3mm,
+  box/.style={blk,minimum width=26mm}]
+  \node[box,fill=blkcpu,minimum width=30mm,minimum height=11mm] (c0) {Ядро 0};
+  \node[box,fill=blkcpu,minimum width=30mm,minimum height=11mm,right=4mm of c0] (c1) {Ядро 1};
+  \node[box,fill=blkmem,below=6mm of c0,minimum width=30mm] (sram) {Оперативная\\ память 512 КБ};
+  \node[box,fill=blkmem,below=6mm of c1,minimum width=30mm] (rom) {Память программ\\ (Flash)};
+  \node[box,fill=blkrf,left=10mm of c0,minimum width=24mm,minimum height=11mm] (wifi) {Wi-Fi};
+  \node[box,fill=blkrf,below=3mm of wifi,minimum width=24mm,minimum height=11mm] (bt) {Bluetooth};
+  \node[box,fill=blkrtc,right=10mm of c1,minimum width=24mm,minimum height=11mm] (ulp) {«Сторож»\\ для режима сна};
+  \node[box,fill=blkrtc,below=3mm of ulp,minimum width=24mm,minimum height=11mm] (pmu) {Управление\\ питанием};
+  \coordinate (busL) at ($(sram.south west)+(-3.4,-0.7)$);
+  \coordinate (busR) at ($(rom.south east)+(3.4,-0.7)$);
+  \draw[line width=4pt,gray!45] (busL) -- (busR) node[midway,below=1pt,font=\sffamily\scriptsize,black] {внутренняя шина --- «дороги» между блоками};
+  \node[box,fill=blkper,minimum width=21mm,anchor=north west] (p1) at ($(busL)+(0.2,-0.7)$) {Выводы GPIO\\ ×45};
+  \node[box,fill=blkper,minimum width=21mm,right=2mm of p1] (p2) {АЦП\\ (аналог)};
+  \node[box,fill=blkper,minimum width=21mm,right=2mm of p2] (p3) {ШИМ\\ (яркость)};
+  \node[box,fill=blkper,minimum width=21mm,right=2mm of p3] (p4) {UART, I\textsuperscript{2}C\\ (связь)};
+  \node[box,fill=blkper,minimum width=21mm,right=2mm of p4] (p5) {Таймеры};
+  \node[box,fill=blkper,minimum width=21mm,right=2mm of p5] (p6) {USB};
+  \draw[darr] (c0) -- (sram);
+  \draw[darr] (c1) -- (rom);
+  \draw[darr] (c0.east) -- (c1.west);
+  \draw[darr] (wifi.east) -- (c0.west);
+  \draw[darr] (ulp.west) -- (c1.east);
+  \foreach \p in {p1,p2,p3,p4,p5,p6} \draw[thick,gray] (\p.north) -- (\p.north |- busL);
+  \draw[thick,gray] (sram.south) -- (sram.south |- busL);
+  \draw[thick,gray] (rom.south) -- (rom.south |- busL);
+  \begin{scope}[on background layer]
+    \node[draw=espdark,thick,rounded corners=4pt,fit=(wifi)(ulp)(p1)(p6)(pmu)(bt),inner sep=5pt,
+      label={[font=\sffamily\bfseries,text=espdark]above:Внутри ESP32-S3}] {};
+  \end{scope}
+\end{tikzpicture}
+\caption{Упрощённая схема того, что находится внутри чипа. Каждый блок нижнего ряда мы
+задействуем в одном из уроков}
+\end{figure}
+
+\begin{fact}
+На металлической крышке модуля написано его полное название, например \code{ESP32-S3-WROOM-1-N16R8}.
+Буква N и число после неё --- объём памяти для программ (16 МБ), буква R --- объём дополнительной
+оперативной памяти PSRAM (8 МБ). Посмотри, какой модуль стоит на твоей плате.
+\end{fact}
+
+\subsection{Выводы: первое знакомство}
+
+Самое интересное для нас --- выводы по краям платы. Их 44, и почти у каждого своя подпись.
+Присмотрись к ним и к рисунку выше:
+
+\begin{itemize}
+  \item у части выводов написаны \textbf{буквы}: \textsf{3V3}, \textsf{5V}, \textsf{GND}, \textsf{RST} --- это
+        питание, «земля» и сброс;
+  \item у остальных --- \textbf{номера}: 1, 2, 4, 5\ldots\ Это выводы общего назначения (GPIO, от англ.
+        \emph{General Purpose Input/Output} --- вход-выход общего назначения).
+\end{itemize}
+
+Если открыть документацию на плату, окажется, что возле номеров есть дополнительные подписи.
+Одни выводы названы просто GPIO, у других приписано ADC (аналого-цифровой преобразователь), у третьих ---
+TOUCH (сенсорный вход). Значит, выводы умеют работать с \emph{разными} сигналами: одни понимают
+только «есть напряжение / нет напряжения», а другие ещё и умеют измерять, \emph{сколько} его.
+
+Чтобы разобраться, чем эти сигналы отличаются, нужно познакомиться с двумя важнейшими понятиями
+электроники --- \textbf{аналоговым} и \textbf{цифровым} сигналом. Этим и займёмся в следующем уроке, а
+потом вернёмся к выводам и узнаем, что умеет каждый из них.
+
+\begin{summary}
+\begin{itemize}[leftmargin=*]
+  \item Отладочная плата --- это модуль ESP32-S3 и всё, что нужно для экспериментов: USB, кнопки, светодиод, выводы.
+  \item Микроконтроллер --- маленький компьютер в одной микросхеме: получает сигналы, обрабатывает, управляет.
+  \item Выводы бывают с буквенными подписями (питание, земля) и с номерами (GPIO). Разные GPIO умеют разное.
+\end{itemize}
+\end{summary}
+
+\begin{quiz}
+\begin{enumerate}
+  \item Найди на своей плате антенну, обе кнопки и RGB-светодиод.
+  \item Чем микроконтроллер отличается от обычного компьютера?
+  \item Назови три прибора у тебя дома, в которых наверняка есть микроконтроллер.
+\end{enumerate}
+\end{quiz}

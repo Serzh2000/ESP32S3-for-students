@@ -1,0 +1,356 @@
+% =====================================================================
+\section{Радио: Wi-Fi и Bluetooth}
+\label{les:radio}
+% =====================================================================
+\lessonintro
+  {понять, что такое радиоволны, как плата подключается к Wi-Fi и что такое MAC- и IP-адреса}
+  {урок~\ref{les:signals} (частота, биты), урок~\ref{les:ide} (сообщения в Serial Monitor)}
+  {плата ищет сети, подключается к роутеру, сама становится точкой доступа и получает имя \code{esp32-led.local}}
+  {Wi-Fi сеть на 2,4~ГГц (или телефон в режиме точки доступа)}
+
+Светодиоды мигают, пищалка пищит --- пора перейти к самому интересному. Главная «суперсила» ESP32-S3,
+за которую его выбирают инженеры по всему миру, --- \textbf{встроенное радио}. Чип умеет работать
+с \textbf{Wi-Fi} и \textbf{Bluetooth} без дополнительных модулей. Значит, любое наше устройство может
+управляться с телефона, отправлять данные в интернет и общаться с другими платами.
+
+\subsection{Что такое радиоволны}
+
+Радиоволны --- это \textbf{электромагнитные волны}, как и свет. Отличаются они только
+\emph{частотой}: сколько раз в секунду колеблется волна. Мы уже знаем, что частоту измеряют в герцах.
+Для радио получаются огромные числа, поэтому используют приставки:
+1~килогерц (кГц) = 1000~Гц, 1~мегагерц (МГц) = миллион герц, 1~гигагерц (ГГц) = миллиард герц.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[x=0.62cm,y=1cm]
+  % шкала частот: логарифм, 10^4 .. 10^20 Гц -> x = 0..16 (log10 f - 4)
+  \shade[left color=blkrtc!60,right color=blkrf] (0,0) rectangle (8.5,1);
+  \shade[left color=blkrf,right color=esp!25] (8.5,0) rectangle (10.4,1);
+  \fill[esp!25] (10.4,0) rectangle (10.55,1);
+  \shade[left color=red,right color=yellow] (10.55,0) rectangle (10.63,1);
+  \shade[left color=yellow,right color=blue!80] (10.63,0) rectangle (10.72,1);
+  \shade[left color=blue!80,right color=violet] (10.72,0) rectangle (10.8,1);
+  \shade[left color=violet!40,right color=gray!30] (10.8,0) rectangle (16,1);
+  \draw (0,0) rectangle (16,1);
+  % волна с убывающей длиной
+  \draw[thick,accent,domain=0:16,samples=500,smooth] plot (\x,{1.6+0.28*sin(0.35*\x*\x r)});
+  \foreach \x/\l in {0/10\,кГц,2/1\,МГц,5/1\,ГГц,8/1\,ТГц,11/$10^{15}$,14/$10^{18}$}
+    \draw (\x,0) -- (\x,-0.12) node[below,font=\scriptsize]{\l};
+  \node[font=\sffamily\scriptsize,align=center] at (2.2,0.5) {радио};
+  \node[font=\sffamily\scriptsize,align=center] at (6.6,0.5) {СВЧ};
+  \node[font=\sffamily\scriptsize,align=center] at (9.4,0.5) {ИК};
+  \node[font=\sffamily\scriptsize,align=center] at (12.3,0.5) {УФ};
+  \node[font=\sffamily\scriptsize,align=center] at (14.6,0.5) {рентген};
+  % примеры: номера на шкале и расшифровка ниже
+  \tikzset{mk/.style={circle,draw=black,fill=white,inner sep=0.8pt,font=\sffamily\bfseries\tiny,minimum size=3.6mm}}
+  \foreach \x/\n/\yy in {1.1/1/-0.75,4.0/2/-0.75,4.95/3/-1.35,5.38/4/-0.75,5.7/5/-1.95,9.5/6/-0.75,10.65/7/-1.35,14.3/8/-0.75}{
+    \draw[thin,gray] (\x,0) -- (\x,\yy);
+    \node[mk] at (\x,\yy-0.18) {\n};
+  }
+  \node[mk,fill=esp!25] at (5.38,-0.93) {4};
+  \node[anchor=north west,font=\sffamily\scriptsize,align=left] at (0,-2.6) {%
+    \textbf{1} АМ-радио, 0,5--1,6 МГц\qquad \textbf{2} FM-радио, 100 МГц\qquad \textbf{3} мобильная связь, 0,9--2 ГГц\\[1pt]
+    \textbf{\textcolor{esp}{4} Wi-Fi и Bluetooth, 2,4 ГГц} (и микроволновка)\qquad \textbf{5} Wi-Fi 5 ГГц\\[1pt]
+    \textbf{6} пульт от телевизора (инфракрасный)\qquad \textbf{7} видимый свет\qquad \textbf{8} рентгеновский снимок};
+  \draw[{Stealth[length=2mm]}-{Stealth[length=2mm]}] (0,2.25) -- node[above,font=\scriptsize]{частота растёт, длина волны уменьшается} (16,2.25);
+\end{tikzpicture}
+\caption{Шкала электромагнитных волн (частоты отложены так, что каждое деление больше предыдущего
+в тысячу раз). Видимый свет занимает крошечную полоску, а Wi-Fi --- соседи микроволновки}
+\end{figure}
+
+Все электромагнитные волны летят со скоростью света $c = 300\,000$~км/с. Зная частоту, можно найти
+\textbf{длину волны} --- расстояние между соседними «гребнями»:
+\[
+  \lambda = \frac{c}{f} = \frac{300\,000\,000~\text{м/с}}{2\,400\,000\,000~\text{Гц}} = 0{,}125~\text{м} = 12{,}5~\text{см}.
+\]
+Антенна обычно делается длиной в четверть волны --- около 3~см. Посмотри на зигзаг на модуле ESP32-S3:
+если его «распрямить», получится примерно такая длина!
+
+\begin{fact}
+Микроволновая печь греет еду волнами почти той же частоты, что и Wi-Fi, --- 2,45~ГГц. Только
+мощность у неё около 800~Вт, а у Wi-Fi платы --- меньше 0,1~Вт, в десять тысяч раз слабее. Поэтому
+работающая микроволновка может мешать Wi-Fi, но Wi-Fi никого не нагреет.
+\end{fact}
+
+\subsection{Wi-Fi и его каналы}
+
+Wi-Fi --- это способ передавать цифровые данные по радио. Биты «прячутся» в радиоволне: передатчик
+очень быстро меняет её параметры, а приёмник расшифровывает изменения обратно в нули и единицы.
+
+Диапазон 2,4~ГГц поделён на \textbf{каналы}, как дорога --- на полосы. Если две сети работают на одном
+канале, они мешают друг другу. Каналы шириной 20~МГц частично перекрываются, поэтому не мешают друг
+другу только каналы 1, 6 и 11:
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[x=0.19cm,y=1cm]
+  \draw[->] (-2,0) -- (78,0) node[right,font=\scriptsize]{МГц};
+  \foreach \ch in {1,...,13}{
+    \pgfmathsetmacro{\c}{2412+5*(\ch-1)-2400}
+    \pgfmathsetmacro{\hh}{(\ch==1||\ch==6||\ch==11)?1.5:1.0}
+    \ifnum\ch=1 \def\col{esp}\else\ifnum\ch=6 \def\col{okgreen}\else\ifnum\ch=11 \def\col{accent}\else\def\col{gray!45}\fi\fi\fi
+    \draw[thick,\col] (\c-10,0) .. controls (\c-7,\hh) and (\c+7,\hh) .. (\c+10,0);
+    \node[font=\scriptsize,text=\col] at (\c,-0.3) {\ch};
+  }
+  \foreach \f in {2400,2420,2440,2460,2480}{\pgfmathsetmacro{\x}{\f-2400}\draw (\x,0.05) -- (\x,-0.05) node[below=3mm,font=\scriptsize]{\f};}
+  \node[font=\sffamily\scriptsize,anchor=west] at (-2,1.7) {номера каналов --- под осью; не перекрываются 1, 6 и 11};
+\end{tikzpicture}
+\caption{Каналы Wi-Fi в диапазоне 2,4~ГГц}
+\end{figure}
+
+Начнём с того, что посмотрим, какие сети «видит» плата. Эта программа выводит имя каждой сети,
+её канал и силу сигнала:
+
+\codecap{Поиск Wi-Fi сетей}
+\codeinput{l07_scan}
+
+Сила сигнала (RSSI) измеряется в \textbf{дБм} (децибел-милливаттах) и всегда отрицательна: чем
+ближе к нулю, тем сильнее сигнал.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[x=0.16cm]
+  \shade[left color=okgreen!70,right color=esp!70] (0,0) rectangle (70,0.6);
+  \foreach \v in {-30,-40,...,-100}{\pgfmathsetmacro{\x}{-(\v)-30}\draw (\x,0) -- (\x,-0.12) node[below,font=\scriptsize]{\v};}
+  \foreach \x/\t in {5/отлично: рядом с роутером,22/хорошо,37/средне: страницы\\ открываются медленно,55/плохо: связь рвётся}
+    \node[font=\sffamily\scriptsize,align=center,above] at (\x,0.65) {\t};
+  \node[font=\sffamily\scriptsize,anchor=west] at (71,0.3) {дБм};
+\end{tikzpicture}
+\caption{Как понимать силу сигнала RSSI}
+\end{figure}
+
+\subsection{Bluetooth}
+
+\textbf{Bluetooth} работает в том же диапазоне 2,4~ГГц, но создан для другого: связывать
+\emph{близкие} устройства (наушники, часы, телефон) и при этом тратить очень мало энергии.
+ESP32-S3 поддерживает \textbf{Bluetooth Low Energy} (BLE, «Bluetooth с низким энергопотреблением»).
+
+\begin{table}[H]
+\centering\small
+\begin{tabularx}{\textwidth}{@{}l X X@{}}
+\toprule
+ & \textbf{Wi-Fi} & \textbf{Bluetooth LE}\\
+\midrule
+Дальность & десятки метров & 10--30 метров\\
+Скорость & миллионы бит в секунду & сотни тысяч бит в секунду\\
+Потребление & большое (до 300~мА в пике) & маленькое (можно годами работать от батарейки)\\
+Нужен роутер? & обычно да & нет, устройства связываются напрямую\\
+Для чего & интернет, веб-страницы, видео & датчики, фитнес-браслеты, умные замки, наушники\\
+\bottomrule
+\end{tabularx}
+\caption{Wi-Fi и Bluetooth LE: одна частота --- разные задачи}
+\end{table}
+
+Устройства BLE постоянно «кричат» в эфир короткие сообщения: «Я тут, меня зовут так-то». Послушаем их:
+
+\codecap{Поиск Bluetooth-устройств поблизости}
+\codeinput{l07_ble_scan}
+
+Скорее всего, ты увидишь телефоны, наушники и часы соседей --- а у некоторых даже имена. Дальше в
+курсе мы будем работать с Wi-Fi, а Bluetooth можно изучить самостоятельно по примерам в
+\textsf{File → Examples → BLE}.
+
+\subsection{Два режима Wi-Fi: клиент и точка доступа}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=10mm]
+  \begin{scope}
+    \node[blk,fill=blkrf] (r) {Роутер};
+    \node[blk,fill=blkcpu,below left=10mm and 0mm of r] (e) {ESP32-S3\\ \scriptsize клиент (STA)};
+    \node[blk,fill=blkmem,below right=10mm and 0mm of r] (p) {Телефон};
+    \draw[darr,dashed] (e) -- (r); \draw[darr,dashed] (p) -- (r);
+    \node[font=\sffamily\bfseries\small,above=2mm of r] {Клиент (станция)};
+    \node[font=\sffamily\scriptsize,align=center] at (0,-3.1) {плата подключается\\ к домашней сети, как телефон};
+  \end{scope}
+  \begin{scope}[xshift=6.3cm]
+    \node[blk,fill=blkcpu] (e2) {ESP32-S3\\ \scriptsize точка доступа (AP)};
+    \node[blk,fill=blkmem,below left=10mm and -2mm of e2] (p2) {Телефон};
+    \node[blk,fill=blkmem,below right=10mm and -2mm of e2] (p3) {Ноутбук};
+    \draw[darr,dashed] (p2) -- (e2); \draw[darr,dashed] (p3) -- (e2);
+    \node[font=\sffamily\bfseries\small,above=2mm of e2] {Точка доступа};
+    \node[font=\sffamily\scriptsize,align=center] at (0,-3.1) {плата сама создаёт сеть,\\ роутер не нужен};
+  \end{scope}
+  \begin{scope}[xshift=12.3cm]
+    \node[blk,fill=blkrf] (r3) {Роутер};
+    \node[blk,fill=blkcpu,below=10mm of r3] (e3) {ESP32-S3\\ \scriptsize AP + STA};
+    \node[blk,fill=blkmem,below=6mm of e3] (p4) {Телефон};
+    \draw[darr,dashed] (e3) -- (r3); \draw[darr,dashed] (p4) -- (e3);
+    \node[font=\sffamily\bfseries\small,above=2mm of r3] {Оба сразу};
+  \end{scope}
+\end{tikzpicture}
+\caption{Режимы Wi-Fi. STA --- от англ. \emph{station} (станция), AP --- \emph{access point} (точка доступа)}
+\end{figure}
+
+\subsubsection{Пример 1: плата --- клиент}
+
+В этом режиме ESP32-S3 подключается к твоему роутеру, как телефон или ноутбук. Впиши в программу имя
+своей сети и пароль:
+
+\codecap{Подключение к Wi-Fi сети}
+\codeinput{l07_connect}
+
+\begin{caution}
+ESP32-S3 работает только в диапазоне 2,4~ГГц. Сеть 5~ГГц он не увидит. Если роутер раздаёт обе сети с
+одинаковым именем, иногда помогает включить на телефоне точку доступа и подключить плату к нему.
+\end{caution}
+
+\subsubsection{Пример 2: плата --- точка доступа}
+
+Если роутера нет (например, в походе или на соревнованиях роботов), плата может сама создать
+Wi-Fi сеть. Найди в списке сетей телефона \code{ESP32-S3}, введи пароль \code{12345678} --- и в
+Serial Monitor появится сообщение о подключении:
+
+\codecap{Своя точка доступа}
+\codeinput{l07_softap}
+
+\subsection{MAC-адрес и IP-адрес}
+
+Когда в сети много устройств, данные нужно доставлять точно по адресу. Для этого у каждого
+устройства есть \emph{два} адреса.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[x=1cm,y=1cm]
+  \node[font=\sffamily\bfseries,anchor=west] at (0,1.9) {MAC-адрес --- «номер паспорта»};
+  \foreach \b/\c [count=\i] in {7C/blkrtc,DF/blkrtc,A1/blkrtc,0F/blkper,3E/blkper,20/blkper}{
+    \node[draw,fill=\c,minimum width=11mm,minimum height=8mm,font=\ttfamily] at (\i*1.25,1) {\b};
+    \ifnum\i<6 \node[font=\ttfamily] at (\i*1.25+0.625,1) {:};\fi
+  }
+  \draw[decorate,decoration={brace,mirror,amplitude=4pt}] (0.7,0.5) -- (3.95,0.5) node[midway,below=5pt,font=\sffamily\scriptsize,align=center]{производитель\\ (здесь --- Espressif)};
+  \draw[decorate,decoration={brace,mirror,amplitude=4pt}] (4.45,0.5) -- (7.7,0.5) node[midway,below=5pt,font=\sffamily\scriptsize,align=center]{номер конкретного\\ устройства};
+  \node[font=\sffamily\scriptsize,align=left,anchor=west] at (8.4,1) {6 байт, записаны в\\ шестнадцатеричной системе.\\ Даётся на заводе, у всех разный.};
+  \begin{scope}[yshift=-3.3cm]
+  \node[font=\sffamily\bfseries,anchor=west] at (0,1.9) {IP-адрес --- «почтовый адрес»};
+  \foreach \b/\c [count=\i] in {192/blkmem,168/blkmem,1/blkmem,50/blkrf}{
+    \node[draw,fill=\c,minimum width=13mm,minimum height=8mm,font=\ttfamily] at (\i*1.6,1) {\b};
+    \ifnum\i<4 \node[font=\ttfamily] at (\i*1.6+0.8,1) {.};\fi
+  }
+  \draw[decorate,decoration={brace,mirror,amplitude=4pt}] (1,0.5) -- (5.4,0.5) node[midway,below=5pt,font=\sffamily\scriptsize,align=center]{номер сети\\ («город и улица»)};
+  \draw[decorate,decoration={brace,mirror,amplitude=4pt}] (5.8,0.5) -- (7.0,0.5) node[midway,below=5pt,font=\sffamily\scriptsize,align=center]{номер\\ устройства};
+  \node[font=\sffamily\scriptsize,align=left,anchor=west] at (8.4,1) {4 числа от 0 до 255.\\ Выдаёт роутер, когда плата\\ подключается к сети.};
+  \end{scope}
+\end{tikzpicture}
+\caption{Два адреса каждого сетевого устройства}
+\end{figure}
+
+\begin{itemize}
+  \item \textbf{MAC-адрес} --- постоянный «номер паспорта» сетевого устройства. Его записывают на заводе,
+        и он не меняется при переезде в другую сеть. Роутер по MAC-адресу узнаёт устройство
+        «в лицо»: например, можно запретить подключение незнакомым устройствам или выдать своему
+        всегда один и тот же IP.
+  \item \textbf{IP-адрес} --- «почтовый адрес» в конкретной сети. В домашней сети он обычно
+        выглядит как \code{192.168.1.\emph{xx}} или \code{192.168.0.\emph{xx}}. Переедешь в другую сеть
+        (например, в школьную) --- адрес будет другим, как у человека при переезде.
+\end{itemize}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=6mm and 8mm]
+  \node[blk,fill=blkrf,minimum width=30mm,minimum height=12mm] (r) {Роутер\\ \scriptsize\ttfamily 192.168.1.1};
+  \node[blk,fill=gray!15,right=24mm of r,minimum height=12mm] (net) {Интернет};
+  \node[blk,fill=blkcpu,below left=12mm and 4mm of r,minimum width=30mm] (e) {ESP32-S3\\ \scriptsize\ttfamily 192.168.1.50\\ \scriptsize\ttfamily 7C:DF:A1:0F:3E:20};
+  \node[blk,fill=blkmem,below=12mm of r,minimum width=30mm] (t) {Телефон\\ \scriptsize\ttfamily 192.168.1.23\\ \scriptsize\ttfamily 5A:11:9B:\ldots};
+  \node[blk,fill=blkmem,below right=12mm and 4mm of r,minimum width=30mm] (n) {Ноутбук\\ \scriptsize\ttfamily 192.168.1.37\\ \scriptsize\ttfamily 3C:22:FB:\ldots};
+  \draw[darr,dashed] (e) -- (r); \draw[darr,dashed] (t) -- (r); \draw[darr,dashed] (n) -- (r);
+  \draw[darr] (r) -- (net);
+  \node[font=\sffamily\scriptsize,align=center,above=1mm of net] {для интернета вся\\ квартира --- один адрес};
+\end{tikzpicture}
+\caption{Домашняя сеть: у каждого устройства свой IP-адрес внутри сети и свой MAC-адрес}
+\end{figure}
+
+\subsubsection{Кто раздаёт IP-адреса}
+
+Когда плата подключается, она не знает своего IP. Она громко спрашивает всю сеть, и роутер
+выдаёт ей свободный адрес. Этот механизм называется \textbf{DHCP}:
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[y=-0.8cm]
+  \node[blk,fill=blkcpu,minimum width=28mm] (e) at (0,0) {ESP32-S3};
+  \node[blk,fill=blkrf,minimum width=28mm] (r) at (9,0) {Роутер};
+  \draw[thick,gray] (e.south) -- (0,5.2);
+  \draw[thick,gray] (r.south) -- (9,5.2);
+  \draw[arr,accent] (0,1.3) -- node[above,font=\sffamily\scriptsize]{«Кто тут раздаёт адреса? Мой MAC --- 7C:DF:\ldots»} (9,1.3);
+  \draw[arr,okgreen] (9,2.4) -- node[above,font=\sffamily\scriptsize]{«Я! Могу дать тебе 192.168.1.50»} (0,2.4);
+  \draw[arr,accent] (0,3.5) -- node[above,font=\sffamily\scriptsize]{«Беру 192.168.1.50»} (9,3.5);
+  \draw[arr,okgreen] (9,4.6) -- node[above,font=\sffamily\scriptsize]{«Договорились. Роутер --- 192.168.1.1»} (0,4.6);
+\end{tikzpicture}
+\caption{Как плата получает IP-адрес (DHCP)}
+\end{figure}
+
+Неудобство в том, что при следующем включении роутер может выдать \emph{другой} адрес. Решений три:
+\begin{enumerate}
+  \item попросить роутер всегда выдавать этому MAC-адресу один и тот же IP (в настройках роутера);
+  \item задать \textbf{постоянный (статический) IP} прямо в программе;
+  \item вообще не запоминать IP, а обращаться к плате \textbf{по имени} --- об этом ниже.
+\end{enumerate}
+
+\subsubsection{Как задать IP, MAC и имя в программе}
+
+\codecap{Постоянный IP-адрес, свой MAC и имя в сети}
+\codeinput{l07_names}
+
+\begin{itemize}
+  \item \code{WiFi.config(ip, gateway, subnet, dns)} задаёт IP вручную. Выбирай адрес из своей сети
+        (первые три числа --- как у роутера) и такой, который точно никем не занят. Если адрес совпадёт
+        с чужим, оба устройства будут работать с ошибками.
+  \item \code{esp\_wifi\_set\_mac()} меняет MAC-адрес. Обычно этого делать не нужно; первый байт
+        \code{0x02} означает «адрес назначен вручную», так он не совпадёт ни с одним заводским.
+  \item \code{WiFi.setHostname()} --- имя, которое будет видно в списке устройств на странице роутера.
+\end{itemize}
+
+\subsection{Имя вместо адреса: mDNS}
+
+Запоминать \code{192.168.1.50} неудобно. В интернете эту задачу решают имена сайтов: мы пишем
+\code{wikipedia.org}, а специальный сервер DNS переводит имя в IP-адрес. В домашней сети есть похожий
+механизм --- \textbf{mDNS} (англ. \emph{multicast DNS}). Устройство само отвечает на своё имя, которое
+всегда оканчивается на \code{.local}. Достаточно одной строки \code{MDNS.begin("esp32-led")}, и
+плата станет доступна как \code{esp32-led.local}.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=8mm]
+  \node[blk,fill=blkmem,minimum width=24mm] (ph) {Телефон};
+  \node[blk,fill=blkcpu,minimum width=24mm] (e) at (9,1.3) {\code{esp32-led}\\ \scriptsize\ttfamily 192.168.1.50};
+  \node[blk,fill=blkmem,minimum width=24mm] (n) at (9,-1.3) {Ноутбук};
+  \draw[arr,accent] (ph.east) -- node[below,sloped,font=\sffamily\scriptsize]{«Кто esp32-led.local?»} (e.west);
+  \draw[arr,accent] (ph.east) -- node[below,sloped,font=\sffamily\scriptsize]{«Кто esp32-led.local?»} (n.west);
+  \draw[arr,okgreen] (e.north) |- node[pos=0.75,above,font=\sffamily\scriptsize]{«Это я! Мой адрес 192.168.1.50»} ($(ph.north)+(0,1.0)$) -- (ph.north);
+  \node[font=\sffamily\scriptsize,text=gray,right=2mm of n] {молчит};
+\end{tikzpicture}
+\caption{mDNS: вопрос отправляется всем устройствам сразу, отвечает только то, чьё это имя}
+\end{figure}
+
+\begin{tip}
+Имена \code{.local} понимают Windows 10/11, macOS, iPhone и Linux. Некоторые старые Android-телефоны
+mDNS не поддерживают --- тогда придётся ввести IP-адрес.
+\end{tip}
+
+\begin{summary}
+\begin{itemize}[leftmargin=*]
+  \item Wi-Fi и Bluetooth --- радиоволны частотой 2,4~ГГц, длина волны около 12~см.
+  \item Wi-Fi --- быстрый и «дальнобойный», Bluetooth LE --- экономный, для близких устройств.
+  \item Плата может быть клиентом (подключаться к роутеру) или точкой доступа (создавать свою сеть).
+  \item MAC-адрес --- постоянный заводской номер, IP-адрес --- адрес в конкретной сети (выдаёт роутер через DHCP).
+  \item mDNS позволяет обращаться к плате по имени \code{имя.local} вместо IP-адреса.
+\end{itemize}
+\end{summary}
+
+\begin{quiz}
+\begin{enumerate}
+  \item Чем радиоволна Wi-Fi отличается от видимого света?
+  \item Какова длина волны Wi-Fi 5~ГГц?
+  \item Что изменится --- MAC или IP, --- если принести плату в гости к другу и подключить к его сети?
+  \item Какой сигнал сильнее: $-45$~дБм или $-80$~дБм?
+\end{enumerate}
+\end{quiz}
+
+\begin{tasks}
+\begin{enumerate}
+  \item Запусти поиск сетей и составь «карту» каналов в своём доме. Какой канал самый свободный?
+  \item Обойди квартиру с платой и ноутбуком: как меняется RSSI в разных комнатах?
+  \item Если за 15 секунд не удалось подключиться к роутеру, пусть плата переходит в режим точки доступа.
+  \item Мигай светодиодом на \pin{4} тем быстрее, чем сильнее сигнал Wi-Fi.
+\end{enumerate}
+\end{tasks}
