@@ -3,8 +3,8 @@
 \label{les:led}
 % =====================================================================
 \lessonintro
-  {правильно подключить светодиод, рассчитать резистор по закону Ома, заставить светодиод мигать}
-  {урок~\ref{les:signals} (цифровой сигнал), урок~\ref{les:pins} (выводы GPIO), урок~\ref{les:ide} (загрузка программы)}
+  {правильно подключить светодиод, рассчитать резистор по закону Ома, заставить светодиод мигать; научиться использовать условие \code{if}, массивы и цикл \code{for}}
+  {урок~\ref{les:signals} (цифровой сигнал), урок~\ref{les:pins} (выводы GPIO), урок~\ref{les:ide} (переменные)}
   {мигающий светодиод и «бегущий огонь» из четырёх светодиодов}
   {макетная плата, провода, 4 светодиода, 4 резистора \SI{220}{\ohm}}
 
@@ -299,6 +299,34 @@
   \item \code{delay(500)} --- подождать полсекунды.
 \end{itemize}
 
+\subsubsection{Учимся программировать: константы и вызов функций}
+
+Первая строчка \code{const int LED\_PIN = 4;} создаёт \textbf{константу} --- переменную, которую нельзя
+изменить. Зачем она, если можно просто писать 4? Если завтра светодиод переедет на другой вывод,
+исправить придётся одну строчку, а не искать все четвёрки по программе. К тому же \code{LED\_PIN}
+понятнее, чем просто число. Константы принято называть БОЛЬШИМИ\_БУКВАМИ.
+
+Строчка \code{digitalWrite(LED\_PIN, HIGH);} --- это \textbf{вызов функции}. Имя функции говорит, что сделать
+(«записать цифровое значение»), а в скобках через запятую перечислены \textbf{аргументы} --- с чем сделать:
+на каком выводе и какое значение. \code{HIGH} и \code{LOW} --- встроенные константы, равные 1 и 0.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[tok/.style={font=\ttfamily\large,inner sep=1pt},ann/.style={font=\sffamily\scriptsize,align=center,text=black}]
+  \node[tok,text=esp] (a) at (0,0) {digitalWrite};
+  \node[tok,base right=0pt of a] (p1) {(};
+  \node[tok,text=accent,base right=0pt of p1] (b) {LED\_PIN};
+  \node[tok,base right=0pt of b] (c) {,};
+  \node[tok,text=okgreen!60!black,base right=0.5em of c] (d) {HIGH};
+  \node[tok,base right=0pt of d] (e) {);};
+  \draw[esp,thick] (a.south) -- ++(0,-0.35) node[ann,below] {имя функции:\\ что сделать};
+  \draw[accent,thick] (b.south) -- ++(0,-1.1) node[ann,below] {аргумент 1:\\ какой вывод};
+  \draw[okgreen!60!black,thick] (d.south) -- ++(0,-0.35) node[ann,below] {аргумент 2:\\ какое значение};
+\end{tikzpicture}
+\caption{Вызов функции: имя и аргументы в скобках}
+\end{figure}
+
+
 Посмотрим, какое напряжение при этом на выводе. Это цифровой сигнал из урока~\ref{les:signals}:
 у него всего два уровня, а переходы между ними резкие. Такой сигнал называют \textbf{прямоугольным}
 или меандром:
@@ -364,6 +392,58 @@ $T = 500 + 500 = 1000$~мс = 1~с. Сколько периодов умещае
 \caption{Слева направо идёт время. Программа с \code{millis()} постоянно свободна}
 \end{figure}
 
+\subsection{Учимся программировать: условие \texttt{if}}
+
+Часто нужно сделать что-то \emph{только если} выполняется условие: «если прошло полсекунды --- переключи
+светодиод». Для этого есть команда \code{if} («если»). Команды внутри фигурных скобок выполняются, только
+когда условие в круглых скобках верно. А после \code{else} («иначе») пишут, что делать, если условие неверно.
+
+Алгоритмы удобно рисовать \textbf{блок-схемами}. Овал --- начало и конец, прямоугольник --- действие,
+ромб --- вопрос с ответами «да» и «нет». Вот блок-схема функции \code{loop()} из программы ниже:
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=7mm]
+  \node[fcterm] (s) {начало \code{loop()}};
+  \node[fcproc,below=of s] (now) {now = millis()};
+  \node[fcdec,below=of now] (q) {now − lastToggle\\ >= 500 ?};
+  \node[fcproc,below=9mm of q] (a) {lastToggle = now\\ ledState = !ledState\\ digitalWrite(\ldots)};
+  \node[fcterm,below=of a] (e) {конец \code{loop()}};
+  \draw[arr] (s) -- (now); \draw[arr] (now) -- (q);
+  \draw[arr] (q) -- node[left,font=\sffamily\scriptsize]{да} (a);
+  \draw[arr] (a) -- (e);
+  \draw[arr] (q.east) -- node[above,font=\sffamily\scriptsize]{нет} ++(14mm,0) |- (e.east);
+  \draw[arr,gray,dashed] (e.west) -- ++(-22mm,0) |- node[pos=0.25,left,font=\sffamily\scriptsize,text=gray,align=right]{и снова\\ сначала} (s.west);
+\end{tikzpicture}
+\caption{Блок-схема неблокирующего мигания: \code{loop()} крутится тысячи раз в секунду,
+но светодиод переключается, только когда ответ на вопрос --- «да»}
+\end{figure}
+
+Для сравнения чисел используются такие знаки:
+
+\begin{table}[H]
+\centering\small
+\begin{tabular}{@{}lll@{\hspace{12mm}}lll@{}}
+\toprule
+Знак & Смысл & Пример & Знак & Смысл & Пример\\
+\midrule
+\code{==} & равно & \code{x == 5} & \code{!=} & не равно & \code{x != 0}\\
+\code{<} & меньше & \code{t < 0} & \code{>} & больше & \code{t > 30}\\
+\code{<=} & меньше или равно & \code{n <= 10} & \code{>=} & больше или равно & \code{now - last >= 500}\\
+\bottomrule
+\end{tabular}
+\caption{Операции сравнения. Результат сравнения --- \code{true} (верно) или \code{false} (неверно)}
+\end{table}
+
+\begin{caution}
+Не путай \code{=} и \code{==}! Одно равно --- «положить в коробку», два равно --- «сравнить». Запись
+\code{if (x = 5)} не проверит, равен ли \code{x} пяти, а \emph{положит} в него 5. Это одна из самых частых ошибок.
+\end{caution}
+
+В программе есть ещё два новых приёма. Переменная \code{ledState} типа \code{bool} помнит, горит ли светодиод.
+Восклицательный знак \code{!} означает «наоборот»: \code{ledState = !ledState} превращает \code{true} в
+\code{false} и обратно. А время хранится в \code{uint32\_t} --- \code{millis()} быстро вырастает до огромных чисел.
+
 \codecap{Мигание без остановки программы}
 \codeinput{l05_blink_millis}
 
@@ -401,11 +481,83 @@ $T = 500 + 500 = 1000$~мс = 1~с. Сколько периодов умещае
 Обрати внимание: на принципиальной схеме земли всех светодиодов соединены одной линией. На
 макетной плате это сделано с помощью шины «−»: все катоды подключены к ней, а она --- к GND платы.
 
+\subsection{Учимся программировать: массивы и цикл \texttt{for}}
+
+В бегущем огне четыре светодиода, и для каждого нужно вызвать \code{pinMode()}. Можно написать четыре
+одинаковые строчки, но что, если светодиодов будет двадцать? На помощь приходят два инструмента.
+
+\textbf{Массив} --- это ряд пронумерованных коробок под одним именем. Номер коробки называется \textbf{индексом},
+и счёт начинается \textbf{с нуля}!
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[cell/.style={draw,thick,fill=blkmem,minimum width=13mm,minimum height=11mm,font=\ttfamily\Large}]
+  \node[font=\ttfamily\large,anchor=east] at (-0.9,0) {LEDS};
+  \foreach \v [count=\i from 0] in {4,5,6,7}{
+    \node[cell] (m\i) at (\i*1.4,0) {\v};
+    \node[font=\ttfamily\small,text=esp,below=1mm of m\i] {[\i]};
+  }
+  \draw[arr,accent] (2.8,1.3) node[above,font=\ttfamily\small]{LEDS[2] → 6} -- (m2.north);
+\end{tikzpicture}
+\caption{Массив \code{const int LEDS[] = \{4, 5, 6, 7\};} --- четыре ячейки с индексами от 0 до 3}
+\end{figure}
+
+\textbf{Цикл} \code{for} повторяет команды нужное число раз. У него четыре части:
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[tok/.style={font=\ttfamily\large,inner sep=1pt},ann/.style={font=\sffamily\scriptsize,align=center,text=black}]
+  \node[tok] (k) at (0,0) {for (};
+  \node[tok,text=esp,base right=0pt of k] (a) {int i = 0};
+  \node[tok,base right=0pt of a] (s1) {;};
+  \node[tok,text=accent,base right=0.5em of s1] (b) {i < COUNT};
+  \node[tok,base right=0pt of b] (s2) {;};
+  \node[tok,text=okgreen!60!black,base right=0.5em of s2] (c) {i++};
+  \node[tok,base right=0pt of c] (s3) {) \{};
+  \node[tok,base right=0.5em of s3] (d) {pinMode(LEDS[i], OUTPUT);};
+  \node[tok,base right=0.5em of d] (s4) {\}};
+  \draw[esp,thick] (a.north) -- ++(0,0.35) node[ann,above] {1) начало:\\ счётчик i = 0};
+  \draw[accent,thick] (b.north) -- ++(0,1.1) node[ann,above] {2) условие: продолжать,\\ пока i < 4};
+  \draw[okgreen!60!black,thick] (c.north) -- ++(0,0.35) node[ann,above] {3) шаг: после\\ каждого круга i++};
+  \draw[black,thick] (d.south) -- ++(0,-0.35) node[ann,below] {4) тело цикла --- что повторять};
+\end{tikzpicture}
+\caption{Четыре части цикла \code{for}}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=7mm]
+  \node[fcproc] (init) {i = 0};
+  \node[fcdec,below=of init] (q) {i < 4 ?};
+  \node[fcproc,below=9mm of q] (body) {pinMode(LEDS[i], OUTPUT)};
+  \node[fcproc,below=of body] (inc) {i = i + 1};
+  \node[fcterm,right=16mm of q] (e) {дальше};
+  \draw[arr] (init) -- (q);
+  \draw[arr] (q) -- node[left,font=\sffamily\scriptsize]{да} (body);
+  \draw[arr] (body) -- (inc);
+  \draw[arr] (inc.west) -- ++(-10mm,0) |- (q.west);
+  \draw[arr] (q) -- node[above,font=\sffamily\scriptsize]{нет} (e);
+\end{tikzpicture}
+\hspace{10mm}
+\begin{tabular}[b]{@{}cccl@{}}
+\toprule
+Круг & \code{i} & \code{LEDS[i]} & Что выполнилось\\
+\midrule
+1 & 0 & 4 & \code{pinMode(4, OUTPUT)}\\
+2 & 1 & 5 & \code{pinMode(5, OUTPUT)}\\
+3 & 2 & 6 & \code{pinMode(6, OUTPUT)}\\
+4 & 3 & 7 & \code{pinMode(7, OUTPUT)}\\
+--- & 4 & --- & $4 < 4$ неверно --- выход\\
+\bottomrule
+\end{tabular}
+\caption{Блок-схема цикла и «трассировка» --- как меняется счётчик на каждом круге}
+\end{figure}
+
 \codecap{Бегущий огонь}
 \codeinput{l05_running}
 
-Номера выводов собраны в \textbf{массив} \code{LEDS[]} --- список значений под одним именем.
-\code{LEDS[0]} --- это 4, \code{LEDS[1]} --- 5 и так далее. Выражение \code{(current + 1) \% COUNT}
+Цикл \code{for} в \code{setup()} настраивает все четыре вывода. В \code{loop()} переменная \code{current}
+хранит индекс горящего светодиода. Выражение \code{(current + 1) \% COUNT}
 даёт по очереди 1, 2, 3, 0, 1, 2\ldots: знак \code{\%} означает остаток от деления, и после
 последнего светодиода счёт начинается снова с нулевого.
 
@@ -446,6 +598,8 @@ $T = 500 + 500 = 1000$~мс = 1~с. Сколько периодов умещае
   \item Чем «синее» светодиод, тем больше напряжения он требует.
   \item Blink создаёт на выводе прямоугольный сигнал. Период $T$ --- время одного цикла, частота $f = 1/T$.
   \item Чтобы программа не «засыпала», время отсчитываем через \code{millis()}, а не \code{delay()}.
+  \item \code{const} --- константа; \code{if} выполняет команды, только если условие верно; \code{==} --- сравнение.
+  \item Массив хранит ряд значений с индексами от 0; цикл \code{for} перебирает их по очереди.
 \end{itemize}
 \end{summary}
 
@@ -455,6 +609,7 @@ $T = 500 + 500 = 1000$~мс = 1~с. Сколько периодов умещае
   \item Какой резистор нужен зелёному светодиоду ($U_F = 2{,}2$~В) при токе 5~мА и питании 3,3~В?
   \item Светодиод горит 200~мс и не горит 300~мс. Чему равны период и частота?
   \item Какие цвета полосок у резистора \SI{4.7}{k\ohm} (4700~\si{\ohm})?
+  \item Сколько раз выполнится тело цикла \code{for (int i = 0; i < 10; i++)}? Какой индекс у последнего элемента массива из 10 ячеек?
 \end{enumerate}
 \end{quiz}
 

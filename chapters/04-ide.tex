@@ -3,7 +3,7 @@
 \label{les:ide}
 % =====================================================================
 \lessonintro
-  {установить среду программирования, загрузить в плату первую программу и увидеть её ответ}
+  {установить среду программирования, загрузить в плату первую программу, узнать правила записи программ и что такое переменные}
   {урок~\ref{les:board} (разъёмы и кнопки платы)}
   {плата присылает на компьютер приветствие и рассказывает о себе}
   {плата, USB-кабель \textbf{с передачей данных} (некоторые кабели умеют только заряжать!), компьютер}
@@ -118,12 +118,146 @@
 \end{tikzpicture}
 \end{center}
 
+\subsection{Учимся программировать: как записывается программа}
+
+Программа похожа на рецепт: список команд, которые выполняются \emph{по порядку}, сверху вниз.
+Компьютер выполняет их очень точно и ничего не додумывает. Если в рецепте написано «положить 100 кг
+соли», компьютер положит 100 кг. Поэтому у языка C++ (читается «си-плюс-плюс»), на котором пишут
+программы для Arduino, есть строгие правила записи. Посмотри на них на примере строчки из следующей
+программы:
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[tok/.style={font=\ttfamily\large,inner sep=1pt},ann/.style={font=\sffamily\scriptsize,align=center,text=black}]
+  \node[tok,text=esp] (a) at (0,0) {int};
+  \node[tok,text=accent,base right=0.5em of a] (b) {apples};
+  \node[tok,base right=0.5em of b] (c) {=};
+  \node[tok,text=okgreen!60!black,base right=0.5em of c] (d) {5};
+  \node[tok,base right=0pt of d] (e) {\textbf{;}};
+  \node[tok,text=gray,base right=1.2em of e] (f) {// яблок в корзине};
+  \draw[esp,thick] (a.north) -- ++(0,0.35) node[ann,above] {тип:\\ что храним};
+  \draw[accent,thick] (b.north) -- ++(0,1.1) node[ann,above] {имя\\ переменной};
+  \draw[okgreen!60!black,thick] (d.north) -- ++(0,0.35) node[ann,above] {значение};
+  \draw[black,thick] (e.south) -- ++(0,-0.35) node[ann,below] {точка с запятой ---\\ конец команды};
+  \draw[gray,thick] (f.south) -- ++(0,-1.1) node[ann,below] {комментарий: для людей,\\ плата его не читает};
+\end{tikzpicture}
+\caption{Из чего состоит строчка программы}
+\end{figure}
+
+\begin{itemize}
+  \item каждая команда заканчивается \textbf{точкой с запятой} \code{;};
+  \item после \code{//} до конца строки идёт \textbf{комментарий} --- пояснение для людей;
+  \item фигурные скобки \code{\{ \}} объединяют несколько команд в \textbf{блок}, как абзац в тексте.
+        Всё, что между скобками после \code{void setup()}, --- это содержимое функции \code{setup()};
+  \item большие и маленькие буквы различаются: \code{apples} и \code{Apples} --- разные имена;
+  \item в дробных числах пишут \textbf{точку}, а не запятую: \code{23.5};
+  \item текст пишут в двойных кавычках: \code{"Привет"}.
+\end{itemize}
+
+\begin{tip}
+Если в программе ошибка, при компиляции внизу Arduino IDE появится красное сообщение с номером строки.
+Чаще всего виноваты забытая \code{;}, незакрытая скобка или опечатка в имени. Ошибки --- это нормально:
+их делают все программисты, даже самые опытные.
+\end{tip}
+
+\subsection{Учимся программировать: переменные}
+
+Программе нужно что-то помнить: сколько раз нажали кнопку, какая яркость у светодиода, какая температура.
+Для этого есть \textbf{переменные}. Переменная --- это коробка с названием, в которой хранится значение.
+Значение можно положить, посмотреть и заменить другим. На коробке написано не только имя, но и
+\textbf{тип} --- что в неё можно класть: целые числа, дробные, текст.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+  box/.style={draw,thick,fill=#1,minimum width=24mm,minimum height=13mm,font=\ttfamily\Large},
+  lbl/.style={font=\ttfamily\small,above=1mm},
+  typ/.style={font=\sffamily\scriptsize,text=gray,below=1mm}]
+  \node[box=blkmem] (a) at (0,0) {5};       \node[lbl] at (a.north) {apples};      \node[typ] at (a.south) {int --- целое};
+  \node[box=blkper] (b) at (3.3,0) {23.5};  \node[lbl] at (b.north) {temperature}; \node[typ] at (b.south) {float --- дробное};
+  \node[box=blkrf] (c) at (6.6,0) {true};   \node[lbl] at (c.north) {isOpen};      \node[typ] at (c.south) {bool --- да/нет};
+  \node[box=blkrtc] (d) at (9.9,0) {"Маша"};\node[lbl] at (d.north) {name};        \node[typ] at (d.south) {String --- текст};
+\end{tikzpicture}
+\caption{Переменные --- подписанные коробки. Тип говорит, что в коробку можно положить}
+\end{figure}
+
+\begin{table}[H]
+\centering\small
+\begin{tabularx}{\textwidth}{@{}l X l@{}}
+\toprule
+Тип & Что хранит & Пример\\
+\midrule
+\code{int} & целое число от $-2\,147\,483\,648$ до $2\,147\,483\,647$ (32 бита) & \code{int score = 10;}\\
+\code{float} & дробное число (около 7 точных цифр) & \code{float t = 36.6;}\\
+\code{bool} & логическое значение: \code{true} (истина) или \code{false} (ложь) & \code{bool on = false;}\\
+\code{String} & строку текста & \code{String s = "Привет";}\\
+\code{uint8\_t}, \code{byte} & целое от 0 до 255 (8 бит, как в уроке~\ref{les:signals}) & \code{byte r = 200;}\\
+\code{uint32\_t} & целое от 0 до 4\,294\,967\,295 --- для времени \code{millis()} & \code{uint32\_t t = millis();}\\
+\bottomrule
+\end{tabularx}
+\caption{Типы переменных, которые встретятся в курсе}
+\end{table}
+
+Знак \code{=} в программировании означает не «равно», а «\textbf{положить в коробку}». Запись
+\code{apples = apples + 3} читается так: «возьми, что лежит в \code{apples}, прибавь 3 и положи результат
+обратно в \code{apples}». В математике это бессмыслица, а для программы --- обычное дело.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[box/.style={draw,thick,fill=blkmem,minimum width=16mm,minimum height=11mm,font=\ttfamily\Large}]
+  \node[box] (b1) at (0,0) {5};
+  \node[font=\ttfamily\small,above=1mm of b1] {apples};
+  \node[font=\sffamily\small,below=1mm of b1] {было};
+  \node[draw,thick,rounded corners,fill=blkper,font=\ttfamily\small,align=center] (op) at (4,0) {5 + 3 = 8};
+  \node[box,fill=okgreen!20] (b2) at (8,0) {8};
+  \node[font=\ttfamily\small,above=1mm of b2] {apples};
+  \node[font=\sffamily\small,below=1mm of b2] {стало};
+  \draw[arr] (b1) -- node[above,font=\sffamily\scriptsize]{достать} (op);
+  \draw[arr] (op) -- node[above,font=\sffamily\scriptsize]{положить} (b2);
+  \node[font=\ttfamily\large] at (4,1.4) {apples = apples + 3;};
+\end{tikzpicture}
+\caption{Присваивание: сначала считается правая часть, потом результат кладётся в переменную}
+\end{figure}
+
+\begin{table}[H]
+\centering\small
+\begin{tabular}{@{}lll@{}}
+\toprule
+Запись & Что делает & Пример ($x = 7$)\\
+\midrule
+\code{+ - * /} & сложение, вычитание, умножение, деление & \code{x * 2} → 14\\
+\code{\%} & остаток от деления & \code{x \% 2} → 1\\
+\code{x++}, \code{x--} & увеличить или уменьшить на 1 & \code{x} станет 8 или 6\\
+\code{x += 5} & то же, что \code{x = x + 5} & \code{x} станет 12\\
+\bottomrule
+\end{tabular}
+\caption{Арифметические операции}
+\end{table}
+
+\codecap{Переменные и операции}
+\codeinput{l04_variables}
+
+\begin{caution}
+Если оба числа целые, деление тоже будет целым: \code{7 / 2} даёт \textbf{3}, а не 3,5 --- дробная часть
+просто отбрасывается. Чтобы получить 3,5, хотя бы одно число должно быть дробным: \code{7.0 / 2}.
+\end{caution}
+
+Переменная, объявленная \emph{вне} функций (в начале программы), --- \textbf{глобальная}: её видят все части
+программы. Переменная, объявленная \emph{внутри} фигурных скобок, --- \textbf{локальная}: она существует только
+внутри этого блока. Как записка на доске в классе (видят все) и записка в твоём кармане (видишь только ты).
+
+Теперь понятно, что было в первой программе: \code{setup()} и \code{loop()} --- это \textbf{функции}, наборы
+команд под одним именем; \code{Serial.println()} и \code{delay()} --- готовые функции, которые мы
+\emph{вызываем}, передавая им в скобках данные; \code{millis()} возвращает число --- его можно положить в переменную.
+
 \begin{summary}
 \begin{itemize}[leftmargin=*]
   \item Программа (скетч) пишется в Arduino IDE, переводится компилятором в машинный код и загружается по USB.
   \item \code{setup()} выполняется один раз, \code{loop()} --- бесконечно.
   \item \code{Serial} позволяет плате отправлять сообщения на компьютер.
   \item Если прошивка не идёт --- кнопки BOOT и RST.
+  \item Команды заканчиваются \code{;}, блоки --- в \code{\{ \}}, комментарии --- после \code{//}.
+  \item Переменная --- коробка с именем и типом; \code{=} кладёт в неё значение; целые числа делятся нацело.
 \end{itemize}
 \end{summary}
 
@@ -132,5 +266,7 @@
   \item Добавь в программу вывод своего имени и возраста.
   \item Сделай так, чтобы плата печатала время работы не в миллисекундах, а в секундах.
   \item Узнай, сколько памяти (Flash и PSRAM) у твоей платы, и сравни с надписью на модуле.
+  \item Заведи переменные \code{a = 17} и \code{b = 5} и напечатай их сумму, разность, произведение, частное и остаток.
+        Почему частное получилось таким?
 \end{enumerate}
 \end{tasks}

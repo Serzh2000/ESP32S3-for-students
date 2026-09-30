@@ -5,7 +5,7 @@
 \lessonintro
   {понять, как биты путешествуют по одному проводу, и научиться принимать команды с компьютера}
   {урок~\ref{les:signals} (биты и байты), урок~\ref{les:ide} (\code{Serial.print}), урок~\ref{les:pwm} (яркость)}
-  {светодиод слушается команд \code{on}, \code{off} и \code{level 30} из Serial Monitor}
+  {светодиод слушается команд \code{on}, \code{off} и \code{level 30}; игра «Угадай число»}
   {схема со светодиодом на \pin{4} (рис.~\ref{fig:led}); для последнего раздела --- модуль GPS или вторая плата (по желанию)}
 
 С самого первого урока мы пользуемся Serial Monitor: плата присылает сообщения, и мы их читаем.
@@ -101,8 +101,102 @@
 \codeinput{l09_commands}
 
 Попробуй: \code{on}, \code{level 10}, \code{level 100}, \code{status}, \code{off}.
-Метод \code{cmd.startsWith("level ")} проверяет, начинается ли строка с этих букв, а
-\code{cmd.substring(6)} вырезает всё, что после шестого символа, --- то есть число.
+
+\subsection{Учимся программировать: строки и цепочка условий}
+
+Команда из Serial Monitor приходит как \textbf{строка} --- переменная типа \code{String}. Со строками можно
+делать много полезного:
+
+\begin{table}[H]
+\centering\small
+\begin{tabular}{@{}lll@{}}
+\toprule
+Запись & Что делает & Пример для \code{cmd = "level 30"}\\
+\midrule
+\code{cmd == "on"} & сравнить строки & \code{false}\\
+\code{cmd.startsWith("level ")} & начинается ли с этих букв & \code{true}\\
+\code{cmd.substring(6)} & вырезать часть, начиная с символа № 6 & \code{"30"}\\
+\code{cmd.substring(6).toInt()} & превратить текст в число & \code{30}\\
+\code{cmd.length()} & длина строки & \code{8}\\
+\code{cmd.trim()} & убрать пробелы и переводы строки по краям & ---\\
+\code{"уровень " + String(30)} & склеить строки & \code{"уровень 30"}\\
+\bottomrule
+\end{tabular}
+\caption{Полезные действия со строками \code{String}. Символы нумеруются с нуля, как ячейки массива}
+\end{table}
+
+Чтобы выбрать одно действие из многих, условия выстраивают в \textbf{цепочку} \code{if} --- \code{else if} ---
+\code{else}. Они проверяются по очереди сверху вниз, и выполняется только \emph{первая} подходящая ветка.
+Последний \code{else} ловит всё остальное --- например, опечатки.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=5mm and 12mm]
+  \node[fcio] (in) {прочитать строку cmd};
+  \node[fcdec,below=of in] (q1) {cmd == "on" ?};
+  \node[fcproc,right=of q1] (a1) {ledOn = true};
+  \node[fcdec,below=of q1] (q2) {cmd == "off" ?};
+  \node[fcproc,right=of q2] (a2) {ledOn = false};
+  \node[fcdec,below=of q2] (q3) {начинается\\ с "level " ?};
+  \node[fcproc,right=of q3] (a3) {level = число};
+  \node[fcproc,below=of q3] (a4) {напечатать\\ список команд};
+  \draw[arr] (in) -- (q1);
+  \foreach \q/\a in {q1/a1,q2/a2,q3/a3}{\draw[arr] (\q) -- node[above,font=\sffamily\scriptsize]{да} (\a);}
+  \draw[arr] (q1) -- node[left,font=\sffamily\scriptsize]{нет} (q2);
+  \draw[arr] (q2) -- node[left,font=\sffamily\scriptsize]{нет} (q3);
+  \draw[arr] (q3) -- node[left,font=\sffamily\scriptsize]{нет} (a4);
+\end{tikzpicture}
+\caption{Цепочка условий в функции \code{handleSerial()}: проверяем команды по очереди}
+\end{figure}
+
+Обрати внимание на \code{return} в начале функции: \code{if (!Serial.available()) return;} --- «если данных
+нет, сразу выйти из функции». Такой ранний выход избавляет от лишних фигурных скобок.
+
+\subsection{Практика: игра «Угадай число»}
+
+Теперь, когда мы умеем читать ввод с компьютера, сделаем игру. Плата загадывает случайное число от 1 до 100,
+а ты угадываешь, вводя числа в поле Serial Monitor (окончание строки --- \textsf{New Line}). Плата подсказывает
+«мало» или «много». Светодиод для игры не нужен.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=6mm]
+  \node[fcterm] (s) {начало};
+  \node[fcproc,below=of s] (new) {загадать число secret,\\ попытки = 0};
+  \node[fcio,below=of new] (in) {ввести guess};
+  \node[fcproc,below=of in] (t) {попытки = попытки + 1};
+  \node[fcdec,below=of t] (q1) {guess < secret ?};
+  \node[fcio,left=10mm of q1] (m1) {«мало!»};
+  \node[fcdec,below=9mm of q1] (q2) {guess > secret ?};
+  \node[fcio,left=10mm of q2] (m2) {«много!»};
+  \node[fcio,right=10mm of q2] (w) {«Угадал!»};
+  \draw[arr] (s) -- (new); \draw[arr] (new) -- (in); \draw[arr] (in) -- (t); \draw[arr] (t) -- (q1);
+  \draw[arr] (q1) -- node[above,font=\sffamily\scriptsize]{да} (m1);
+  \draw[arr] (q1) -- node[right,font=\sffamily\scriptsize]{нет} (q2);
+  \draw[arr] (q2) -- node[above,font=\sffamily\scriptsize]{да} (m2);
+  \draw[arr] (q2) -- node[above,font=\sffamily\scriptsize]{нет} (w);
+  \draw[arr] (m1.west) -- ++(-5mm,0) |- (in.west);
+  \draw[arr] (m2.west) -- ++(-10mm,0) |- (in.west);
+  \draw[arr] (w.east) -- ++(5mm,0) |- (new.east);
+\end{tikzpicture}
+\caption{Блок-схема игры «Угадай число»}
+\end{figure}
+
+\codecap{Игра «Угадай число»}
+\codeinput{l09_guess}
+
+Здесь встретилось всё, что мы уже знаем: глобальные \textbf{переменные} \code{secret} и \code{tries},
+\textbf{цепочка условий}, цикл \code{while}, который ждёт ввода, и \textbf{свои функции} \code{newGame()} и
+\code{readNumber()}. Новые готовые функции: \code{random(1, 101)} даёт случайное число от 1 до 100, а
+\code{Serial.parseInt()} читает из пришедших символов целое число.
+
+\begin{fact}
+Если угадывать с умом --- каждый раз называть середину оставшегося промежутка (50, потом 25 или 75\ldots), ---
+любое число от 1 до 100 угадывается не больше чем за 7 попыток, ведь $2^7 = 128 > 100$. Точно так же работает
+АЦП из урока~\ref{les:signals}: он «угадывает» напряжение за 12 шагов. Этот способ называется
+\textbf{двоичным поиском}.
+\end{fact}
+
 
 \subsection{Второй UART: связь с другими устройствами}
 
@@ -148,6 +242,7 @@ ESP32-S3 напрямую --- помнишь «опасную зону» из у
   \item Скорость (бод) у обеих сторон должна совпадать.
   \item Команды читаем, не останавливая программу: сначала \code{available()}, потом \code{readStringUntil()}.
   \item TX одного устройства --- к RX другого, земли --- вместе.
+  \item Строки \code{String} можно сравнивать, резать и превращать в числа; цепочка \code{if}/\code{else if}/\code{else} выбирает одно действие из многих.
 \end{itemize}
 \end{summary}
 
@@ -164,5 +259,6 @@ ESP32-S3 напрямую --- помнишь «опасную зону» из у
   \item Добавь команду \code{blink N}: мигнуть светодиодом N раз (без \code{delay()}).
   \item Раз в 10 секунд выводи время работы платы, не мешая приёму команд.
   \item Соедини две платы по UART: команды, набранные на одной, пусть управляют светодиодом другой.
+  \item Измени игру: пусть плата отгадывает число, загаданное тобой, двоичным поиском. Ты отвечаешь «+», «−» или «=».
 \end{enumerate}
 \end{tasks}

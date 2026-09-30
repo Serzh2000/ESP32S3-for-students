@@ -143,7 +143,49 @@
 \codecap{Функция buttonPressed(): нажатие без дребезга}
 \codeinput{l10_debounce}
 
-Слово \code{static} перед переменной внутри функции означает: «помни значение между вызовами».
+\subsection{Учимся программировать: логические операции и \texttt{static}}
+
+В функции \code{buttonPressed()} встретилось условие посложнее:
+\code{millis() - changed > DEBOUNCE\_MS \&\& r != stable}. Оно состоит из двух вопросов, соединённых
+\textbf{логической операцией}. Таких операций три:
+
+\begin{table}[H]
+\centering\small
+\begin{tabularx}{\textwidth}{@{}l l X@{}}
+\toprule
+Запись & Название & Когда верно\\
+\midrule
+\code{A \&\& B} & «и» & только если верны \emph{оба}: «прошло 50~мс \emph{и} уровень изменился»\\
+\code{A || B} & «или» & если верно \emph{хотя бы одно}: «слишком холодно \emph{или} слишком жарко»\\
+\code{!A} & «не» & если \code{A} неверно: \code{!ledOn} --- «светодиод не горит»\\
+\bottomrule
+\end{tabularx}
+\caption{Логические операции}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[c/.style={draw,minimum width=13mm,minimum height=7mm,font=\ttfamily\small}]
+  \foreach \t/\op/\x in {{A \&\& B}/and/0,{A || B}/or/5.2}{
+    \node[font=\sffamily\small\bfseries] at (\x+1.95,2.3) {\code{\t}};
+    \node[c,fill=gray!15] at (\x,1.5) {A}; \node[c,fill=gray!15] at (\x+1.3,1.5) {B}; \node[c,fill=gray!15] at (\x+2.9,1.5) {результат};
+  }
+  \foreach \a/\b/\r/\o/\cr/\co [count=\k] in {false/false/false/false/esp!15/esp!15,false/true/false/true/esp!15/okgreen!25,
+      true/false/false/true/esp!15/okgreen!25,true/true/true/true/okgreen!25/okgreen!25}{
+    \pgfmathsetmacro{\yy}{1.5-\k*0.7}
+    \node[c] at (0,\yy) {\a}; \node[c] at (1.3,\yy) {\b};
+    \node[c,fill=\cr] at (2.9,\yy) {\r};
+    \node[c] at (5.2,\yy) {\a}; \node[c] at (6.5,\yy) {\b};
+    \node[c,fill=\co] at (8.1,\yy) {\o};
+  }
+\end{tikzpicture}
+\caption{Таблицы истинности: результат «и» и «или» для всех сочетаний}
+\end{figure}
+
+Второе новое слово --- \code{static}. Обычная локальная переменная создаётся заново при каждом вызове функции и
+забывает старое значение. А переменная со словом \code{static} создаётся один раз и \emph{помнит} значение
+между вызовами --- как блокнот, который функция носит с собой. Именно поэтому \code{buttonPressed()} помнит,
+каким был уровень кнопки в прошлый раз.
 
 \subsection{Практика: кнопка-переключатель яркости}
 
@@ -205,6 +247,7 @@
   \item Вход без подтяжки «висит». Используем \code{INPUT\_PULLUP} и кнопку на землю: нажата = \code{LOW}.
   \item Ловим \emph{момент} нажатия и отфильтровываем дребезг (20--50~мс).
   \item Прерывание срабатывает мгновенно, но обработчик должен быть очень коротким.
+  \item \code{\&\&} --- «и», \code{||} --- «или», \code{!} --- «не»; \code{static}-переменная помнит значение между вызовами функции.
 \end{itemize}
 \end{summary}
 

@@ -3,7 +3,7 @@
 \label{les:pwm}
 % =====================================================================
 \lessonintro
-  {понять, почему быстрое мигание кажется ровным светом, освоить ШИМ и плавно менять яркость светодиода}
+  {понять, почему быстрое мигание кажется ровным светом, освоить ШИМ и плавно менять яркость светодиода; научиться писать свои функции}
   {урок~\ref{les:signals} (ШИМ, двоичные числа), урок~\ref{les:led} (светодиод, период и частота)}
   {«дышащий» светодиод, плавная волна на четырёх светодиодах, мелодия на пищалке}
   {схема из урока~\ref{les:led}; пассивная пьезопищалка (по желанию)}
@@ -183,7 +183,8 @@
 \caption{Как меняется \code{duty} в программе: 256 шагов по 4~мс вверх, столько же вниз --- «пила» с периодом около 2~с}
 \end{figure}
 
-Каждые 4~мс \code{duty} увеличивается на единицу. За это время ШИМ успевает сделать
+Здесь два цикла \code{for}: первый считает вверх (\code{d++}), второй --- вниз (\code{d--}), начиная с 255
+и пока \code{d >= 0}. Каждые 4~мс \code{duty} меняется на единицу. За это время ШИМ успевает сделать
 $5000 \cdot 0{,}004 = 20$ периодов --- глаз видит не мигание, а плавное изменение яркости.
 
 \subsection{Почему «линейно» выглядит нелинейно}
@@ -226,6 +227,48 @@ $5000 \cdot 0{,}004 = 20$ периодов --- глаз видит не мига
 \end{tikzpicture}
 \caption{Гамма-коррекция: на вывод подаём «изогнутую» кривую, чтобы глаз увидел ровное изменение яркости}
 \end{figure}
+
+\subsection{Учимся программировать: свои функции}
+
+Формулу гамма-коррекции придётся использовать много раз: для каждого значения яркости. Чтобы не
+переписывать её снова и снова, оформим её как \textbf{свою функцию}. Функция --- это «машинка»: у неё есть имя,
+на вход ей передают данные (\textbf{параметры}), а на выходе она \textbf{возвращает} результат. Написал один
+раз --- пользуешься сколько угодно, как новым словом в языке.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+  \node[draw,thick,fill=blkcpu,rounded corners=3mm,minimum width=46mm,minimum height=18mm,align=center,font=\sffamily] (f) {функция \code{gammaDuty}\\[1mm] \scriptsize\code{255 * pow(percent / 100.0, 2.2)}};
+  \draw[arr,very thick] ($(f.west)+(-28mm,0)$) node[left,font=\ttfamily]{50} -- node[above,font=\sffamily\scriptsize]{параметр \code{percent}} (f.west);
+  \draw[arr,very thick] (f.east) -- node[above,font=\sffamily\scriptsize]{\code{return}} ($(f.east)+(24mm,0)$) node[right,font=\ttfamily]{56};
+\end{tikzpicture}
+
+\vspace{5mm}
+\begin{tikzpicture}[tok/.style={font=\ttfamily\large,inner sep=1pt},ann/.style={font=\sffamily\scriptsize,align=center,text=black}]
+  \node[tok,text=esp] (a) at (0,0) {uint32\_t};
+  \node[tok,text=accent,base right=0.5em of a] (b) {gammaDuty};
+  \node[tok,base right=0pt of b] (p) {(};
+  \node[tok,text=okgreen!60!black,base right=0pt of p] (c) {int percent};
+  \node[tok,base right=0pt of c] (e) {) \{ \ldots\ \}};
+  \draw[esp,thick] (a.south) -- ++(0,-0.35) node[ann,below] {тип результата\\ (\code{void} --- без результата)};
+  \draw[accent,thick] (b.south) -- ++(0,-1.1) node[ann,below] {имя};
+  \draw[okgreen!60!black,thick] (c.south) -- ++(0,-0.35) node[ann,below] {параметр:\\ тип и имя};
+\end{tikzpicture}
+\caption{Функция получает яркость в процентах и возвращает значение \code{duty}: 50\,\% → 56}
+\end{figure}
+
+\begin{itemize}
+  \item Слово \code{return} («вернуть») отдаёт результат туда, откуда функцию вызвали. Поэтому
+        \code{ledcWrite(LED\_PIN, gammaDuty(p))} сначала вычислит \code{gammaDuty(p)}, а потом подставит результат.
+  \item Функции \code{setup()} и \code{loop()} имеют тип \code{void} («пустота»): они ничего не возвращают.
+  \item Почему в формуле \code{100.0}, а не \code{100}? Помнишь целочисленное деление из урока~\ref{les:ide}?
+        \code{50 / 100} даст 0, а \code{50 / 100.0} --- правильные 0,5.
+\end{itemize}
+
+\begin{tip}
+Хорошая функция делает \emph{одно} дело, и её имя говорит, какое: \code{gammaDuty()}, \code{blinkTwice()},
+\code{isButtonPressed()}. Тогда программа читается почти как обычный текст.
+\end{tip}
 
 \codecap{«Дыхание» с гамма-коррекцией}
 \codeinput{l06_breathe_gamma}
@@ -362,6 +405,7 @@ $5000 \cdot 0{,}004 = 20$ периодов --- глаз видит не мига
   \item \code{ledcAttach(pin, freq, bits)} + \code{ledcWrite(pin, duty)}; при 8 битах \code{duty} от 0 до 255.
   \item Глаз воспринимает яркость нелинейно, поэтому для плавности нужна гамма-коррекция.
   \item Частота определяет, заметно ли мерцание, а для звука --- высоту ноты.
+  \item Своя функция: тип результата, имя, параметры; \code{return} возвращает результат.
 \end{itemize}
 \end{summary}
 
@@ -377,6 +421,7 @@ $5000 \cdot 0{,}004 = 20$ периодов --- глаз видит не мига
 \begin{tasks}
 \begin{enumerate}
   \item Сделай «дыхание» в два раза медленнее, не меняя \code{delay()}. Подсказка: шаг.
+  \item Напиши функцию \code{void blinkTimes(int n)}, которая мигает светодиодом \code{n} раз, и вызови её с разными числами.
   \item Попробуй функцию \code{ledcFade(pin, от, до, мс)}: она меняет яркость плавно и полностью сама.
   \item Сыграй на пищалке «В траве сидел кузнечик» или любую другую мелодию.
   \item Установи частоту ШИМ 30~Гц и посмотри на «дыхание». Что изменилось и почему?

@@ -19,6 +19,30 @@ GPIO22--25 & не существуют \\
 \end{tabularx}
 \end{center}
 
+\subsection*{Шпаргалка по языку C++}
+
+\begin{center}\small
+\begin{tabularx}{\textwidth}{@{}l X@{}}
+\toprule
+Запись & Смысл\\
+\midrule
+\code{int x = 5;} & переменная целого типа со значением 5\\
+\code{const int PIN = 4;} & константа: значение не меняется\\
+\code{x = x + 1;}\quad \code{x++;}\quad \code{x += 1;} & три способа увеличить \code{x} на 1\\
+\code{a / b}, \code{a \% b} & деление (для целых --- нацело) и остаток\\
+\code{==  !=  <  >  <=  >=} & сравнение\\
+\code{\&\&  ||  !} & логические «и», «или», «не»\\
+\code{if (усл) \{ \ldots \} else \{ \ldots \}} & выполнить одну из двух веток\\
+\code{for (int i = 0; i < N; i++) \{ \ldots \}} & повторить $N$ раз, \code{i} = 0, 1, \ldots, $N-1$\\
+\code{while (усл) \{ \ldots \}} & повторять, пока условие верно; \code{break} --- выйти\\
+\code{int a[] = \{1, 2, 3\};}\quad \code{a[0]} & массив и его первый элемент\\
+\code{int sum(int a, int b) \{ return a + b; \}} & функция с параметрами и результатом\\
+\code{void hello() \{ \ldots \}} & функция без результата\\
+\code{// текст} & комментарий\\
+\bottomrule
+\end{tabularx}
+\end{center}
+
 \subsection*{Шпаргалка по функциям Arduino-ESP32}
 
 \begin{center}\small
