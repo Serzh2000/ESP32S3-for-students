@@ -1,0 +1,51 @@
+\begin{CodeVerbatim}
+\PY{k}{class}\PY{+w}{ }\PY{n+nc}{Button}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{                            }\PY{c+c1}{// кнопка с подавлением дребезга (урок 3)}
+\PY{+w}{ }\PY{k}{public}\PY{o}{:}
+\PY{+w}{  }\PY{k}{explicit}\PY{+w}{ }\PY{n}{Button}\PY{p}{(}\PY{k+kt}{int}\PY{+w}{ }\PY{n}{pin}\PY{p}{)}\PY{+w}{ }\PY{o}{:}\PY{+w}{ }\PY{n}{pin\PYZus{}}\PY{p}{(}\PY{n}{pin}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{p}{\PYZcb{}}
+
+\PY{+w}{  }\PY{k+kt}{void}\PY{+w}{ }\PY{n}{begin}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{    }\PY{n}{pinMode}\PY{p}{(}\PY{n}{pin\PYZus{}}\PY{p}{,}\PY{+w}{ }\PY{n}{INPUT\PYZus{}PULLUP}\PY{p}{)}\PY{p}{;}
+\PY{+w}{    }\PY{n}{stable\PYZus{}}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{last\PYZus{}}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{digitalRead}\PY{p}{(}\PY{n}{pin\PYZus{}}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{p}{\PYZcb{}}
+
+\PY{+w}{  }\PY{k+kt}{bool}\PY{+w}{ }\PY{n}{pressed}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{                        }\PY{c+c1}{// true ровно один раз на нажатие}
+\PY{+w}{    }\PY{k+kt}{bool}\PY{+w}{ }\PY{n}{r}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{digitalRead}\PY{p}{(}\PY{n}{pin\PYZus{}}\PY{p}{)}\PY{p}{;}
+\PY{+w}{    }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{r}\PY{+w}{ }\PY{o}{!}\PY{o}{=}\PY{+w}{ }\PY{n}{last\PYZus{}}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{ }\PY{n}{last\PYZus{}}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{r}\PY{p}{;}\PY{+w}{ }\PY{n}{changed\PYZus{}}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{millis}\PY{p}{(}\PY{p}{)}\PY{p}{;}\PY{+w}{ }\PY{p}{\PYZcb{}}
+\PY{+w}{    }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{millis}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{o}{\PYZhy{}}\PY{+w}{ }\PY{n}{changed\PYZus{}}\PY{+w}{ }\PY{o}{\PYZgt{}}\PY{+w}{ }\PY{l+m+mi}{50}\PY{+w}{ }\PY{o}{\PYZam{}}\PY{o}{\PYZam{}}\PY{+w}{ }\PY{n}{r}\PY{+w}{ }\PY{o}{!}\PY{o}{=}\PY{+w}{ }\PY{n}{stable\PYZus{}}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{      }\PY{n}{stable\PYZus{}}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{r}\PY{p}{;}
+\PY{+w}{      }\PY{k}{return}\PY{+w}{ }\PY{n}{stable\PYZus{}}\PY{+w}{ }\PY{o}{=}\PY{o}{=}\PY{+w}{ }\PY{n}{LOW}\PY{p}{;}
+\PY{+w}{    }\PY{p}{\PYZcb{}}
+\PY{+w}{    }\PY{k}{return}\PY{+w}{ }\PY{n+nb}{false}\PY{p}{;}
+\PY{+w}{  }\PY{p}{\PYZcb{}}
+
+\PY{+w}{ }\PY{k}{private}\PY{o}{:}\PY{+w}{                                 }\PY{c+c1}{// снаружи эти переменные недоступны}
+\PY{+w}{  }\PY{k+kt}{int}\PY{+w}{ }\PY{n}{pin\PYZus{}}\PY{p}{;}
+\PY{+w}{  }\PY{k+kt}{bool}\PY{+w}{ }\PY{n}{stable\PYZus{}}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{HIGH}\PY{p}{;}
+\PY{+w}{  }\PY{k+kt}{bool}\PY{+w}{ }\PY{n}{last\PYZus{}}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{HIGH}\PY{p}{;}
+\PY{+w}{  }\PY{k+kt}{uint32\PYZus{}t}\PY{+w}{ }\PY{n}{changed\PYZus{}}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}
+\PY{p}{\PYZcb{}}\PY{p}{;}
+
+\PY{k}{class}\PY{+w}{ }\PY{n+nc}{Led}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{ }\PY{k}{public}\PY{o}{:}
+\PY{+w}{  }\PY{k}{explicit}\PY{+w}{ }\PY{n}{Led}\PY{p}{(}\PY{k+kt}{int}\PY{+w}{ }\PY{n}{pin}\PY{p}{)}\PY{+w}{ }\PY{o}{:}\PY{+w}{ }\PY{n}{pin\PYZus{}}\PY{p}{(}\PY{n}{pin}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{p}{\PYZcb{}}
+\PY{+w}{  }\PY{k+kt}{void}\PY{+w}{ }\PY{n}{begin}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{ }\PY{n}{pinMode}\PY{p}{(}\PY{n}{pin\PYZus{}}\PY{p}{,}\PY{+w}{ }\PY{n}{OUTPUT}\PY{p}{)}\PY{p}{;}\PY{+w}{ }\PY{p}{\PYZcb{}}
+\PY{+w}{  }\PY{k+kt}{void}\PY{+w}{ }\PY{n}{set}\PY{p}{(}\PY{k+kt}{bool}\PY{+w}{ }\PY{n}{on}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{ }\PY{n}{on\PYZus{}}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{on}\PY{p}{;}\PY{+w}{ }\PY{n}{digitalWrite}\PY{p}{(}\PY{n}{pin\PYZus{}}\PY{p}{,}\PY{+w}{ }\PY{n}{on\PYZus{}}\PY{p}{)}\PY{p}{;}\PY{+w}{ }\PY{p}{\PYZcb{}}
+\PY{+w}{  }\PY{k+kt}{void}\PY{+w}{ }\PY{n}{toggle}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{ }\PY{n}{set}\PY{p}{(}\PY{o}{!}\PY{n}{on\PYZus{}}\PY{p}{)}\PY{p}{;}\PY{+w}{ }\PY{p}{\PYZcb{}}
+
+\PY{+w}{ }\PY{k}{private}\PY{o}{:}
+\PY{+w}{  }\PY{k+kt}{int}\PY{+w}{ }\PY{n}{pin\PYZus{}}\PY{p}{;}
+\PY{+w}{  }\PY{k+kt}{bool}\PY{+w}{ }\PY{n}{on\PYZus{}}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n+nb}{false}\PY{p}{;}
+\PY{p}{\PYZcb{}}\PY{p}{;}
+
+\PY{n}{Button}\PY{+w}{ }\PY{n+nf}{button}\PY{p}{(}\PY{l+m+mi}{5}\PY{p}{)}\PY{p}{;}\PY{+w}{                         }\PY{c+c1}{// два объекта \PYZhy{}\PYZhy{} и никаких глобальных флагов}
+\PY{n}{Led}\PY{+w}{ }\PY{n+nf}{led}\PY{p}{(}\PY{l+m+mi}{4}\PY{p}{)}\PY{p}{;}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{setup}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{n}{button}\PY{p}{.}\PY{n}{begin}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{led}\PY{p}{.}\PY{n}{begin}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{loop}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{button}\PY{p}{.}\PY{n}{pressed}\PY{p}{(}\PY{p}{)}\PY{p}{)}\PY{+w}{ }\PY{n}{led}\PY{p}{.}\PY{n}{toggle}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+\end{CodeVerbatim}

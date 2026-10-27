@@ -1,0 +1,74 @@
+\begin{CodeVerbatim}
+\PY{c+c1}{// MPU6050 (GY\PYZhy{}521): SDA \PYZhy{}\PYZgt{} GPIO8, SCL \PYZhy{}\PYZgt{} GPIO9, адрес 0x68 (урок 26). График наклона на телефоне.}
+\PY{c+cp}{\PYZsh{}}\PY{c+cp}{include}\PY{+w}{ }\PY{c+cpf}{\PYZlt{}Wire.h\PYZgt{}}
+\PY{c+cp}{\PYZsh{}}\PY{c+cp}{include}\PY{+w}{ }\PY{c+cpf}{\PYZlt{}WiFi.h\PYZgt{}}
+\PY{c+cp}{\PYZsh{}}\PY{c+cp}{include}\PY{+w}{ }\PY{c+cpf}{\PYZlt{}ESPUI.h\PYZgt{}}
+
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{uint8\PYZus{}t}\PY{+w}{ }\PY{n}{MPU\PYZus{}ADDR}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mh}{0x68}\PY{p}{;}
+\PY{k+kt}{float}\PY{+w}{ }\PY{n}{angle}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}
+\PY{k+kt}{uint32\PYZus{}t}\PY{+w}{ }\PY{n}{lastUs}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}
+\PY{k+kt}{bool}\PY{+w}{ }\PY{n}{sensorOk}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n+nb}{false}\PY{p}{;}
+\PY{k+kt}{uint16\PYZus{}t}\PY{+w}{ }\PY{n}{graphId}\PY{p}{,}\PY{+w}{ }\PY{n}{accId}\PY{p}{,}\PY{+w}{ }\PY{n}{filtId}\PY{p}{,}\PY{+w}{ }\PY{n}{stateId}\PY{p}{;}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{writeReg}\PY{p}{(}\PY{k+kt}{uint8\PYZus{}t}\PY{+w}{ }\PY{n}{reg}\PY{p}{,}\PY{+w}{ }\PY{k+kt}{uint8\PYZus{}t}\PY{+w}{ }\PY{n}{value}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{n}{Wire}\PY{p}{.}\PY{n}{beginTransmission}\PY{p}{(}\PY{n}{MPU\PYZus{}ADDR}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{Wire}\PY{p}{.}\PY{n}{write}\PY{p}{(}\PY{n}{reg}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{Wire}\PY{p}{.}\PY{n}{write}\PY{p}{(}\PY{n}{value}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{Wire}\PY{p}{.}\PY{n}{endTransmission}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{bool}\PY{+w}{ }\PY{n+nf}{readRegs}\PY{p}{(}\PY{k+kt}{uint8\PYZus{}t}\PY{+w}{ }\PY{n}{reg}\PY{p}{,}\PY{+w}{ }\PY{k+kt}{uint8\PYZus{}t}\PY{o}{*}\PY{+w}{ }\PY{n}{buf}\PY{p}{,}\PY{+w}{ }\PY{k+kt}{size\PYZus{}t}\PY{+w}{ }\PY{n}{n}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{n}{Wire}\PY{p}{.}\PY{n}{beginTransmission}\PY{p}{(}\PY{n}{MPU\PYZus{}ADDR}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{Wire}\PY{p}{.}\PY{n}{write}\PY{p}{(}\PY{n}{reg}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{Wire}\PY{p}{.}\PY{n}{endTransmission}\PY{p}{(}\PY{n+nb}{false}\PY{p}{)}\PY{+w}{ }\PY{o}{!}\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{)}\PY{+w}{ }\PY{k}{return}\PY{+w}{ }\PY{n+nb}{false}\PY{p}{;}
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{Wire}\PY{p}{.}\PY{n}{requestFrom}\PY{p}{(}\PY{n}{MPU\PYZus{}ADDR}\PY{p}{,}\PY{+w}{ }\PY{n}{n}\PY{p}{)}\PY{+w}{ }\PY{o}{!}\PY{o}{=}\PY{+w}{ }\PY{n}{n}\PY{p}{)}\PY{+w}{ }\PY{k}{return}\PY{+w}{ }\PY{n+nb}{false}\PY{p}{;}
+\PY{+w}{  }\PY{k}{for}\PY{+w}{ }\PY{p}{(}\PY{k+kt}{size\PYZus{}t}\PY{+w}{ }\PY{n}{i}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}\PY{+w}{ }\PY{n}{i}\PY{+w}{ }\PY{o}{\PYZlt{}}\PY{+w}{ }\PY{n}{n}\PY{p}{;}\PY{+w}{ }\PY{n}{i}\PY{o}{+}\PY{o}{+}\PY{p}{)}\PY{+w}{ }\PY{n}{buf}\PY{p}{[}\PY{n}{i}\PY{p}{]}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{Wire}\PY{p}{.}\PY{n}{read}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{k}{return}\PY{+w}{ }\PY{n+nb}{true}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{setup}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{n}{Serial}\PY{p}{.}\PY{n}{begin}\PY{p}{(}\PY{l+m+mi}{115200}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{Wire}\PY{p}{.}\PY{n}{begin}\PY{p}{(}\PY{l+m+mi}{8}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{9}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{writeReg}\PY{p}{(}\PY{l+m+mh}{0x6B}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{;}\PY{+w}{                      }\PY{c+c1}{// разбудить датчик}
+\PY{+w}{  }\PY{k+kt}{uint8\PYZus{}t}\PY{+w}{ }\PY{n}{id}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}
+\PY{+w}{  }\PY{n}{sensorOk}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{readRegs}\PY{p}{(}\PY{l+m+mh}{0x75}\PY{p}{,}\PY{+w}{ }\PY{o}{\PYZam{}}\PY{n}{id}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{1}\PY{p}{)}\PY{p}{;}\PY{+w}{      }\PY{c+c1}{// WHO\PYZus{}AM\PYZus{}I: ответ вообще есть?}
+\PY{+w}{  }\PY{n}{lastUs}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{micros}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+
+\PY{+w}{  }\PY{n}{WiFi}\PY{p}{.}\PY{n}{mode}\PY{p}{(}\PY{n}{WIFI\PYZus{}AP}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{o}{!}\PY{n}{WiFi}\PY{p}{.}\PY{n}{softAP}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{S3\PYZhy{}Tilt}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{lesson\PYZhy{}39\PYZhy{}demo}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{ }\PY{n}{Serial}\PY{p}{.}\PY{n}{println}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{AP failed}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{;}\PY{+w}{ }\PY{k}{return}\PY{p}{;}\PY{+w}{ }\PY{p}{\PYZcb{}}
+\PY{+w}{  }\PY{n}{stateId}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{ESPUI}\PY{p}{.}\PY{n}{label}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{Датчик}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{n}{ControlColor}\PY{o}{:}\PY{o}{:}\PY{n}{Peterriver}\PY{p}{,}\PY{+w}{ }\PY{n}{sensorOk}\PY{+w}{ }\PY{o}{?}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{отвечает}\PY{l+s}{\PYZdq{}}\PY{+w}{ }\PY{o}{:}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{НЕ ОТВЕЧАЕТ}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{accId}\PY{+w}{  }\PY{o}{=}\PY{+w}{ }\PY{n}{ESPUI}\PY{p}{.}\PY{n}{label}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{Угол по акселерометру, °}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{n}{ControlColor}\PY{o}{:}\PY{o}{:}\PY{n}{Alizarin}\PY{p}{,}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{0}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{filtId}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{ESPUI}\PY{p}{.}\PY{n}{label}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{Угол после фильтра, °}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{n}{ControlColor}\PY{o}{:}\PY{o}{:}\PY{n}{Emerald}\PY{p}{,}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{0}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{graphId}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{ESPUI}\PY{p}{.}\PY{n}{graph}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{Фильтрованный угол}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{n}{ControlColor}\PY{o}{:}\PY{o}{:}\PY{n}{Turquoise}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{ESPUI}\PY{p}{.}\PY{n}{begin}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{ESP32\PYZhy{}S3 tilt}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{Serial}\PY{p}{.}\PY{n}{println}\PY{p}{(}\PY{n}{WiFi}\PY{p}{.}\PY{n}{softAPIP}\PY{p}{(}\PY{p}{)}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{loop}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{k}{static}\PY{+w}{ }\PY{k+kt}{uint32\PYZus{}t}\PY{+w}{ }\PY{n}{lastShow}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}
+\PY{+w}{  }\PY{k+kt}{uint8\PYZus{}t}\PY{+w}{ }\PY{n}{b}\PY{p}{[}\PY{l+m+mi}{14}\PY{p}{]}\PY{p}{;}
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{o}{!}\PY{n}{readRegs}\PY{p}{(}\PY{l+m+mh}{0x3B}\PY{p}{,}\PY{+w}{ }\PY{n}{b}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{14}\PY{p}{)}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{           }\PY{c+c1}{// нет ответа: честно говорим об этом}
+\PY{+w}{    }\PY{n}{ESPUI}\PY{p}{.}\PY{n}{updateLabel}\PY{p}{(}\PY{n}{stateId}\PY{p}{,}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{НЕ ОТВЕЧАЕТ}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{;}
+\PY{+w}{    }\PY{n}{delay}\PY{p}{(}\PY{l+m+mi}{500}\PY{p}{)}\PY{p}{;}
+\PY{+w}{    }\PY{k}{return}\PY{p}{;}
+\PY{+w}{  }\PY{p}{\PYZcb{}}
+\PY{+w}{  }\PY{k+kt}{int16\PYZus{}t}\PY{+w}{ }\PY{n}{ay}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{p}{(}\PY{k+kt}{int16\PYZus{}t}\PY{p}{)}\PY{p}{(}\PY{p}{(}\PY{n}{b}\PY{p}{[}\PY{l+m+mi}{2}\PY{p}{]}\PY{+w}{ }\PY{o}{\PYZlt{}}\PY{o}{\PYZlt{}}\PY{+w}{ }\PY{l+m+mi}{8}\PY{p}{)}\PY{+w}{ }\PY{o}{|}\PY{+w}{ }\PY{n}{b}\PY{p}{[}\PY{l+m+mi}{3}\PY{p}{]}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{k+kt}{int16\PYZus{}t}\PY{+w}{ }\PY{n}{az}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{p}{(}\PY{k+kt}{int16\PYZus{}t}\PY{p}{)}\PY{p}{(}\PY{p}{(}\PY{n}{b}\PY{p}{[}\PY{l+m+mi}{4}\PY{p}{]}\PY{+w}{ }\PY{o}{\PYZlt{}}\PY{o}{\PYZlt{}}\PY{+w}{ }\PY{l+m+mi}{8}\PY{p}{)}\PY{+w}{ }\PY{o}{|}\PY{+w}{ }\PY{n}{b}\PY{p}{[}\PY{l+m+mi}{5}\PY{p}{]}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{k+kt}{int16\PYZus{}t}\PY{+w}{ }\PY{n}{gx}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{p}{(}\PY{k+kt}{int16\PYZus{}t}\PY{p}{)}\PY{p}{(}\PY{p}{(}\PY{n}{b}\PY{p}{[}\PY{l+m+mi}{8}\PY{p}{]}\PY{+w}{ }\PY{o}{\PYZlt{}}\PY{o}{\PYZlt{}}\PY{+w}{ }\PY{l+m+mi}{8}\PY{p}{)}\PY{+w}{ }\PY{o}{|}\PY{+w}{ }\PY{n}{b}\PY{p}{[}\PY{l+m+mi}{9}\PY{p}{]}\PY{p}{)}\PY{p}{;}
+
+\PY{+w}{  }\PY{k+kt}{uint32\PYZus{}t}\PY{+w}{ }\PY{n}{now}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{micros}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{k+kt}{float}\PY{+w}{ }\PY{n}{dt}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{p}{(}\PY{n}{now}\PY{+w}{ }\PY{o}{\PYZhy{}}\PY{+w}{ }\PY{n}{lastUs}\PY{p}{)}\PY{+w}{ }\PY{o}{/}\PY{+w}{ }\PY{l+m+mf}{1000000.0f}\PY{p}{;}
+\PY{+w}{  }\PY{n}{lastUs}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{now}\PY{p}{;}
+\PY{+w}{  }\PY{k+kt}{float}\PY{+w}{ }\PY{n}{accAngle}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{atan2}\PY{p}{(}\PY{n}{ay}\PY{p}{,}\PY{+w}{ }\PY{n}{az}\PY{p}{)}\PY{+w}{ }\PY{o}{*}\PY{+w}{ }\PY{l+m+mf}{57.2958f}\PY{p}{;}
+\PY{+w}{  }\PY{n}{angle}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mf}{0.98f}\PY{+w}{ }\PY{o}{*}\PY{+w}{ }\PY{p}{(}\PY{n}{angle}\PY{+w}{ }\PY{o}{+}\PY{+w}{ }\PY{p}{(}\PY{n}{gx}\PY{+w}{ }\PY{o}{/}\PY{+w}{ }\PY{l+m+mf}{131.0f}\PY{p}{)}\PY{+w}{ }\PY{o}{*}\PY{+w}{ }\PY{n}{dt}\PY{p}{)}\PY{+w}{ }\PY{o}{+}\PY{+w}{ }\PY{l+m+mf}{0.02f}\PY{+w}{ }\PY{o}{*}\PY{+w}{ }\PY{n}{accAngle}\PY{p}{;}
+
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{millis}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{o}{\PYZhy{}}\PY{+w}{ }\PY{n}{lastShow}\PY{+w}{ }\PY{o}{\PYZgt{}}\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{250}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{       }\PY{c+c1}{// фильтр считаем часто, показываем редко}
+\PY{+w}{    }\PY{n}{lastShow}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{millis}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+\PY{+w}{    }\PY{n}{ESPUI}\PY{p}{.}\PY{n}{updateLabel}\PY{p}{(}\PY{n}{stateId}\PY{p}{,}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{отвечает}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{;}
+\PY{+w}{    }\PY{n}{ESPUI}\PY{p}{.}\PY{n}{updateLabel}\PY{p}{(}\PY{n}{accId}\PY{p}{,}\PY{+w}{ }\PY{n}{String}\PY{p}{(}\PY{n}{accAngle}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{1}\PY{p}{)}\PY{p}{)}\PY{p}{;}
+\PY{+w}{    }\PY{n}{ESPUI}\PY{p}{.}\PY{n}{updateLabel}\PY{p}{(}\PY{n}{filtId}\PY{p}{,}\PY{+w}{ }\PY{n}{String}\PY{p}{(}\PY{n}{angle}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{1}\PY{p}{)}\PY{p}{)}\PY{p}{;}
+\PY{+w}{    }\PY{n}{ESPUI}\PY{p}{.}\PY{n}{addGraphPoint}\PY{p}{(}\PY{n}{graphId}\PY{p}{,}\PY{+w}{ }\PY{p}{(}\PY{k+kt}{int}\PY{p}{)}\PY{n}{angle}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{p}{\PYZcb{}}
+\PY{+w}{  }\PY{n}{delay}\PY{p}{(}\PY{l+m+mi}{10}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+\end{CodeVerbatim}

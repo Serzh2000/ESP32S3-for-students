@@ -1,13 +1,13 @@
 % =====================================================================
-\section{Последовательный порт: разговор с компьютером}
+\section{Последовательный порт: разговор с компьютером}\label{les:serial}
 % =====================================================================
 \lessonintro
   {понять, как устроен UART, научиться выводить отладочные сообщения и принимать команды с компьютера}
-  {урок 1: неблокирующий цикл, светодиод лампы}
-  {лампа включается и выключается командами \code{on} / \code{off} из Serial Monitor}
+  {урок 1: неблокирующий цикл, светодиод на \pin{4}}
+  {светодиод включается и выключается командами \code{on} / \code{off} из Serial Monitor}
   {то же, что в уроке 1; для последнего раздела --- второе устройство с UART (по желанию)}
 
-Прежде чем добавлять в лампу кнопки и датчики, нужен способ видеть, что происходит внутри
+Прежде чем подключать кнопки и датчики, нужен способ видеть, что происходит внутри
 программы. Этим способом будет последовательный порт: через него мы будем проверять
 результат в каждом следующем уроке.
 
@@ -40,22 +40,22 @@ UART --- асинхронный протокол: у приёмника и пе�
 У ESP32-S3 три аппаратных UART, а в Arduino им соответствуют объекты \code{Serial}:
 
 \begin{center}\small
-\begin{tabular}{@{}llll@{}}
+\begin{tabularx}{\textwidth}{@{}l l X l@{}}
 \toprule
 Объект Arduino & Контроллер & Выводы по умолчанию & Назначение \\
 \midrule
 \code{Serial} & USB CDC или UART0 & USB / 43, 44 & связь с компьютером \\
 \code{Serial0} & UART0 & TX 43, RX 44 & разъём «UART» на плате \\
-\code{Serial1} & UART1 & задаются в \code{begin()} & свободен \\
-\code{Serial2} & UART2 & задаются в \code{begin()} & свободен \\
+\code{Serial1} & UART1 & есть по умолчанию; лучше явно задать в \code{begin()} & свободен \\
+\code{Serial2} & UART2 & есть по умолчанию; лучше явно задать в \code{begin()} & свободен \\
 \bottomrule
-\end{tabular}
+\end{tabularx}
 \end{center}
 
 \begin{figure}[H]
 \centering
-\begin{tikzpicture}[node distance=10mm]
-  \node[blk,fill=blkmem,minimum width=30mm,minimum height=12mm] (pc) {Компьютер\\ \scriptsize Serial Monitor};
+\begin{tikzpicture}[node distance=10mm,scale=0.94,transform shape]
+  \node[blk,fill=blkper,minimum width=30mm,minimum height=12mm] (pc) {Компьютер\\ \scriptsize Serial Monitor};
   \node[blk,fill=blkcpu,minimum width=30mm,minimum height=12mm,right=40mm of pc] (esp) {ESP32-S3\\ \scriptsize \code{Serial}};
   \draw[arr,accent] ($(pc.east)+(0,0.25)$) -- node[above,font=\ttfamily\scriptsize]{"on\textbackslash n"} ($(esp.west)+(0,0.25)$);
   \draw[arr,okgreen] ($(esp.west)+(0,-0.25)$) -- node[below,font=\ttfamily\scriptsize]{"OK\textbackslash n"} ($(pc.east)+(0,-0.25)$);
@@ -78,15 +78,107 @@ UART --- асинхронный протокол: у приёмника и пе�
 заканчиваться символом \code{\textbackslash n}, и \code{readStringUntil()} сразу поймёт, где конец команды.
 \end{tip}
 
-\subsection{Шаг проекта 2: команды с компьютера}
+\subsection{Самостоятельный опыт: команды с компьютера}
 
-\progress{2}
+Сделайте отдельный скетч с LED на GPIO4: команда \code{on} включает его, \code{off} выключает.
+Затем добавьте \code{status}, которая печатает текущее состояние. Главное правило: если данных нет,
+функция чтения сразу возвращается и \code{loop()} продолжает работу.
 
-Добавляем к шагу 1 обработку команд. Функция \code{handleSerial()} ничего не ждёт: если данных нет,
-она сразу возвращается, и \code{loop()} продолжает крутить «пульс».
+\subsection{Учимся программировать: строки и цепочка условий}
 
-\codecap{Умная лампа, шаг 2 (полный скетч)}
-\codeinput{lamp_step2}
+Команда из Serial Monitor приходит как \textbf{строка} --- переменная типа \code{String}. Со строками можно
+делать много полезного:
+
+\begin{table}[H]
+\centering\small
+\begin{tabularx}{\textwidth}{@{}l X l@{}}
+\toprule
+Запись & Что делает & Пример для \code{cmd = "level 30"}\\
+\midrule
+\code{cmd == "on"} & сравнить строки & \code{false}\\
+\code{cmd.startsWith("level ")} & начинается ли с этих букв & \code{true}\\
+\code{cmd.substring(6)} & вырезать часть, начиная с символа № 6 & \code{"30"}\\
+\code{cmd.substring(6).toInt()} & превратить текст в число & \code{30}\\
+\code{cmd.length()} & длина строки & \code{8}\\
+\code{cmd.trim()} & убрать пробелы и переводы строки по краям & ---\\
+\code{"уровень " + String(30)} & склеить строки & \code{"уровень 30"}\\
+\bottomrule
+\end{tabularx}
+\caption{Полезные действия со строками \code{String}. Символы нумеруются с нуля, как ячейки массива}
+\end{table}
+
+Чтобы выбрать одно действие из многих, условия выстраивают в \textbf{цепочку} \code{if} --- \code{else if} ---
+\code{else}. Они проверяются по очереди сверху вниз, и выполняется только \emph{первая} подходящая ветка.
+Последний \code{else} ловит всё остальное --- например, опечатки.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=5mm and 12mm]
+  \node[fcio] (in) {прочитать строку cmd};
+  \node[fcdec,below=of in] (q1) {cmd == "on" ?};
+  \node[fcproc,right=of q1] (a1) {ledOn = true};
+  \node[fcdec,below=of q1] (q2) {cmd == "off" ?};
+  \node[fcproc,right=of q2] (a2) {ledOn = false};
+  \node[fcdec,below=of q2] (q3) {начинается\\ с "level " ?};
+  \node[fcproc,right=of q3] (a3) {level = число};
+  \node[fcproc,below=of q3] (a4) {напечатать\\ список команд};
+  \draw[arr] (in) -- (q1);
+  \foreach \q/\a in {q1/a1,q2/a2,q3/a3}{\draw[arr] (\q) -- node[above,font=\sffamily\scriptsize]{да} (\a);}
+  \draw[arr] (q1) -- node[left,font=\sffamily\scriptsize]{нет} (q2);
+  \draw[arr] (q2) -- node[left,font=\sffamily\scriptsize]{нет} (q3);
+  \draw[arr] (q3) -- node[left,font=\sffamily\scriptsize]{нет} (a4);
+\end{tikzpicture}
+\caption{Цепочка условий в функции \code{handleSerial()}: проверяем команды по очереди}
+\end{figure}
+
+Обрати внимание на \code{return} в начале функции: \code{if (!Serial.available()) return;} --- «если данных
+нет, сразу выйти из функции». Такой ранний выход избавляет от лишних фигурных скобок.
+
+\subsection{Практика: игра «Угадай число»}
+
+Теперь, когда мы умеем читать ввод с компьютера, сделаем игру. Плата загадывает случайное число от 1 до 100,
+а ты угадываешь, вводя числа в поле Serial Monitor (окончание строки --- \textsf{New Line}). Плата подсказывает
+«мало» или «много». Светодиод для игры не нужен.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=6mm]
+  \node[fcterm] (s) {начало};
+  \node[fcproc,below=of s] (new) {загадать число secret,\\ попытки = 0};
+  \node[fcio,below=of new] (in) {ввести guess};
+  \node[fcproc,below=of in] (t) {попытки = попытки + 1};
+  \node[fcdec,below=of t] (q1) {guess < secret ?};
+  \node[fcio,left=10mm of q1] (m1) {«мало!»};
+  \node[fcdec,below=9mm of q1] (q2) {guess > secret ?};
+  \node[fcio,left=10mm of q2] (m2) {«много!»};
+  \node[fcio,right=10mm of q2] (w) {«Угадал!»};
+  \draw[arr] (s) -- (new); \draw[arr] (new) -- (in); \draw[arr] (in) -- (t); \draw[arr] (t) -- (q1);
+  \draw[arr] (q1) -- node[above,font=\sffamily\scriptsize]{да} (m1);
+  \draw[arr] (q1) -- node[right,font=\sffamily\scriptsize]{нет} (q2);
+  \draw[arr] (q2) -- node[above,font=\sffamily\scriptsize]{да} (m2);
+  \draw[arr] (q2) -- node[above,font=\sffamily\scriptsize]{нет} (w);
+  \draw[arr] (m1.west) -- ++(-5mm,0) |- (in.west);
+  \draw[arr] (m2.west) -- ++(-10mm,0) |- (in.west);
+  \draw[arr] (w.east) -- ++(5mm,0) |- (new.east);
+\end{tikzpicture}
+\caption{Блок-схема игры «Угадай число»}
+\end{figure}
+
+\codecap{Игра «Угадай число»}
+\codeinput{l09_guess}
+
+Здесь встретилось всё, что мы уже знаем: глобальные \textbf{переменные} \code{secret} и \code{tries},
+\textbf{цепочка условий}, цикл \code{while}, который ждёт ввода, и \textbf{свои функции} \code{newGame()} и
+\code{readNumber()}. Новые готовые функции: \code{random(1, 101)} даёт случайное число от 1 до 100, а
+\code{Serial.parseInt()} читает из пришедших символов целое число.
+
+\begin{fact}
+Если угадывать с умом --- каждый раз называть середину оставшегося промежутка (50, потом 25 или 75\ldots), ---
+любое число от 1 до 100 угадывается не больше чем за 7 попыток, ведь $2^7 = 128 > 100$. Точно так же работает
+АЦП из урока~\hyperref[les:signals]{«Сигналы»}: он «угадывает» напряжение за 12 шагов. Этот способ называется
+\textbf{двоичным поиском}.
+\end{fact}
+
 
 \subsection{Второй UART: связь с другими устройствами}
 
@@ -113,6 +205,14 @@ UART1 и UART2 можно вывести почти на любые выводы
 используйте делитель или преобразователь уровней.
 \end{caution}
 
+\begin{trouble}
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Вместо текста «кракозябры»} --- скорость Serial Monitor не 115200.
+  \item \textbf{Ничего не выводится через разъём USB} --- включите \textsf{Tools → USB CDC On Boot: Enabled}.
+  \item \textbf{Команда не срабатывает} --- выберите окончание строки \textsf{New Line} и уберите лишние пробелы через \code{trim()}.
+\end{itemize}
+\end{trouble}
+
 \begin{summary}
 \begin{itemize}[leftmargin=*]
   \item UART передаёт байты кадрами: старт-бит, 8 бит данных, стоп-бит; скорости сторон должны совпадать.
@@ -121,10 +221,21 @@ UART1 и UART2 можно вывести почти на любые выводы
 \end{itemize}
 \end{summary}
 
+\begin{selfcheck}
+\begin{enumerate}
+  \item Почему UART называют асинхронным и что будет, если скорости сторон разные?
+  \item Как соединяют TX и RX двух устройств и зачем нужна общая земля?
+  \item Зачем перед чтением проверяют \code{Serial.available()}?
+\end{enumerate}
+\end{selfcheck}
+
 \begin{tasks}
 \begin{enumerate}
-  \item Добавьте в лампу команду \code{blink N}: мигнуть лампой N раз (без \code{delay()}, по образцу урока 1).
-  \item Выводите раз в 10 секунд строку с временем работы, не мешая приёму команд.
-  \item Соедините две платы по UART и передавайте команды лампе с другой платы.
+\item \lv{1} Выведите в Serial Monitor строку «Привет, ESP32-S3!» и время работы платы в секундах.
+\item \lv{1} Переключите скорость порта на 9600 в программе, но оставьте 115200 в мониторе. Что вы увидите? Верните настройки.
+\item \lv{2} Добавьте команды \code{on} и \code{off} для светодиода и ответ «OK» на каждую.
+\item \lv{2} Добавьте команду \code{blink N}: мигнуть светодиодом N раз без \code{delay()}.
+\item \lv{3} Выводите раз в 10 секунд строку со временем работы, не мешая приёму команд, и добавьте команду \code{help} со списком команд.
+\item \lv{4} Соедините две платы по UART (TX--RX крест-накрест, общая земля) и управляйте светодиодом одной платы командами с другой.
 \end{enumerate}
 \end{tasks}

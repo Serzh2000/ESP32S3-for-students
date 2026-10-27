@@ -1,0 +1,5 @@
+idf_component_register(SRCS "main.c" INCLUDE_DIRS "." REQUIRES ulp driver esp_system)
+set(ulp_app_name ulp_main)
+set(ulp_sources "ulp/main.c")
+set(ulp_exp_dep_srcs "main.c")
+ulp_embed_binary(${ulp_app_name} "${ulp_sources}" "${ulp_exp_dep_srcs}")

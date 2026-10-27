@@ -1,0 +1,27 @@
+\begin{CodeVerbatim}
+\PY{c+cp}{\PYZsh{}}\PY{c+cp}{include}\PY{+w}{ }\PY{c+cpf}{\PYZlt{}OneWire.h\PYZgt{}}
+\PY{c+cp}{\PYZsh{}}\PY{c+cp}{include}\PY{+w}{ }\PY{c+cpf}{\PYZlt{}DallasTemperature.h\PYZgt{}}
+
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{int}\PY{+w}{ }\PY{n}{ONE\PYZus{}WIRE\PYZus{}PIN}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{7}\PY{p}{;}\PY{+w}{               }\PY{c+c1}{// DATA датчика + подтяжка 4,7 кОм к 3V3}
+
+\PY{n}{OneWire}\PY{+w}{ }\PY{n+nf}{oneWire}\PY{p}{(}\PY{n}{ONE\PYZus{}WIRE\PYZus{}PIN}\PY{p}{)}\PY{p}{;}
+\PY{n}{DallasTemperature}\PY{+w}{ }\PY{n+nf}{sensors}\PY{p}{(}\PY{o}{\PYZam{}}\PY{n}{oneWire}\PY{p}{)}\PY{p}{;}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{setup}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{n}{Serial}\PY{p}{.}\PY{n}{begin}\PY{p}{(}\PY{l+m+mi}{115200}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{sensors}\PY{p}{.}\PY{n}{begin}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{sensors}\PY{p}{.}\PY{n}{setResolution}\PY{p}{(}\PY{l+m+mi}{12}\PY{p}{)}\PY{p}{;}\PY{+w}{              }\PY{c+c1}{// 12 бит: шаг 0,0625 °C, \PYZti{}750 мс на замер}
+\PY{+w}{  }\PY{n}{Serial}\PY{p}{.}\PY{n}{printf}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{Найдено датчиков: \PYZpc{}d}\PY{l+s+se}{\PYZbs{}n}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{n}{sensors}\PY{p}{.}\PY{n}{getDeviceCount}\PY{p}{(}\PY{p}{)}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{loop}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{n}{sensors}\PY{p}{.}\PY{n}{requestTemperatures}\PY{p}{(}\PY{p}{)}\PY{p}{;}\PY{+w}{          }\PY{c+c1}{// запустить замер (ждёт окончания)}
+\PY{+w}{  }\PY{k+kt}{float}\PY{+w}{ }\PY{n}{t}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{sensors}\PY{p}{.}\PY{n}{getTempCByIndex}\PY{p}{(}\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{;}\PY{+w}{   }\PY{c+c1}{// первый датчик на шине}
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{t}\PY{+w}{ }\PY{o}{=}\PY{o}{=}\PY{+w}{ }\PY{n}{DEVICE\PYZus{}DISCONNECTED\PYZus{}C}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{       }\PY{c+c1}{// \PYZhy{}127: датчик не отвечает}
+\PY{+w}{    }\PY{n}{Serial}\PY{p}{.}\PY{n}{println}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{DS18B20 не отвечает: проверьте подтяжку и провода}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{p}{\PYZcb{}}\PY{+w}{ }\PY{k}{else}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{    }\PY{n}{Serial}\PY{p}{.}\PY{n}{printf}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{Температура: \PYZpc{}.2f °C}\PY{l+s+se}{\PYZbs{}n}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{n}{t}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{p}{\PYZcb{}}
+\PY{+w}{  }\PY{n}{delay}\PY{p}{(}\PY{l+m+mi}{2000}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+\end{CodeVerbatim}

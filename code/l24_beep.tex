@@ -1,0 +1,18 @@
+\begin{CodeVerbatim}
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{int}\PY{+w}{ }\PY{n}{BUZZER\PYZus{}PIN}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{21}\PY{p}{;}\PY{+w}{   }\PY{c+c1}{// пассивная пьезопищалка между GPIO21 и GND}
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{int}\PY{+w}{ }\PY{n}{BTN\PYZus{}PIN}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{5}\PY{p}{;}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{setup}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{n}{pinMode}\PY{p}{(}\PY{n}{BTN\PYZus{}PIN}\PY{p}{,}\PY{+w}{ }\PY{n}{INPUT\PYZus{}PULLUP}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{loop}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{k}{static}\PY{+w}{ }\PY{k+kt}{bool}\PY{+w}{ }\PY{n}{wasPressed}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n+nb}{false}\PY{p}{;}
+\PY{+w}{  }\PY{k+kt}{bool}\PY{+w}{ }\PY{n}{pressed}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{p}{(}\PY{n}{digitalRead}\PY{p}{(}\PY{n}{BTN\PYZus{}PIN}\PY{p}{)}\PY{+w}{ }\PY{o}{=}\PY{o}{=}\PY{+w}{ }\PY{n}{LOW}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{pressed}\PY{+w}{ }\PY{o}{\PYZam{}}\PY{o}{\PYZam{}}\PY{+w}{ }\PY{o}{!}\PY{n}{wasPressed}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{    }\PY{n}{tone}\PY{p}{(}\PY{n}{BUZZER\PYZus{}PIN}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{1000}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{150}\PY{p}{)}\PY{p}{;}\PY{+w}{         }\PY{c+c1}{// 1000 Гц на 150 мс: короткий «бип»}
+\PY{+w}{  }\PY{p}{\PYZcb{}}
+\PY{+w}{  }\PY{n}{wasPressed}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{pressed}\PY{p}{;}
+\PY{+w}{  }\PY{n}{delay}\PY{p}{(}\PY{l+m+mi}{20}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+\end{CodeVerbatim}

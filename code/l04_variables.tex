@@ -1,0 +1,32 @@
+\begin{CodeVerbatim}
+\PY{c+c1}{// Переменные: коробки с названиями}
+\PY{k+kt}{int}\PY{+w}{ }\PY{n}{apples}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{5}\PY{p}{;}\PY{+w}{                    }\PY{c+c1}{// целое число}
+\PY{k+kt}{float}\PY{+w}{ }\PY{n}{temperature}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mf}{23.5}\PY{p}{;}\PY{+w}{          }\PY{c+c1}{// дробное число (точка вместо запятой!)}
+\PY{k+kt}{bool}\PY{+w}{ }\PY{n}{isOpen}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n+nb}{true}\PY{p}{;}\PY{+w}{                }\PY{c+c1}{// логическое: true (да) или false (нет)}
+\PY{n}{String}\PY{+w}{ }\PY{n}{name}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{Маша}\PY{l+s}{\PYZdq{}}\PY{p}{;}\PY{+w}{              }\PY{c+c1}{// строка текста}
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{int}\PY{+w}{ }\PY{n}{DAYS\PYZus{}IN\PYZus{}WEEK}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{7}\PY{p}{;}\PY{+w}{        }\PY{c+c1}{// константа: менять нельзя}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{setup}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{n}{Serial}\PY{p}{.}\PY{n}{begin}\PY{p}{(}\PY{l+m+mi}{115200}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{delay}\PY{p}{(}\PY{l+m+mi}{500}\PY{p}{)}\PY{p}{;}
+
+\PY{+w}{  }\PY{n}{Serial}\PY{p}{.}\PY{n}{print}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{Яблок: }\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{Serial}\PY{p}{.}\PY{n}{println}\PY{p}{(}\PY{n}{apples}\PY{p}{)}\PY{p}{;}\PY{+w}{          }\PY{c+c1}{// 5}
+
+\PY{+w}{  }\PY{n}{apples}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{apples}\PY{+w}{ }\PY{o}{+}\PY{+w}{ }\PY{l+m+mi}{3}\PY{p}{;}\PY{+w}{             }\PY{c+c1}{// взять старое значение, прибавить 3, положить обратно}
+\PY{+w}{  }\PY{n}{Serial}\PY{p}{.}\PY{n}{print}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{Стало яблок: }\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{Serial}\PY{p}{.}\PY{n}{println}\PY{p}{(}\PY{n}{apples}\PY{p}{)}\PY{p}{;}\PY{+w}{          }\PY{c+c1}{// 8}
+
+\PY{+w}{  }\PY{n}{apples}\PY{o}{+}\PY{o}{+}\PY{p}{;}\PY{+w}{                        }\PY{c+c1}{// то же, что apples = apples + 1}
+\PY{+w}{  }\PY{n}{Serial}\PY{p}{.}\PY{n}{println}\PY{p}{(}\PY{n}{apples}\PY{p}{)}\PY{p}{;}\PY{+w}{          }\PY{c+c1}{// 9}
+
+\PY{+w}{  }\PY{n}{Serial}\PY{p}{.}\PY{n}{println}\PY{p}{(}\PY{l+m+mi}{7}\PY{+w}{ }\PY{o}{/}\PY{+w}{ }\PY{l+m+mi}{2}\PY{p}{)}\PY{p}{;}\PY{+w}{           }\PY{c+c1}{// 3   \PYZhy{}\PYZhy{} целые числа делятся нацело!}
+\PY{+w}{  }\PY{n}{Serial}\PY{p}{.}\PY{n}{println}\PY{p}{(}\PY{l+m+mi}{7}\PY{+w}{ }\PY{o}{\PYZpc{}}\PY{+w}{ }\PY{l+m+mi}{2}\PY{p}{)}\PY{p}{;}\PY{+w}{           }\PY{c+c1}{// 1   \PYZhy{}\PYZhy{} остаток от деления}
+\PY{+w}{  }\PY{n}{Serial}\PY{p}{.}\PY{n}{println}\PY{p}{(}\PY{l+m+mf}{7.0}\PY{+w}{ }\PY{o}{/}\PY{+w}{ }\PY{l+m+mi}{2}\PY{p}{)}\PY{p}{;}\PY{+w}{         }\PY{c+c1}{// 3.50 \PYZhy{}\PYZhy{} а дробные \PYZhy{}\PYZhy{} как обычно}
+
+\PY{+w}{  }\PY{n}{Serial}\PY{p}{.}\PY{n}{println}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{Привет, }\PY{l+s}{\PYZdq{}}\PY{+w}{ }\PY{o}{+}\PY{+w}{ }\PY{n}{name}\PY{+w}{ }\PY{o}{+}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{!}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{Serial}\PY{p}{.}\PY{n}{printf}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{На улице \PYZpc{}.1f градусов}\PY{l+s+se}{\PYZbs{}n}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{n}{temperature}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{loop}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{p}{\PYZcb{}}
+\end{CodeVerbatim}

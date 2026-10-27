@@ -1,0 +1,29 @@
+\begin{CodeVerbatim}
+\PY{c+cp}{\PYZsh{}}\PY{c+cp}{include}\PY{+w}{ }\PY{c+cpf}{\PYZdq{}USB.h\PYZdq{}}
+\PY{c+cp}{\PYZsh{}}\PY{c+cp}{include}\PY{+w}{ }\PY{c+cpf}{\PYZdq{}USBHIDMouse.h\PYZdq{}}
+
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{int}\PY{+w}{ }\PY{n}{BUTTON\PYZus{}PIN}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{5}\PY{p}{;}\PY{+w}{                 }\PY{c+c1}{// пока кнопка нажата, курсор «рисует» квадрат}
+\PY{n}{USBHIDMouse}\PY{+w}{ }\PY{n}{Mouse}\PY{p}{;}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{setup}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{n}{pinMode}\PY{p}{(}\PY{n}{BUTTON\PYZus{}PIN}\PY{p}{,}\PY{+w}{ }\PY{n}{INPUT\PYZus{}PULLUP}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{Mouse}\PY{p}{.}\PY{n}{begin}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{USB}\PY{p}{.}\PY{n}{begin}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{loop}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{digitalRead}\PY{p}{(}\PY{n}{BUTTON\PYZus{}PIN}\PY{p}{)}\PY{+w}{ }\PY{o}{!}\PY{o}{=}\PY{+w}{ }\PY{n}{LOW}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{   }\PY{c+c1}{// кнопка отпущена \PYZhy{}\PYZhy{} ничего не делаем}
+\PY{+w}{    }\PY{n}{delay}\PY{p}{(}\PY{l+m+mi}{20}\PY{p}{)}\PY{p}{;}
+\PY{+w}{    }\PY{k}{return}\PY{p}{;}
+\PY{+w}{  }\PY{p}{\PYZcb{}}
+\PY{+w}{  }\PY{k}{const}\PY{+w}{ }\PY{k+kt}{int8\PYZus{}t}\PY{+w}{ }\PY{n}{dx}\PY{p}{[}\PY{l+m+mi}{4}\PY{p}{]}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{ }\PY{l+m+mi}{5}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{\PYZhy{}5}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{0}\PY{+w}{ }\PY{p}{\PYZcb{}}\PY{p}{;}\PY{+w}{   }\PY{c+c1}{// вправо, вниз, влево, вверх}
+\PY{+w}{  }\PY{k}{const}\PY{+w}{ }\PY{k+kt}{int8\PYZus{}t}\PY{+w}{ }\PY{n}{dy}\PY{p}{[}\PY{l+m+mi}{4}\PY{p}{]}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{5}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{\PYZhy{}5}\PY{+w}{ }\PY{p}{\PYZcb{}}\PY{p}{;}
+\PY{+w}{  }\PY{k}{for}\PY{+w}{ }\PY{p}{(}\PY{k+kt}{int}\PY{+w}{ }\PY{n}{side}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}\PY{+w}{ }\PY{n}{side}\PY{+w}{ }\PY{o}{\PYZlt{}}\PY{+w}{ }\PY{l+m+mi}{4}\PY{p}{;}\PY{+w}{ }\PY{n}{side}\PY{o}{+}\PY{o}{+}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{    }\PY{k}{for}\PY{+w}{ }\PY{p}{(}\PY{k+kt}{int}\PY{+w}{ }\PY{n}{i}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}\PY{+w}{ }\PY{n}{i}\PY{+w}{ }\PY{o}{\PYZlt{}}\PY{+w}{ }\PY{l+m+mi}{20}\PY{p}{;}\PY{+w}{ }\PY{n}{i}\PY{o}{+}\PY{o}{+}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{      }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{digitalRead}\PY{p}{(}\PY{n}{BUTTON\PYZus{}PIN}\PY{p}{)}\PY{+w}{ }\PY{o}{!}\PY{o}{=}\PY{+w}{ }\PY{n}{LOW}\PY{p}{)}\PY{+w}{ }\PY{k}{return}\PY{p}{;}\PY{+w}{   }\PY{c+c1}{// отпустили \PYZhy{}\PYZhy{} сразу остановиться}
+\PY{+w}{      }\PY{n}{Mouse}\PY{p}{.}\PY{n}{move}\PY{p}{(}\PY{n}{dx}\PY{p}{[}\PY{n}{side}\PY{p}{]}\PY{p}{,}\PY{+w}{ }\PY{n}{dy}\PY{p}{[}\PY{n}{side}\PY{p}{]}\PY{p}{)}\PY{p}{;}
+\PY{+w}{      }\PY{n}{delay}\PY{p}{(}\PY{l+m+mi}{10}\PY{p}{)}\PY{p}{;}
+\PY{+w}{    }\PY{p}{\PYZcb{}}
+\PY{+w}{  }\PY{p}{\PYZcb{}}
+\PY{p}{\PYZcb{}}
+\end{CodeVerbatim}

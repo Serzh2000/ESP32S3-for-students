@@ -6,36 +6,58 @@
 \RequirePackage{polyglossia}
 \setdefaultlanguage{russian}
 \setotherlanguage{english}
-\setmainfont{Cambria}
-\setsansfont{Calibri}
-\setmonofont{Consolas}[Scale=0.92]
-\newfontfamily\cyrillicfont{Cambria}[Ligatures=TeX]
-\newfontfamily\cyrillicfontsf{Calibri}[Ligatures=TeX]
-\newfontfamily\cyrillicfonttt{Consolas}[Scale=0.92]
+% Шрифты Windows (Cambria, Calibri, Consolas); если их нет --- свободные PT Serif, PT Sans, DejaVu Sans Mono
+\IfFontExistsTF{Cambria}{\def\coursemain{Cambria}}{\def\coursemain{PT Serif}}
+\IfFontExistsTF{Calibri}{\def\coursesans{Calibri}}{\def\coursesans{PT Sans}}
+\IfFontExistsTF{Consolas}{\def\coursemono{Consolas}}{\def\coursemono{DejaVu Sans Mono}}
+\setmainfont{\coursemain}
+\setsansfont{\coursesans}
+\setmonofont{\coursemono}[Scale=0.92]
+\newfontfamily\cyrillicfont{\coursemain}[Ligatures=TeX]
+\newfontfamily\cyrillicfontsf{\coursesans}[Ligatures=TeX]
+\newfontfamily\cyrillicfonttt{\coursemono}[Scale=0.92]
+
+% Символы, которых нет в части шрифтов
+\RequirePackage{newunicodechar}
+\newunicodechar{→}{\ensuremath{\rightarrow}}
+\newunicodechar{■}{\rule[0.1ex]{0.9ex}{0.9ex}}
 
 % ---------- Вёрстка ----------
 \RequirePackage[margin=2.2cm,top=2.4cm,bottom=2.4cm]{geometry}
+\AtBeginDocument{\setlength{\parindent}{0pt}} % абзацы без красной строки во всей книге
 \RequirePackage{microtype}
 \RequirePackage{amsmath}
-\RequirePackage{booktabs,tabularx,array}
+\RequirePackage{booktabs,tabularx,array,xltabular}
 \RequirePackage{enumitem}
 \setlist{itemsep=2pt,topsep=4pt}
 \RequirePackage{xcolor}
 \RequirePackage{titlesec}
 \RequirePackage{fancyhdr}
+\RequirePackage{lastpage}
 \RequirePackage[hidelinks]{hyperref}
+\hypersetup{pdftitle={ESP32-S3: практический курс программирования микроконтроллеров},
+  pdfauthor={Корягин Сергей Андреевич; Полякова Полина Алексеевна}}
 \RequirePackage{float}
 \RequirePackage{caption}
 \captionsetup{font=small,labelfont={bf,sf}}
+\RequirePackage{multicol}
+\RequirePackage{subcaption}
+\renewcommand{\thesubfigure}{\ifcase\value{subfigure}\or а\or б\or в\or г\or д\fi}
+\DeclareCaptionLabelFormat{rparen}{#2)}
+\captionsetup[subfigure]{labelformat=rparen,labelsep=space,font=small}
+\renewcommand{\p@subfigure}{\thefigure}
 
 % ---------- Графика ----------
 \RequirePackage{tikz}
-\usetikzlibrary{arrows.meta,positioning,calc,shapes.geometric,shapes.misc,fit,backgrounds,decorations.pathreplacing}
+\usetikzlibrary{arrows.meta,positioning,calc,shapes.geometric,shapes.misc,fit,backgrounds,decorations.pathreplacing,fadings}
+\RequirePackage{esp32s3-bb}
 \RequirePackage[siunitx,RPvoltages]{circuitikz}
 \RequirePackage{pgfplots}
 \pgfplotsset{compat=1.18}
+\usepgfplotslibrary{groupplots}
 \sisetup{output-decimal-marker={,},range-phrase={\,--\,},range-units=single}
 \RequirePackage{etoolbox,needspace}
+\RequirePackage{pifont}
 \pretocmd{\section}{\needspace{18\baselineskip}}{}{}
 \RequirePackage[most]{tcolorbox}
 
@@ -60,7 +82,7 @@
 
 \pagestyle{fancy}
 \fancyhf{}
-\fancyhead[L]{\sffamily\small\color{gray}Базовый курс ESP32-S3}
+\fancyhead[L]{\sffamily\small\color{gray}ESP32-S3: практический курс}
 \fancyhead[R]{\sffamily\small\color{gray}\nouppercase{\leftmark}}
 \fancyfoot[C]{\sffamily\small\thepage}
 \renewcommand{\headrulewidth}{0.4pt}
@@ -71,16 +93,22 @@
 \RequirePackage{fvextra}
 \RequirePackage{newfloat}
 \DeclareFloatingEnvironment[name=Листинг,fileext=lol]{listing}
+% номера рисунков, таблиц и листингов --- по урокам: «Рис. 7.2»
+\counterwithin{figure}{section}
+\counterwithin{table}{section}
+\counterwithin{listing}{section}
 \input{code/pygments-style.tex}
+\newcommand{\coursecodefont}{\small}
 \DefineVerbatimEnvironment{CodeVerbatim}{Verbatim}{
-  commandchars=\\\{\}, fontsize=\small, numbers=none,
+  commandchars=\\\{\}, fontsize=\coursecodefont, numbers=left, numbersep=6pt,
   bgcolor=codebg, breaklines, tabsize=2,
 }
-\newcommand{\codeinput}[1]{\input{code/#1.tex}}
+\renewcommand{\theFancyVerbLine}{\textcolor{gray!70}{\scriptsize\arabic{FancyVerbLine}}}
+\newcommand{\codeinput}[2][\small]{\begingroup\def\coursecodefont{#1}\input{code/#2.tex}\endgroup}
 \newcommand{\codecap}[1]{\needspace{8\baselineskip}\captionof{listing}{#1}}
 
 % ---------- Боксы ----------
-\newtcolorbox{introbox}{enhanced,colback=accent!5,colframe=accent,boxrule=0.8pt,arc=2pt,
+\newtcolorbox{introbox}{enhanced,breakable,colback=accent!5,colframe=accent,boxrule=0.8pt,arc=2pt,
   left=6pt,right=6pt,top=5pt,bottom=5pt}
 \newcommand{\introlabel}[1]{\textsf{\bfseries\textcolor{accent}{#1}}}
 \newcommand{\lessonintro}[4]{%
@@ -89,18 +117,36 @@
 \begin{tabularx}{\linewidth}{@{}p{27mm} X@{}}
 \introlabel{Цель} & #1\\
 \introlabel{Опирается на} & #2\\
-\introlabel{Шаг проекта} & #3\\
+\introlabel{Результат} & #3\\
 \introlabel{Понадобится} & #4
 \end{tabularx}
 \end{introbox}}
-\newtcolorbox{caution}{enhanced,colback=warn!8,colframe=warn,fonttitle=\sffamily\bfseries,
+\newtcolorbox{caution}{enhanced,breakable,colback=warn!8,colframe=warn,fonttitle=\sffamily\bfseries,
   title=Осторожно,boxrule=0.8pt,arc=2pt,left=6pt,right=6pt}
-\newtcolorbox{tip}{enhanced,colback=gray!6,colframe=gray!60,fonttitle=\sffamily\bfseries,
+\newtcolorbox{tip}{enhanced,breakable,colback=gray!6,colframe=gray!60,fonttitle=\sffamily\bfseries,
   title=Совет,boxrule=0.8pt,arc=2pt,left=6pt,right=6pt}
-\newtcolorbox{summary}{enhanced,colback=okgreen!5,colframe=okgreen,fonttitle=\sffamily\bfseries,
+\newtcolorbox{summary}{enhanced,breakable,colback=okgreen!5,colframe=okgreen,fonttitle=\sffamily\bfseries,
   title=Итоги урока,boxrule=0.8pt,arc=2pt,left=6pt,right=6pt}
-\newtcolorbox{tasks}{enhanced,colback=esp!4,colframe=esp,fonttitle=\sffamily\bfseries,
-  title=Задания для самостоятельной работы,boxrule=0.8pt,arc=2pt,left=6pt,right=6pt}
+\newtcolorbox{trouble}{enhanced,breakable,colback=gray!4,colframe=espdark!70,fonttitle=\sffamily\bfseries,
+  title=Если не работает,boxrule=0.8pt,arc=2pt,left=6pt,right=6pt}
+\newtcolorbox{selfcheck}{enhanced,breakable,colback=accent!4,colframe=accent!70,fonttitle=\sffamily\bfseries,
+  title=Проверь себя,boxrule=0.8pt,arc=2pt,left=6pt,right=6pt}
+% Уровень задания: \lv{1} --- повторить, \lv{2} --- изменить, \lv{3} --- создать своё, \lv{4} --- вызов
+\makeatletter % pygments-style.tex выше заканчивается \makeatother
+\newcommand{\lv}[1]{\textcolor{esp}{\footnotesize\ifcase#1\or\ding{72}\or\ding{72}\ding{72}\or
+  \ding{72}\ding{72}\ding{72}\or\ding{72}\ding{72}\ding{72}\ding{72}\fi}\enspace}
+\newtcolorbox{tasks}{enhanced,breakable,colback=esp!4,colframe=esp,fonttitle=\sffamily\bfseries,
+  title=Задания для самостоятельной работы,boxrule=0.8pt,arc=2pt,left=6pt,right=6pt,
+  before upper={\setlist[enumerate,1]{label=\arabic*.,leftmargin=*,itemsep=3pt}%
+    {\footnotesize\sffamily\textcolor{esp}{\ding{72}}~повторить\quad
+     \textcolor{esp}{\ding{72}\ding{72}}~изменить\quad
+     \textcolor{esp}{\ding{72}\ding{72}\ding{72}}~создать своё\quad
+     \textcolor{esp}{\ding{72}\ding{72}\ding{72}\ding{72}}~вызов\par\smallskip}}}
+
+% Оглавление: места хватает номерам вида 20.10 и страницам из трёх цифр
+\renewcommand{\@pnumwidth}{2em}
+\renewcommand{\@tocrmarg}{3em}
+\renewcommand*{\l@subsection}{\@dottedtocline{2}{1.5em}{3.2em}}
 
 \newcommand{\code}[1]{\texttt{#1}}
 \newcommand{\pin}[1]{\textsf{\bfseries GPIO#1}}
@@ -109,21 +155,31 @@
   blk/.style={draw,rounded corners=2pt,align=center,font=\sffamily\small,minimum height=8mm,inner sep=3pt},
   arr/.style={-{Stealth[length=2.2mm]},thick},
   darr/.style={{Stealth[length=2.2mm]}-{Stealth[length=2.2mm]},thick},
+  % блок-схемы
+  fcterm/.style={draw,thick,rounded corners=3mm,fill=blkrtc,font=\sffamily\small,minimum height=7mm,inner xsep=4mm},
+  fcproc/.style={draw,thick,fill=blkmem,font=\sffamily\small,minimum height=8mm,align=center,inner xsep=3mm},
+  fcdec/.style={draw,thick,diamond,aspect=2.2,fill=blkper,font=\sffamily\small,align=center,inner sep=1pt},
+  fcio/.style={draw,thick,trapezium,trapezium left angle=70,trapezium right angle=110,fill=blkrf,font=\sffamily\small,align=center,minimum height=8mm},
 }
 
-% Индикатор прогресса проекта: \progress{номер шага}
-\newcommand{\progress}[1]{%
-\begin{center}
-\begin{tikzpicture}[x=11mm]
-  \node[anchor=east,font=\sffamily\scriptsize\bfseries,text=okgreen] at (0.85,0.17) {Умная лампа:};
-  \foreach \i/\l in {1/LED,2/Serial,3/кнопка,4/ШИМ,5/ручка,6/экран,7/задачи,8/Wi-Fi,9/сон}{
-    \ifnum\i>#1\relax \def\c{white}\def\t{gray}\else\def\c{okgreen!55}\def\t{black}\fi
-    \draw[fill=\c,draw=okgreen,rounded corners=1pt] (\i,0) rectangle ++(0.9,0.34);
-    \node[font=\sffamily\tiny,text=\t] at (\i+0.45,0.17) {\i};
-    \node[font=\sffamily\tiny,text=\t] at (\i+0.45,-0.18) {\l};
-  }
-\end{tikzpicture}
-\end{center}}
+% Врезка «Это интересно»
+\newtcolorbox{fact}{enhanced,breakable,colback=blkrtc!35,colframe=blkrtc!50!black,fonttitle=\sffamily\bfseries,
+  title=Это интересно,boxrule=0.8pt,arc=2pt,left=6pt,right=6pt}
+
+% Рисунок из двух частей: монтажная схема (на макетной плате) и принципиальная схема.
+% \begin{twoview}{подпись}{метка} <монтажная> \nextview <принципиальная> \end{twoview}
+\newenvironment{twoview}[2]{%
+  \def\twoviewcap{#1}\def\twoviewlabel{#2}%
+  \begin{figure}[H]\centering
+  \begin{subfigure}{\textwidth}\centering}{%
+  \caption{Принципиальная электрическая схема}
+  \end{subfigure}
+  \caption{\twoviewcap}\label{\twoviewlabel}
+  \end{figure}}
+\newcommand{\nextview}{%
+  \caption{Монтажная схема: как собрать на макетной плате}
+  \end{subfigure}\par\medskip
+  \begin{subfigure}{\textwidth}\centering}
 
 % ---------- Приложения ----------
 \newcommand{\courseappendix}{%

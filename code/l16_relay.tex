@@ -1,0 +1,20 @@
+\begin{CodeVerbatim}
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{int}\PY{+w}{ }\PY{n}{RELAY\PYZus{}PIN}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{15}\PY{p}{;}\PY{+w}{                 }\PY{c+c1}{// вход IN модуля реле}
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{bool}\PY{+w}{ }\PY{n}{ACTIVE\PYZus{}LOW}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n+nb}{true}\PY{p}{;}\PY{+w}{             }\PY{c+c1}{// у большинства модулей включает уровень LOW}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{relay}\PY{p}{(}\PY{k+kt}{bool}\PY{+w}{ }\PY{n}{on}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{n}{digitalWrite}\PY{p}{(}\PY{n}{RELAY\PYZus{}PIN}\PY{p}{,}\PY{+w}{ }\PY{p}{(}\PY{n}{on}\PY{+w}{ }\PY{o}{=}\PY{o}{=}\PY{+w}{ }\PY{n}{ACTIVE\PYZus{}LOW}\PY{p}{)}\PY{+w}{ }\PY{o}{?}\PY{+w}{ }\PY{n}{LOW}\PY{+w}{ }\PY{o}{:}\PY{+w}{ }\PY{n}{HIGH}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{setup}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{n}{pinMode}\PY{p}{(}\PY{n}{RELAY\PYZus{}PIN}\PY{p}{,}\PY{+w}{ }\PY{n}{OUTPUT}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{relay}\PY{p}{(}\PY{n+nb}{false}\PY{p}{)}\PY{p}{;}\PY{+w}{                           }\PY{c+c1}{// сразу выключить: для модуля LOW \PYZhy{}\PYZhy{} это «включено»}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{loop}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{n}{relay}\PY{p}{(}\PY{n+nb}{true}\PY{p}{)}\PY{p}{;}\PY{+w}{                            }\PY{c+c1}{// щелчок: контакты замкнулись}
+\PY{+w}{  }\PY{n}{delay}\PY{p}{(}\PY{l+m+mi}{2000}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{relay}\PY{p}{(}\PY{n+nb}{false}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{delay}\PY{p}{(}\PY{l+m+mi}{3000}\PY{p}{)}\PY{p}{;}\PY{+w}{                            }\PY{c+c1}{// реле не переключают чаще раза в секунду}
+\PY{p}{\PYZcb{}}
+\end{CodeVerbatim}

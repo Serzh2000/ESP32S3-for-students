@@ -1,56 +1,149 @@
-% Титульная страница
-% ================= Титул =================
+% ================= Титульный лист =================
+\definecolor{pcbA}{HTML}{0E1F2F}
+\definecolor{pcbB}{HTML}{1C3B57}
+\definecolor{trace}{HTML}{E0A64B}
+\definecolor{netcol}{HTML}{3FC1C9}
+\definecolor{syscol}{HTML}{E5736A}
 \begin{titlepage}
 \centering
-\vspace*{2cm}
-{\sffamily\Huge\bfseries\color{espdark} ESP32-S3\par}
-\vspace{4mm}
-{\sffamily\LARGE Базовый курс в десяти уроках\par}
-\vspace{2mm}
-{\sffamily\large со сквозным проектом «умная лампа»\par}
-\vspace{1.2cm}
-\begin{tikzpicture}[scale=1.05]
-  \fill[rounded corners=3pt,fill=black!80] (-3.6,-1.6) rectangle (3.6,1.6);
-  \foreach \x in {-3.3,-2.9,...,3.4} {
-    \fill[yellow!70!orange] (\x-0.08,1.35) rectangle (\x+0.08,1.5);
-    \fill[yellow!70!orange] (\x-0.08,-1.5) rectangle (\x+0.08,-1.35);
-  }
-  \fill[gray!55,rounded corners=1pt] (-0.4,-1.0) rectangle (2.9,1.0);
-  \draw[gray!20,line width=0.6pt] (2.3,-0.8) -- ++(0,1.6);
-  \foreach \y in {-0.6,-0.2,0.2,0.6}{\draw[gray!20,line width=0.6pt] (2.3,\y) -- ++(0.45,0);}
-  \node[font=\sffamily\bfseries\small,white] at (0.95,0.15) {ESP32-S3};
-  \node[font=\sffamily\tiny,white] at (0.95,-0.25) {WROOM-1};
-  \fill[gray!70] (-3.9,0.35) rectangle (-3.3,0.95);
-  \fill[gray!70] (-3.9,-0.95) rectangle (-3.3,-0.35);
-  \node[font=\sffamily\tiny,white] at (-2.8,0.65) {UART};
-  \node[font=\sffamily\tiny,white] at (-2.8,-0.65) {USB};
-  \fill[white] (-1.6,0.1) rectangle (-1.2,0.5);
-  \fill[esp!60,opacity=0.6] (-1.4,0.3) circle (0.45);
-  \node[font=\sffamily\tiny,white] at (-1.4,-0.2) {RGB};
-  \foreach \s/\l in {-2.0/BOOT,-0.9/RST}{
-    \fill[gray!40] (\s-0.2,-1.15) rectangle (\s+0.2,-0.75);
-    \node[font=\sffamily\tiny,white] at (\s,-0.55) {\l};
-  }
-\end{tikzpicture}
-\vspace{1.2cm}
-
-\begin{minipage}{0.8\textwidth}
-\sffamily\large
-\begin{enumerate}[label=\arabic*.,start=0,itemsep=1pt]
-  \item Знакомство с чипом и настройка среды
-  \item Цифровой выход: светодиод
-  \item Последовательный порт: разговор с компьютером
-  \item Цифровой вход: кнопки и прерывания
-  \item ШИМ (LEDC): плавная яркость
-  \item АЦП: читаем аналоговые сигналы
-  \item Шина I\textsuperscript{2}C: дисплей
-  \item FreeRTOS: задачи и синхронизация
-  \item Wi-Fi и веб-сервер
-  \item Сон и энергосбережение
-\end{enumerate}
-\end{minipage}
+% ---------- шапка учреждения ----------
+{\rmfamily\normalsize
+Муниципальное общеобразовательное бюджетное учреждение\\
+«Средняя общеобразовательная школа «Центр образования «Кудрово»\\[2pt]
+Отделение дополнительного образования детей\par}
+\vspace{3mm}
+{\color{espdark}\rule{\textwidth}{0.8pt}}
 
 \vfill
-{\small Все примеры --- для Arduino-ESP32 версии 3.x (на базе ESP-IDF 5.x)\\
-и отладочной платы ESP32-S3-DevKitC-1 (или совместимой).\par}
+{\sffamily\small\color{gray}\addfontfeatures{LetterSpace=12}УЧЕБНО-МЕТОДИЧЕСКОЕ ПОСОБИЕ\par}
+\vspace{4mm}
+{\sffamily\bfseries\fontsize{46}{50}\selectfont\color{espdark}ESP32-S3\par}
+\vspace{3mm}
+{\sffamily\LARGE Практический курс программирования микроконтроллеров\par}
+\vspace{2mm}
+{\sffamily\large\color{gray!70!black}от первых сигналов до самостоятельных устройств\par}
+\vspace{8mm}
+
+% ---------- иллюстрация: микроконтроллер на плате ----------
+\begin{tikzpicture}[
+  font=\sffamily,
+  pill/.style={draw=#1,line width=0.9pt,rounded corners=7pt,fill=pcbA,text=white,
+               minimum height=6.4mm,minimum width=19mm,font=\sffamily\small\bfseries},
+  tr/.style={trace,line width=1.1pt,line join=round,line cap=round},
+  via/.style={circle,fill=pcbA,draw=trace,line width=0.9pt,inner sep=1.3pt},
+]
+  % плата
+  \shade[rounded corners=8pt,top color=pcbB,bottom color=pcbA] (-8.3,-4.6) rectangle (8.3,4.6);
+  \foreach \x in {-7.9,-7.4,...,7.9}
+    \foreach \y in {-4.2,-3.7,...,4.3}
+      \fill[white,opacity=0.07] (\x,\y) circle (0.55pt);
+  \draw[white,opacity=0.12,rounded corners=6pt] (-8.1,-4.4) rectangle (8.1,4.4);
+
+  % декоративные дорожки с переходными отверстиями
+  \foreach \s/\e in {{(-1.95,1.2)}/{(-2.7,1.2)},{(-1.95,-1.2)}/{(-2.9,-1.2)},{(1.95,1.2)}/{(2.7,1.2)},
+                     {(1.95,-1.2)}/{(2.9,-1.2)},{(-1.2,1.95)}/{(-1.2,2.6)},{(1.2,1.95)}/{(1.2,2.5)},
+                     {(-1.2,-1.95)}/{(-1.2,-2.5)},{(1.2,-1.95)}/{(1.2,-2.6)}}
+    {\draw[tr,opacity=0.55] \s -- \e node[via,opacity=0.8]{};}
+  \draw[tr,opacity=0.35] (-1.95,0.5) -- (-3.0,0.5) -- (-3.5,1.0) -- (-4.2,1.0) node[via]{};
+  \draw[tr,opacity=0.35] (1.95,-0.5) -- (3.0,-0.5) -- (3.5,-1.0) -- (4.2,-1.0) node[via]{};
+  \draw[tr,opacity=0.35] (0.5,-1.95) -- (0.5,-2.9) -- (1.0,-3.4) -- (2.0,-3.4) node[via]{};
+  \draw[tr,opacity=0.35] (-0.5,1.95) -- (-0.5,2.9) -- (-1.0,3.4) -- (-1.6,3.4) node[via]{};
+
+  % темы курса
+  \node[pill=trace]  (gpio) at (-6.3, 2.3) {GPIO};
+  \node[pill=trace]  (pwm)  at (-6.3, 0.0) {ШИМ};
+  \node[pill=trace]  (adc)  at (-6.3,-2.3) {АЦП};
+  \node[pill=trace]  (uart) at ( 6.3, 2.3) {UART};
+  \node[pill=trace]  (i2c)  at ( 6.3, 0.0) {I\textsuperscript{2}C};
+  \node[pill=trace]  (spi)  at ( 6.3,-2.3) {SPI};
+  \node[pill=netcol] (wifi) at (-3.6, 3.75) {Wi-Fi};
+  \node[pill=netcol] (ble)  at ( 0.0, 3.75) {BLE};
+  \node[pill=netcol] (ota)  at ( 3.6, 3.75) {OTA};
+  \node[pill=syscol] (rtos) at (-3.6,-3.75) {FreeRTOS};
+  \node[pill=syscol] (nvs)  at ( 0.0,-3.75) {NVS};
+  \node[pill=syscol] (slp)  at ( 3.6,-3.75) {Сон};
+
+  % дорожки к темам
+  \draw[tr] (-1.95, 0.9) -- (-3.6, 0.9) -- (-5.0, 2.3) -- (gpio.east);
+  \draw[tr] (-1.95, 0.0) -- (pwm.east);
+  \draw[tr] (-1.95,-0.9) -- (-3.6,-0.9) -- (-5.0,-2.3) -- (adc.east);
+  \draw[tr] ( 1.95, 0.9) -- ( 3.6, 0.9) -- ( 5.0, 2.3) -- (uart.west);
+  \draw[tr] ( 1.95, 0.0) -- (i2c.west);
+  \draw[tr] ( 1.95,-0.9) -- ( 3.6,-0.9) -- ( 5.0,-2.3) -- (spi.west);
+  \draw[tr] (-0.9, 1.95) -- (-0.9, 2.5) -- (-2.15,3.75) -- (wifi.east);
+  \draw[tr] ( 0.0, 1.95) -- (ble.south);
+  \draw[tr] ( 0.9, 1.95) -- ( 0.9, 2.5) -- ( 2.15,3.75) -- (ota.west);
+  \draw[tr] (-0.9,-1.95) -- (-0.9,-2.5) -- (-2.15,-3.75) -- (rtos.east);
+  \draw[tr] ( 0.0,-1.95) -- (nvs.north);
+  \draw[tr] ( 0.9,-1.95) -- ( 0.9,-2.5) -- ( 2.15,-3.75) -- (slp.west);
+
+  % мягкая тень корпуса
+  \foreach \k in {1,...,6}
+    \fill[black,opacity=0.07,rounded corners=4pt] (-1.6-0.05*\k+0.18,-1.6-0.05*\k-0.22) rectangle (1.6+0.05*\k+0.18,1.6+0.05*\k-0.22);
+
+  % выводы корпуса QFN
+  \foreach \i in {0,...,8}{
+    \pgfmathsetmacro{\p}{-1.2+\i*0.3}
+    \shade[top color=gray!15,bottom color=gray!55] (\p-0.08,1.58) rectangle (\p+0.08,1.95);
+    \shade[top color=gray!15,bottom color=gray!55] (\p-0.08,-1.95) rectangle (\p+0.08,-1.58);
+    \shade[left color=gray!15,right color=gray!55] (-1.95,\p-0.08) rectangle (-1.58,\p+0.08);
+    \shade[left color=gray!55,right color=gray!15] (1.58,\p-0.08) rectangle (1.95,\p+0.08);
+  }
+
+  % корпус с фаской и бликом
+  \shade[rounded corners=3pt,top color=black!70,bottom color=black!95] (-1.6,-1.6) rectangle (1.6,1.6);
+  \shade[rounded corners=2pt,top color=black!80,bottom color=black!88,middle color=black!72] (-1.42,-1.42) rectangle (1.42,1.42);
+  \draw[white,opacity=0.22,rounded corners=2pt,line width=0.4pt] (-1.42,-1.42) rectangle (1.42,1.42);
+  \fill[white,opacity=0.06] (-1.42,1.42) -- (0.6,1.42) -- (-1.42,-0.6) -- cycle;
+  \fill[black!60] (-1.1,1.1) circle (0.11);
+  \draw[white,opacity=0.25,line width=0.3pt] (-1.1,1.1) circle (0.11);
+
+  % маркировка
+  \node[white,font=\sffamily\bfseries\Large] at (0,0.25) {ESP32-S3};
+  \node[gray!60,font=\sffamily\scriptsize] at (0,-0.3) {Xtensa LX7 · 240 МГц};
+  \node[gray!50,font=\sffamily\tiny] at (0,-0.65) {2 ядра · Wi-Fi · BLE 5 · USB};
+\end{tikzpicture}
+
+\vfill
+% ---------- автор ----------
+\begin{flushright}
+\begin{minipage}{0.62\textwidth}\raggedright\rmfamily\normalsize
+Авторы-составители:\\
+\textbf{Корягин Сергей Андреевич},\\
+\textbf{Полякова Полина Алексеевна},\\
+педагоги отделения дополнительного образования детей
+\end{minipage}
+\end{flushright}
+
+\vfill
+{\rmfamily\normalsize Кудрово\\ 2026\par}
+
+% ---------- оборот титула ----------
+\newpage
+\thispagestyle{empty}
+\vspace*{\fill}
+\begin{minipage}{\textwidth}\small\rmfamily\raggedright
+\textbf{Корягин С.\,А., Полякова П.\,А.} ESP32-S3: практический курс программирования микроконтроллеров :
+учебно-методическое пособие / С.\,А.~Корягин, П.\,А.~Полякова. --- Кудрово : МОБУ «СОШ «ЦО «Кудрово», ОДОД, 2026. ---
+\pageref{LastPage}~с.
+
+\vspace{4mm}
+Пособие содержит вводные главы и сорок два урока (с нулевого по сорок первый) по программированию
+микроконтроллера ESP32-S3 в среде Arduino: от техники безопасности, цифровых выводов и
+последовательного порта до FreeRTOS, беспроводных сетей, защищённых обновлений, диагностики сбоев,
+основ HTML и CSS, датчиков, моторов, звука, USB, камеры, автономного питания, I²S, RMT, PCNT/MCPWM, TWAI, графики, USB Host, JTAG, ULP, распознавания, ESPUI, настройки Wi-Fi через портал и итогового проекта. Каждый урок включает
+объяснение идеи, готовые примеры, самостоятельный опыт, разбор типичных ошибок, вопросы для
+самопроверки и шесть заданий четырёх уровней сложности. В приложениях --- справочник, словарь, ответы на вопросы
+и примерное тематическое планирование для педагога.
+
+Пособие адресовано обучающимся объединений технической направленности и педагогам
+дополнительного образования.
+
+\vspace{4mm}
+Примеры рассчитаны на работу с Arduino-ESP32 версии 3.x (на базе ESP-IDF 5.x) и отладочной платой
+ESP32-S3-DevKitC-1 (или совместимой).
+
+\vspace{6mm}
+\textcopyright~Корягин С.\,А., Полякова П.\,А., 2026
+\end{minipage}
 \end{titlepage}

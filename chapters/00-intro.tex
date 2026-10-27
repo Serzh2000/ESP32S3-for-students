@@ -1,11 +1,18 @@
 % =====================================================================
-\section{Знакомство с ESP32-S3 и настройка среды}
+\section{Знакомство с ESP32-S3 и настройка среды}\label{les:board}\label{les:ide}
 % =====================================================================
 \lessonintro
   {понять, из чего состоит ESP32-S3, как устроена отладочная плата, установить среду и залить первую программу}
   {ничего --- это стартовый урок}
-  {знакомимся с проектом «умная лампа», который будем собирать весь курс}
+  {проверяем, что плата готова к самостоятельным опытам}
   {плата ESP32-S3-DevKitC-1, USB-кабель с передачей данных}
+
+\subsection{Сначала --- что именно мы делаем}
+
+Мы пишем программу (скетч), компьютер превращает её в прошивку и записывает в плату по USB. Успех
+урока: сообщение
+из программы видно в Serial Monitor. Это проверяет кабель, IDE, порт и плату сразу. Названия ядер,
+памяти и шин ниже пока не нужно запоминать: сейчас важны USB, BOOT/EN, GND, 3V3 и безопасные GPIO.
 
 \subsection{Что такое ESP32-S3}
 
@@ -28,7 +35,7 @@ ESP32-S3 --- система на кристалле (SoC) компании Espre
 
 \begin{figure}[H]
 \centering
-\begin{tikzpicture}[node distance=3mm,
+\begin{tikzpicture}[node distance=3mm,scale=0.94,transform shape,
   box/.style={blk,minimum width=26mm}]
   \node[box,fill=blkcpu,minimum width=30mm,minimum height=11mm] (c0) {Xtensa LX7\\ ядро 0 (PRO)};
   \node[box,fill=blkcpu,minimum width=30mm,minimum height=11mm,right=4mm of c0] (c1) {Xtensa LX7\\ ядро 1 (APP)};
@@ -38,14 +45,15 @@ ESP32-S3 --- система на кристалле (SoC) компании Espre
   \node[box,fill=blkmem,below=3mm of rom,minimum width=30mm] (mspi) {Контроллер\\ Flash / PSRAM};
   \coordinate (busL) at ($(cache.south west)+(-2.4,-0.6)$);
   \coordinate (busR) at ($(mspi.south east)+(2.4,-0.6)$);
-  \draw[line width=4pt,gray!45] (busL) -- (busR) node[midway,below=1pt,font=\sffamily\scriptsize,black] {внутренняя шина};
+  \draw[line width=4pt,gray!45] (busL) -- (busR) coordinate[pos=0.5] (busmid);
+  \node[anchor=south west,font=\sffamily\scriptsize,black,align=center,inner sep=1pt] at ($(busL)+(0,0.08)$) {внутренняя шина};
   \node[box,fill=blkrf,left=10mm of c0,minimum width=24mm,minimum height=11mm] (wifi) {Wi-Fi\\ 802.11 b/g/n};
   \node[box,fill=blkrf,below=3mm of wifi,minimum width=24mm,minimum height=11mm] (bt) {Bluetooth\\ 5 LE};
   \node[box,fill=blkrf,below=3mm of bt,minimum width=24mm] (rf) {RF + балун};
   \node[box,fill=blkrtc,right=10mm of c1,minimum width=24mm,minimum height=11mm] (ulp) {ULP-RISC-V\\ ULP-FSM};
   \node[box,fill=blkrtc,below=3mm of ulp,minimum width=24mm] (rtcm) {RTC-память\\ 16 КБ};
   \node[box,fill=blkrtc,below=3mm of rtcm,minimum width=24mm] (pmu) {Управление\\ питанием};
-  \node[box,fill=blkper,minimum width=18mm,anchor=north west] (p1) at ($(busL)+(0.2,-0.6)$) {GPIO\\ ×45};
+  \node[box,fill=blkper,minimum width=18mm,anchor=north west] (p1) at ($(busL)+(0.2,-1.0)$) {GPIO\\ ×45};
   \node[box,fill=blkper,minimum width=18mm,right=2mm of p1] (p2) {UART\\ ×3};
   \node[box,fill=blkper,minimum width=18mm,right=2mm of p2] (p3) {I\textsuperscript{2}C ×2\\ I\textsuperscript{2}S ×2};
   \node[box,fill=blkper,minimum width=18mm,right=2mm of p3] (p4) {SPI\\ ×4};
@@ -53,21 +61,32 @@ ESP32-S3 --- система на кристалле (SoC) компании Espre
   \node[box,fill=blkper,minimum width=18mm,right=2mm of p5] (p6) {LEDC\\ MCPWM};
   \node[box,fill=blkper,minimum width=18mm,right=2mm of p6] (p7) {USB OTG\\ USB-JTAG};
   \node[box,fill=blkper,minimum width=18mm,right=2mm of p7] (p8) {RMT, TWAI\\ LCD/CAM};
-  \draw[darr] (c0) -- (sram);
-  \draw[darr] (c1) -- (rom);
-  \draw[darr] (c0.east) -- (c1.west);
-  \draw[darr] (wifi.east) -- (c0.west);
+  \coordinate (mbL) at ($(c0.south west)!0.5!(sram.north west)+(-0.25,0)$);
+  \coordinate (mbR) at ($(c1.south east)!0.5!(rom.north east)+(0.25,0)$);
+  \draw[line width=3pt,gray!45] (mbL) -- (mbR);
+  \foreach \n in {c0,c1} \draw[thick,gray] (\n.south) -- (\n.south |- mbL);
+  \foreach \n in {sram,rom} \draw[thick,gray] (\n.north) -- (\n.north |- mbL);
+  \draw[thick,gray] (wifi.east) -- ++(0.45,0) |- (mbL);
   \foreach \p in {p1,p2,p3,p4,p5,p6,p7,p8} \draw[thick,gray] (\p.north) -- (\p.north |- busL);
   \draw[thick,gray] (cache.south) -- (cache.south |- busL);
   \draw[thick,gray] (mspi.south) -- (mspi.south |- busL);
-  \draw[darr] (ulp.west) -- (c1.east);
+  \draw[thick,gray] (ulp.west) -- ++(-0.45,0) |- (mbR);
   \begin{scope}[on background layer]
     \node[draw=espdark,thick,rounded corners=4pt,fit=(wifi)(ulp)(p1)(p8)(pmu)(rf),inner sep=5pt,
       label={[font=\sffamily\bfseries,text=espdark]above:ESP32-S3}] {};
   \end{scope}
 \end{tikzpicture}
-\caption{Упрощённая блок-схема ESP32-S3}
+\caption{Упрощённая блок-схема ESP32-S3: оба ядра, память, радио и RTC-домен связаны общими шинами}
 \end{figure}
+
+\begin{tip}
+Цвета на схемах книги постоянны:\\[3pt]
+\colorbox{blkcpu}{микроконтроллер}\quad
+\colorbox{blkper}{внешние устройства и действия человека}\quad
+\colorbox{blkmem}{программа, данные и память}\\[3pt]
+\colorbox{blkrf}{радио и сеть}\quad
+\colorbox{blkrtc}{питание, сброс и сон}
+\end{tip}
 
 \subsection{Сравнение с «родственниками»}
 
@@ -97,7 +116,7 @@ GPIO & 34 & 45 & 22 \\
 \begin{tikzpicture}[font=\sffamily]
   \node[font=\sffamily\Large\bfseries] (m) {ESP32-S3-WROOM-1-\textcolor{accent}{N16}\textcolor{esp}{R8}};
   \draw[accent,thick,decorate,decoration={brace,mirror,amplitude=4pt}] ($(m.south east)+(-1.25,-0.05)$) -- ($(m.south east)+(-0.62,-0.05)$)
-     node[midway,below=5pt,align=center,font=\sffamily\small,text=accent] {Flash 16 МБ};
+     node[midway,below=5pt,xshift=-9mm,align=center,font=\sffamily\small,text=accent] {Flash 16 МБ};
   \draw[esp,thick,decorate,decoration={brace,mirror,amplitude=4pt}] ($(m.south east)+(-0.58,-0.05)$) -- ($(m.south east)+(0,-0.05)$)
      node[midway,below=5pt,xshift=12mm,align=center,font=\sffamily\small,text=esp] {PSRAM 8 МБ\\ (Octal)};
 \end{tikzpicture}
@@ -145,7 +164,7 @@ GPIO & 34 & 45 & 22 \\
   \foreach \i in {13,14}{\node[draw=warn,thick,rounded corners=1pt,fit=(L\i),inner sep=0.3pt]{};}
   \foreach \i in {11,12,13}{\node[draw=blkrtc!40!black,thick,dashed,rounded corners=1pt,fit=(R\i),inner sep=0.3pt]{};}
   \foreach \i in {19,20}{\node[draw=accent,thick,rounded corners=1pt,fit=(R\i),inner sep=0.3pt]{};}
-  % выводы проекта
+  % выводы для опытов курса
   \foreach \i in {4,5,12}{\node[fill=okgreen,circle,inner sep=1.3pt] at ($(L\i.west)+(-1.5,0)$) {};}
   \foreach \i in {4}{\node[fill=okgreen,circle,inner sep=1.3pt] at ($(R\i.east)+(1.5,0)$) {};}
   \node[fill=okgreen,circle,inner sep=1.3pt] at ($(L15.west)+(-1.5,0)$) {};
@@ -155,7 +174,7 @@ GPIO & 34 & 45 & 22 \\
     \textcolor{warn}{\rule{3mm}{2mm}} strapping-выводы\\[1pt]
     \textcolor{accent}{\rule{3mm}{2mm}} USB D$-$/D$+$ (19/20)\\[1pt]
     \textcolor{blkrtc!40!black}{\rule{3mm}{2mm}} заняты Octal PSRAM\\[1pt]
-    \textcolor{okgreen}{$\bullet$} выводы проекта «умная лампа»\\[6pt]
+    \textcolor{okgreen}{$\bullet$} выводы для опытов курса\\[6pt]
     RGB-светодиод WS2812:\\ GPIO48 (v1.0) или GPIO38 (v1.1)\\[4pt]
     Кнопка BOOT = GPIO0\\[4pt]
     ADC1: GPIO1--10\\ ADC2: GPIO11--20\\[4pt]
@@ -195,13 +214,13 @@ GPIO & 34 & 45 & 22 \\
   \node[blk,fill=blkmem] (src) {Скетч\\ \code{.ino}};
   \node[blk,fill=blkmem,right=of src] (cc) {Компилятор\\ xtensa-esp32s3-gcc};
   \node[blk,fill=blkmem,right=of cc] (bin) {Образ\\ \code{.bin}};
-  \node[blk,fill=blkper,right=of bin] (tool) {esptool};
+  \node[blk,fill=blkmem,right=of bin] (tool) {esptool};
   \node[blk,fill=blkcpu,right=of tool] (chip) {Flash\\ ESP32-S3};
   \draw[arr] (src) -- (cc);
   \draw[arr] (cc) -- (bin);
   \draw[arr] (bin) -- (tool);
   \draw[arr] (tool) -- node[above,font=\sffamily\scriptsize]{USB} (chip);
-  \node[blk,fill=blkrf,below=8mm of cc] (lib) {ESP-IDF + FreeRTOS\\ Arduino-ядро};
+  \node[blk,fill=blkmem,below=8mm of cc] (lib) {ESP-IDF + FreeRTOS\\ Arduino-ядро};
   \draw[arr] (lib) -- (cc);
 \end{tikzpicture}
 \caption{Путь от исходного кода до прошивки}
@@ -217,24 +236,23 @@ GPIO & 34 & 45 & 22 \\
   \node[blk,fill=blkper] (a) {Зажать\\ BOOT};
   \node[blk,fill=blkper,right=of a] (b) {Нажать и отпустить\\ RST};
   \node[blk,fill=blkper,right=of b] (c) {Отпустить\\ BOOT};
-  \node[blk,fill=blkrf,right=of c] (d) {Нажать\\ «Upload»};
-  \node[blk,fill=blkcpu,right=of d] (e) {После прошивки\\ нажать RST};
+  \node[blk,fill=blkper,right=of c] (d) {Нажать\\ «Upload»};
+  \node[blk,fill=blkper,right=of d] (e) {После прошивки\\ нажать RST};
   \draw[arr] (a)--(b); \draw[arr] (b)--(c); \draw[arr] (c)--(d); \draw[arr] (d)--(e);
 \end{tikzpicture}
 \end{center}
 
 \subsection{Структура Arduino-скетча}
 
-Любой скетч состоит из двух функций: \code{setup()} выполняется один раз после включения,
-\code{loop()} --- повторяется бесконечно. (На самом деле под ними работает операционная система
-FreeRTOS; она нам понадобится только в уроке~7.)
+Функции \code{setup()} и \code{loop()} уже знакомы по вводной главе. Схема ниже показывает, что
+происходит до их вызова. (Под ними работает операционная система FreeRTOS; она понадобится в уроке~7.)
 
 \begin{center}
 \begin{tikzpicture}[node distance=6mm]
   \node[blk,fill=blkrtc] (rst) {Сброс / подача питания};
   \node[blk,fill=blkmem,below=of rst] (boot) {ROM-загрузчик → 2-й загрузчик → ESP-IDF};
-  \node[blk,fill=blkper,below=of boot] (setup) {\code{setup()} --- один раз};
-  \node[blk,fill=blkper,below=of setup] (loop) {\code{loop()} --- бесконечно};
+  \node[blk,fill=blkmem,below=of boot] (setup) {\code{setup()} --- один раз};
+  \node[blk,fill=blkmem,below=of setup] (loop) {\code{loop()} --- бесконечно};
   \draw[arr] (rst)--(boot); \draw[arr] (boot)--(setup); \draw[arr] (setup)--(loop);
   \draw[arr] (loop.east) to[out=0,in=0,looseness=2.5] (loop.north east);
 \end{tikzpicture}
@@ -246,33 +264,167 @@ FreeRTOS; она нам понадобится только в уроке~7.)
 \codecap{Первый скетч: «Hello, ESP32-S3»}
 \codeinput{l0_hello}
 
+\subsection{Прочитайте пример как инструкцию}
+
+\code{Serial.begin(115200)} открывает разговор с компьютером; число 115200 должно совпасть со скоростью
+в Serial Monitor. \code{Serial.println(...)} печатает строку и переходит на новую строку. Если вместо текста видны
+непонятные символы, почти всегда выбрана неверная скорость порта.
+
 Откройте \textsf{Tools → Serial Monitor}, установите скорость 115200 --- должны появиться сообщения.
 
-\subsection{Сквозной проект: умная лампа}
-\label{sec:project}
+\subsection{Учимся программировать: как записывается программа}
 
-Чтобы уроки не были набором разрозненных примеров, все они работают на один проект. К концу курса
-у нас будет настольная лампа, которая:
+Программа похожа на рецепт: список команд, которые выполняются \emph{по порядку}, сверху вниз.
+Компьютер выполняет их очень точно и ничего не додумывает. Если в рецепте написано «положить 100 кг
+соли», компьютер положит 100 кг. Поэтому у языка C++ (читается «си-плюс-плюс»), на котором пишут
+программы для Arduino, есть строгие правила записи. Посмотри на них на примере строчки из следующей
+программы:
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[tok/.style={font=\ttfamily\large,inner sep=1pt},ann/.style={font=\sffamily\scriptsize,align=center,text=black}]
+  \node[tok,text=esp] (a) at (0,0) {int};
+  \node[tok,text=accent,base right=0.5em of a] (b) {apples};
+  \node[tok,base right=0.5em of b] (c) {=};
+  \node[tok,text=okgreen!60!black,base right=0.5em of c] (d) {5};
+  \node[tok,base right=0pt of d] (e) {\textbf{;}};
+  \node[tok,text=gray,base right=1.2em of e] (f) {// яблок в корзине};
+  \draw[esp,thick] (a.north) -- ++(0,0.35) node[ann,above] {тип:\\ что храним};
+  \draw[accent,thick] (b.north) -- ++(0,1.1) node[ann,above] {имя\\ переменной};
+  \draw[okgreen!60!black,thick] (d.north) -- ++(0,0.35) node[ann,above] {значение};
+  \draw[black,thick] (e.south) -- ++(0,-0.35) node[ann,below] {точка с запятой ---\\ конец команды};
+  \draw[gray,thick] (f.south) -- ++(0,-1.1) node[ann,below] {комментарий: для людей,\\ плата его не читает};
+\end{tikzpicture}
+\caption{Из чего состоит строчка программы}
+\end{figure}
 
 \begin{itemize}
-  \item включается кнопкой и командой с компьютера;
-  \item плавно меняет яркость ручкой-потенциометром;
-  \item показывает своё состояние на OLED-экране;
-  \item управляется с телефона через браузер;
-  \item засыпает, когда выключена, и просыпается от кнопки.
+  \item каждая команда заканчивается \textbf{точкой с запятой} \code{;};
+  \item после \code{//} до конца строки идёт \textbf{комментарий} --- пояснение для людей;
+  \item фигурные скобки \code{\{ \}} объединяют несколько команд в \textbf{блок}, как абзац в тексте.
+        Всё, что между скобками после \code{void setup()}, --- это содержимое функции \code{setup()};
+  \item большие и маленькие буквы различаются: \code{apples} и \code{Apples} --- разные имена;
+  \item в дробных числах пишут \textbf{точку}, а не запятую: \code{23.5};
+  \item текст пишут в двойных кавычках: \code{"Привет"}.
 \end{itemize}
 
-Каждый урок добавляет ровно одну возможность, опираясь на уже изученное. Выводы платы закреплены
-за деталями с самого начала и дальше не меняются:
+\begin{tip}
+Если в программе ошибка, при компиляции внизу Arduino IDE появится красное сообщение с номером строки.
+Чаще всего виноваты забытая \code{;}, незакрытая скобка или опечатка в имени. Ошибки --- это нормально:
+их делают все программисты, даже самые опытные.
+\end{tip}
+
+\subsection{Учимся программировать: переменные}
+
+Программе нужно что-то помнить: сколько раз нажали кнопку, какая яркость у светодиода, какая температура.
+Для этого есть \textbf{переменные}. Переменная --- это коробка с названием, в которой хранится значение.
+Значение можно положить, посмотреть и заменить другим. На коробке написано не только имя, но и
+\textbf{тип} --- что в неё можно класть: целые числа, дробные, текст.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+  box/.style={draw,thick,fill=#1,minimum width=24mm,minimum height=13mm,font=\ttfamily\Large},
+  lbl/.style={font=\ttfamily\small,above=1mm},
+  typ/.style={font=\sffamily\scriptsize,text=gray,below=1mm}]
+  \node[box=blkmem] (a) at (0,0) {5};       \node[lbl] at (a.north) {apples};      \node[typ] at (a.south) {int --- целое};
+  \node[box=blkper] (b) at (3.3,0) {23.5};  \node[lbl] at (b.north) {temperature}; \node[typ] at (b.south) {float --- дробное};
+  \node[box=blkrf] (c) at (6.6,0) {true};   \node[lbl] at (c.north) {isOpen};      \node[typ] at (c.south) {bool --- да/нет};
+  \node[box=blkrtc] (d) at (9.9,0) {"Маша"};\node[lbl] at (d.north) {name};        \node[typ] at (d.south) {String --- текст};
+\end{tikzpicture}
+\caption{Переменные --- подписанные коробки. Тип говорит, что в коробку можно положить}
+\end{figure}
+
+\begin{table}[H]
+\centering\small
+\begin{tabularx}{\textwidth}{@{}l X l@{}}
+\toprule
+Тип & Что хранит & Пример\\
+\midrule
+\code{int} & целое число от $-2\,147\,483\,648$ до $2\,147\,483\,647$ (32 бита) & \code{int score = 10;}\\
+\code{float} & дробное число (около 7 точных цифр) & \code{float t = 36.6;}\\
+\code{bool} & логическое значение: \code{true} (истина) или \code{false} (ложь) & \code{bool on = false;}\\
+\code{String} & строку текста & \code{String s = "Привет";}\\
+\code{uint8\_t}, \code{byte} & целое от 0 до 255 (8 бит, как в вводной главе \hyperref[les:signals]{«Сигналы»}) & \code{byte r = 200;}\\
+\code{uint32\_t} & целое от 0 до 4\,294\,967\,295 --- для времени \code{millis()} & \code{uint32\_t t = millis();}\\
+\bottomrule
+\end{tabularx}
+\caption{Типы переменных, которые встретятся в курсе}
+\end{table}
+
+Знак \code{=} в программировании означает не «равно», а «\textbf{положить в коробку}». Запись
+\code{apples = apples + 3} читается так: «возьми, что лежит в \code{apples}, прибавь 3 и положи результат
+обратно в \code{apples}». В математике это бессмыслица, а для программы --- обычное дело.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[box/.style={draw,thick,fill=blkmem,minimum width=16mm,minimum height=11mm,font=\ttfamily\Large}]
+  \node[box] (b1) at (0,0) {5};
+  \node[font=\ttfamily\small,above=1mm of b1] {apples};
+  \node[font=\sffamily\small,below=1mm of b1] {было};
+  \node[draw,thick,rounded corners,fill=blkper,font=\ttfamily\small,align=center] (op) at (4,0) {5 + 3 = 8};
+  \node[box,fill=okgreen!20] (b2) at (8,0) {8};
+  \node[font=\ttfamily\small,above=1mm of b2] {apples};
+  \node[font=\sffamily\small,below=1mm of b2] {стало};
+  \draw[arr] (b1) -- node[above,font=\sffamily\scriptsize]{достать} (op);
+  \draw[arr] (op) -- node[above,font=\sffamily\scriptsize]{положить} (b2);
+  \node[font=\ttfamily\large] at (4,1.4) {apples = apples + 3;};
+\end{tikzpicture}
+\caption{Присваивание: сначала считается правая часть, потом результат кладётся в переменную}
+\end{figure}
+
+\begin{table}[H]
+\centering\small
+\begin{tabular}{@{}lll@{}}
+\toprule
+Запись & Что делает & Пример ($x = 7$)\\
+\midrule
+\code{+ - * /} & сложение, вычитание, умножение, деление & \code{x * 2} → 14\\
+\code{\%} & остаток от деления & \code{x \% 2} → 1\\
+\code{x++}, \code{x--} & увеличить или уменьшить на 1 & \code{x} станет 8 или 6\\
+\code{x += 5} & то же, что \code{x = x + 5} & \code{x} станет 12\\
+\bottomrule
+\end{tabular}
+\caption{Арифметические операции}
+\end{table}
+
+\codecap{Переменные и операции}
+\codeinput{l04_variables}
+
+\begin{caution}
+Если оба числа целые, деление тоже будет целым: \code{7 / 2} даёт \textbf{3}, а не 3,5 --- дробная часть
+просто отбрасывается. Чтобы получить 3,5, хотя бы одно число должно быть дробным: \code{7.0 / 2}.
+\end{caution}
+
+Переменная, объявленная \emph{вне} функций (в начале программы), --- \textbf{глобальная}: её видят все части
+программы. Переменная, объявленная \emph{внутри} фигурных скобок, --- \textbf{локальная}: она существует только
+внутри этого блока. Как записка на доске в классе (видят все) и записка в твоём кармане (видишь только ты).
+
+Теперь понятно, что было в первой программе: \code{setup()} и \code{loop()} --- это \textbf{функции}, наборы
+команд под одним именем; \code{Serial.println()} и \code{delay()} --- готовые функции, которые мы
+\emph{вызываем}, передавая им в скобках данные; \code{millis()} возвращает число --- его можно положить в переменную.
+
+
+\subsection{Как устроены уроки}
+
+Каждый урок построен одинаково: цель и список деталей, короткое объяснение идеи, устройство
+периферии, готовый пример, \emph{самостоятельный опыт}, итоги и задания. Опыты не связаны общим
+проектом: каждый собирается отдельным скетчем, поэтому урок можно повторить или пропустить, не ломая
+остальные. В конце урока --- шесть заданий, от лёгких к трудным, с отметкой уровня:
+\ding{72} --- повторить пример, \ding{72}\ding{72} --- изменить и дополнить,
+\ding{72}\ding{72}\ding{72} --- создать своё устройство, \ding{72}\ding{72}\ding{72}\ding{72} --- вызов
+для тех, кто хочет большего. Выполняйте задания по порядку: каждое опирается на предыдущее.
+
+Чтобы не пересобирать макетную плату, детали закрепим за одними и теми же выводами:
 
 \begin{figure}[H]
 \centering
 \begin{circuitikz}[scale=0.95,transform shape]
-  \node[draw,thick,fill=blkcpu,minimum width=3.2cm,minimum height=6.2cm,align=center,font=\sffamily] (esp) at (0,0)
+  \node[draw,thick,fill=blkcpu,minimum width=4.4cm,minimum height=6.2cm,align=center,font=\sffamily] (esp) at (0,0)
      {ESP32-S3\\ DevKitC-1\\[4mm] \scriptsize RGB: GPIO48\\ \scriptsize (урок 1)};
   % LED
-  \draw ($(esp.east)+(0,2.3)$) node[left,font=\sffamily\scriptsize]{GPIO4} to[short,-] (1.9,2.3)
-        to[R, l=\SI{220}{\ohm}] (4.2,2.3) to[led, l=LED лампы] (6.4,2.3) -- (7,2.3) node[right,font=\sffamily\small]{GND};
+  \draw ($(esp.east)+(0,2.3)$) node[left,font=\sffamily\scriptsize]{GPIO4} to[short,-] (2.6,2.3)
+        to[R, l=\SI{220}{\ohm}] (4.2,2.3) to[led, l=LED] (6.4,2.3) -- (7,2.3) node[right,font=\sffamily\small]{GND};
   \node[font=\sffamily\scriptsize,text=okgreen] at (9.2,2.3) {уроки 1, 4};
   % button
   \draw ($(esp.east)+(0,1.1)$) node[left,font=\sffamily\scriptsize]{GPIO5} to[short,-] (4.2,1.1)
@@ -289,27 +441,7 @@ FreeRTOS; она нам понадобится только в уроке~7.)
   \node[font=\sffamily\scriptsize,text=okgreen] at (9.2,-2.35) {урок 6};
   \node[font=\sffamily\scriptsize,align=left,anchor=west] at (7.4,-3.3) {питание экрана: 3V3, GND};
 \end{circuitikz}
-\caption{Итоговая схема умной лампы. Детали добавляются по мере прохождения уроков}
-\end{figure}
-
-\begin{figure}[H]
-\centering
-\begin{tikzpicture}[node distance=4mm and 3mm,
-  st/.style={blk,fill=blkrf,minimum width=27mm,minimum height=13mm,font=\sffamily\scriptsize}]
-  \node[st] (s1) {\textbf{Урок 1}\\ светодиод лампы,\\ «пульс» на RGB};
-  \node[st,right=of s1] (s2) {\textbf{Урок 2}\\ команды on/off\\ с компьютера};
-  \node[st,right=of s2] (s3) {\textbf{Урок 3}\\ кнопка-\\выключатель};
-  \node[st,right=of s3] (s4) {\textbf{Урок 4}\\ плавная яркость\\ (ШИМ)};
-  \node[st,right=of s4] (s5) {\textbf{Урок 5}\\ ручка яркости\\ (АЦП)};
-  \node[st,below=9mm of s5] (s6) {\textbf{Урок 6}\\ экран состояния\\ (I\textsuperscript{2}C)};
-  \node[st,left=of s6] (s7) {\textbf{Урок 7}\\ разделение\\ на задачи};
-  \node[st,left=of s7] (s8) {\textbf{Урок 8}\\ управление\\ через браузер};
-  \node[st,left=of s8] (s9) {\textbf{Урок 9}\\ сон и пробуждение\\ кнопкой};
-  \node[st,left=of s9,fill=blkcpu] (fin) {\textbf{Приложение}\\ полный код\\ проекта};
-  \draw[arr] (s1)--(s2); \draw[arr] (s2)--(s3); \draw[arr] (s3)--(s4); \draw[arr] (s4)--(s5);
-  \draw[arr] (s5)--(s6); \draw[arr] (s6)--(s7); \draw[arr] (s7)--(s8); \draw[arr] (s8)--(s9); \draw[arr] (s9)--(fin);
-\end{tikzpicture}
-\caption{Как растёт проект от урока к уроку}
+\caption{Учебный стенд: какие детали к каким выводам подключаются в опытах курса}
 \end{figure}
 
 \begin{summary}
@@ -320,10 +452,21 @@ FreeRTOS; она нам понадобится только в уроке~7.)
 \end{itemize}
 \end{summary}
 
+\begin{selfcheck}
+\begin{enumerate}
+  \item Чем модуль отличается от чипа и что означает суффикс \code{N16R8}?
+  \item Зачем на плате два USB-разъёма и чем они различаются?
+  \item Что делать, если IDE пишет \code{Failed to connect}?
+\end{enumerate}
+\end{selfcheck}
+
 \begin{tasks}
 \begin{enumerate}
-  \item Выясните, какой модуль стоит на вашей плате (надпись на экране модуля) и сколько у него Flash и PSRAM. Сверьте с выводом скетча.
-  \item Выведите MAC-адрес чипа: \code{ESP.getEfuseMac()}.
-  \item Измените частоту CPU функцией \code{setCpuFrequencyMhz(80)} и проверьте результат.
+\item \lv{1} Выясните, какой модуль стоит на вашей плате (надпись на экране модуля) и сколько у него Flash и PSRAM.
+\item \lv{1} Выведите в Serial Monitor номер версии вашей Arduino IDE и название выбранной платы (из меню Tools).
+\item \lv{2} Выведите MAC-адрес чипа: \code{ESP.getEfuseMac()}. Зачем устройствам нужен уникальный адрес?
+\item \lv{2} Выведите размер Flash (\code{ESP.getFlashChipSize()}) и свободную кучу (\code{ESP.getFreeHeap()}) и сравните с данными из маркировки модуля.
+\item \lv{3} Измените частоту CPU функцией \code{setCpuFrequencyMhz(80)} и проверьте результат через \code{getCpuFrequencyMhz()}. Как это повлияет на скорость простого цикла? Измерьте через \code{micros()}.
+\item \lv{4} Составьте «паспорт платы»: программа печатает модель чипа, число ядер, частоту, Flash, PSRAM, MAC и причину последнего сброса в виде аккуратной таблицы.
 \end{enumerate}
 \end{tasks}

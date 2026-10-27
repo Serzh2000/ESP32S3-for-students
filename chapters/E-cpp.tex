@@ -1,0 +1,192 @@
+% =====================================================================
+\section{Шпаргалка по C++ для Arduino}
+% =====================================================================
+Здесь собраны конструкции языка, которые встречаются во всех уроках. Это не учебник C++, а справка:
+открывайте её, когда забыли, как записывается условие или цикл.
+
+\subsection*{Типы данных}
+
+\begin{center}\small
+\begin{tabularx}{\textwidth}{@{}l l X@{}}
+\toprule
+Тип & Диапазон на ESP32-S3 & Когда использовать \\
+\midrule
+\code{int} & от $-2\,147\,483\,648$ до $2\,147\,483\,647$ & обычные целые числа, счётчики \\
+\code{uint8\_t} & 0\ldots255 & байт, яркость, значение цвета \\
+\code{uint32\_t} & 0\ldots4\,294\,967\,295 & время в \code{millis()}, большие неотрицательные числа \\
+\code{float} & около 7 значащих цифр & дробные числа (температура, напряжение) \\
+\code{bool} & \code{true} или \code{false} & флаги, состояния «включено/выключено» \\
+\code{char} & один символ \code{'A'} & отдельные символы \\
+\code{String} & строка произвольной длины & текст в Arduino (удобно, но использует память) \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\begin{Verbatim}[fontsize=\small,bgcolor=codebg]
+int count = 0;                  // целое
+float temp = 23.5;              // дробное
+bool ledOn = false;             // логическое
+uint32_t lastTime = 0;          // для millis()
+String name = "ESP32";          // строка
+\end{Verbatim}
+
+\subsection*{Константы}
+
+Значение, которое не должно меняться, объявляют с \code{const}. Компилятор не даст случайно изменить
+его, а имена принято писать ЗАГЛАВНЫМИ буквами.
+
+\begin{Verbatim}[fontsize=\small,bgcolor=codebg]
+const int LED_PIN = 4;          // номер вывода
+constexpr float VREF = 3.3;     // известно ещё на этапе компиляции
+#define BUTTON_PIN 5            // старый способ: просто подстановка текста
+\end{Verbatim}
+
+\subsection*{Операторы}
+
+\begin{center}\small
+\begin{tabularx}{\textwidth}{@{}l X@{}}
+\toprule
+Операторы & Назначение \\
+\midrule
+\code{+ - * / \%} & арифметика; \code{\%} --- остаток от деления \\
+\code{== != < > <= >=} & сравнение (результат \code{true} или \code{false}) \\
+\code{\&\& || !} & «и», «или», «не» \\
+\code{= += -= ++ --} & присваивание, увеличение и уменьшение \\
+\code{\& | \^{} << >>} & побитовые операции (маски, сдвиги) \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\begin{Verbatim}[fontsize=\small,bgcolor=codebg]
+int a = 7 % 3;                  // 1 (остаток)
+bool ok = (a > 0) && (a < 5);   // true
+count++;                        // то же, что count = count + 1
+mask |= (1 << 3);               // включить бит номер 3
+\end{Verbatim}
+
+\subsection*{Условия: if / else и switch}
+
+\begin{Verbatim}[fontsize=\small,bgcolor=codebg]
+if (temp > 30) {
+  digitalWrite(FAN_PIN, HIGH);
+} else if (temp < 25) {
+  digitalWrite(FAN_PIN, LOW);
+} else {
+  // между 25 и 30 ничего не меняем
+}
+
+switch (mode) {                 // выбор по значению
+  case 0: Serial.println("выкл"); break;
+  case 1: Serial.println("авто"); break;
+  default: Serial.println("?");
+}
+\end{Verbatim}
+
+\subsection*{Циклы: for и while}
+
+\begin{Verbatim}[fontsize=\small,bgcolor=codebg]
+for (int i = 0; i < 5; i++) {   // пять повторов: i = 0..4
+  Serial.println(i);
+}
+
+uint32_t start = millis();
+while (!ready && millis() - start < 5000) {  // ждём не дольше 5 с
+  delay(10);
+}
+\end{Verbatim}
+
+Цикл \code{while (true)} без выхода и без тайм-аута в учебных программах не пишите: плата «повиснет» (урок 14).
+
+\subsection*{Функции}
+
+Функция даёт имя повторяющемуся действию. У неё есть тип результата, имя и список параметров.
+Тип \code{void} означает «ничего не возвращает».
+
+\begin{Verbatim}[fontsize=\small,bgcolor=codebg]
+int clampPercent(int x) {       // вернуть число, ограниченное 0..100
+  if (x < 0) return 0;
+  if (x > 100) return 100;
+  return x;
+}
+
+void blinkOnce(int pin, int ms) {   // ничего не возвращает
+  digitalWrite(pin, HIGH);
+  delay(ms);
+  digitalWrite(pin, LOW);
+}
+
+int level = clampPercent(130);  // level = 100
+\end{Verbatim}
+
+\subsection*{Массивы}
+
+\begin{Verbatim}[fontsize=\small,bgcolor=codebg]
+int pins[3] = {4, 5, 6};        // три элемента: индексы 0, 1, 2
+int n = sizeof(pins) / sizeof(pins[0]);  // число элементов = 3
+
+for (int i = 0; i < n; i++) {
+  pinMode(pins[i], OUTPUT);
+}
+// pins[3] -- ошибка: выход за границы массива!
+\end{Verbatim}
+
+\subsection*{Структуры}
+
+Структура объединяет несколько значений под одним именем: удобно для пакета данных (урок 12) или
+для описания датчика.
+
+\begin{Verbatim}[fontsize=\small,bgcolor=codebg]
+struct Reading {
+  float temp;
+  float humidity;
+  uint32_t time;
+};
+
+Reading r = {22.5, 40.0, 0};
+r.temp = 23.1;                  // обращение к полю через точку
+Serial.println(r.temp);
+\end{Verbatim}
+
+\subsection*{Область видимости и static}
+
+Переменная, объявленная внутри функции, существует только в ней и при каждом вызове создаётся заново.
+Переменная вне функций (глобальная) видна всем. Модификатор \code{static} внутри функции сохраняет значение
+между вызовами, но оставляет имя видимым только в этой функции.
+
+\begin{Verbatim}[fontsize=\small,bgcolor=codebg]
+int total = 0;                  // глобальная: видна везде
+
+void step() {
+  int local = 0;                // создаётся заново при каждом вызове
+  static int calls = 0;         // помнит значение между вызовами
+  local++;
+  calls++;
+  total += 10;
+}
+\end{Verbatim}
+
+\subsection*{Типичные ошибки}
+
+\begin{center}\small
+\begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}p{4.6cm} X@{}}
+\toprule
+Ошибка & Как правильно \\
+\midrule
+\code{if (x = 5)} --- присваивание вместо сравнения & \code{if (x == 5)}: сравнение записывают двумя знаками \\
+Деление целых: \code{int a = 1 / 2;} даёт 0 & хотя бы одно число дробное: \code{1.0 / 2} или \code{(float)1 / 2} \\
+Переполнение: \code{uint8\_t b = 250; b += 10;} даёт 4 & выбирайте тип с запасом (\code{int}, \code{uint32\_t}) \\
+Сравнение времени: \code{millis() > t + 1000} ломается через 49 суток & пишите вычитание: \code{millis() - t > 1000} \\
+Выход за границы массива & индексы от 0 до размер$-1$; проверяйте индекс \\
+Точка с запятой сразу после условия: \code{if (x > 0);} & блок после условия ставят без неё: \code{if (x > 0) \{ \ldots \}} \\
+Сравнение строк через \code{==} с \code{char*} & для \code{String} можно \code{==}, для \code{char*} --- \code{strcmp()} \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\begin{Verbatim}[fontsize=\small,bgcolor=codebg]
+int half = 7 / 2;               // 3, а не 3.5: целочисленное деление
+float f = 7 / 2.0;              // 3.5
+uint8_t b = 250;
+b += 10;                        // переполнение: теперь b = 4
+if (millis() - lastTime >= 1000) { lastTime = millis(); }  // верно
+\end{Verbatim}

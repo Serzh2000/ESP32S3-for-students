@@ -1,0 +1,40 @@
+\begin{CodeVerbatim}
+\PY{c+c1}{// Кнопка переключает яркость: выкл \PYZhy{}\PYZgt{} 30 \PYZpc{} \PYZhy{}\PYZgt{} 100 \PYZpc{} \PYZhy{}\PYZgt{} выкл ...}
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{int}\PY{+w}{ }\PY{n}{LED\PYZus{}PIN}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{4}\PY{p}{;}
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{int}\PY{+w}{ }\PY{n}{BTN\PYZus{}PIN}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{5}\PY{p}{;}
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{int}\PY{+w}{ }\PY{n}{LEVELS}\PY{p}{[}\PY{p}{]}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{l+m+mi}{0}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{30}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{100}\PY{p}{\PYZcb{}}\PY{p}{;}\PY{+w}{           }\PY{c+c1}{// ступени яркости, \PYZpc{}}
+
+\PY{k+kt}{int}\PY{+w}{ }\PY{n}{mode}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}\PY{+w}{                                }\PY{c+c1}{// номер текущей ступени}
+
+\PY{k+kt}{uint32\PYZus{}t}\PY{+w}{ }\PY{n+nf}{gammaDuty}\PY{p}{(}\PY{k+kt}{int}\PY{+w}{ }\PY{n}{percent}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{k}{return}\PY{+w}{ }\PY{p}{(}\PY{k+kt}{uint32\PYZus{}t}\PY{p}{)}\PY{p}{(}\PY{l+m+mi}{255}\PY{+w}{ }\PY{o}{*}\PY{+w}{ }\PY{n}{pow}\PY{p}{(}\PY{n}{percent}\PY{+w}{ }\PY{o}{/}\PY{+w}{ }\PY{l+m+mf}{100.0}\PY{p}{,}\PY{+w}{ }\PY{l+m+mf}{2.2}\PY{p}{)}\PY{+w}{ }\PY{o}{+}\PY{+w}{ }\PY{l+m+mf}{0.5}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{bool}\PY{+w}{ }\PY{n+nf}{buttonPressed}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{                       }\PY{c+c1}{// см. выше: с защитой от дребезга}
+\PY{+w}{  }\PY{k}{static}\PY{+w}{ }\PY{k+kt}{bool}\PY{+w}{ }\PY{n}{stable}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{digitalRead}\PY{p}{(}\PY{n}{BTN\PYZus{}PIN}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{k}{static}\PY{+w}{ }\PY{k+kt}{bool}\PY{+w}{ }\PY{n}{last}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{stable}\PY{p}{;}
+\PY{+w}{  }\PY{k}{static}\PY{+w}{ }\PY{k+kt}{uint32\PYZus{}t}\PY{+w}{ }\PY{n}{changed}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}
+\PY{+w}{  }\PY{k+kt}{bool}\PY{+w}{ }\PY{n}{r}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{digitalRead}\PY{p}{(}\PY{n}{BTN\PYZus{}PIN}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{r}\PY{+w}{ }\PY{o}{!}\PY{o}{=}\PY{+w}{ }\PY{n}{last}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{ }\PY{n}{last}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{r}\PY{p}{;}\PY{+w}{ }\PY{n}{changed}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{millis}\PY{p}{(}\PY{p}{)}\PY{p}{;}\PY{+w}{ }\PY{p}{\PYZcb{}}
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{millis}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{o}{\PYZhy{}}\PY{+w}{ }\PY{n}{changed}\PY{+w}{ }\PY{o}{\PYZgt{}}\PY{+w}{ }\PY{l+m+mi}{50}\PY{+w}{ }\PY{o}{\PYZam{}}\PY{o}{\PYZam{}}\PY{+w}{ }\PY{n}{r}\PY{+w}{ }\PY{o}{!}\PY{o}{=}\PY{+w}{ }\PY{n}{stable}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{    }\PY{n}{stable}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{r}\PY{p}{;}
+\PY{+w}{    }\PY{k}{return}\PY{+w}{ }\PY{n}{stable}\PY{+w}{ }\PY{o}{=}\PY{o}{=}\PY{+w}{ }\PY{n}{LOW}\PY{p}{;}
+\PY{+w}{  }\PY{p}{\PYZcb{}}
+\PY{+w}{  }\PY{k}{return}\PY{+w}{ }\PY{n+nb}{false}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{setup}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{n}{Serial}\PY{p}{.}\PY{n}{begin}\PY{p}{(}\PY{l+m+mi}{115200}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{pinMode}\PY{p}{(}\PY{n}{BTN\PYZus{}PIN}\PY{p}{,}\PY{+w}{ }\PY{n}{INPUT\PYZus{}PULLUP}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{ledcAttach}\PY{p}{(}\PY{n}{LED\PYZus{}PIN}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{5000}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{8}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{ledcWrite}\PY{p}{(}\PY{n}{LED\PYZus{}PIN}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{loop}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{buttonPressed}\PY{p}{(}\PY{p}{)}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{    }\PY{n}{mode}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{p}{(}\PY{n}{mode}\PY{+w}{ }\PY{o}{+}\PY{+w}{ }\PY{l+m+mi}{1}\PY{p}{)}\PY{+w}{ }\PY{o}{\PYZpc{}}\PY{+w}{ }\PY{l+m+mi}{3}\PY{p}{;}\PY{+w}{                   }\PY{c+c1}{// 0 \PYZhy{}\PYZgt{} 1 \PYZhy{}\PYZgt{} 2 \PYZhy{}\PYZgt{} 0}
+\PY{+w}{    }\PY{n}{ledcWrite}\PY{p}{(}\PY{n}{LED\PYZus{}PIN}\PY{p}{,}\PY{+w}{ }\PY{n}{gammaDuty}\PY{p}{(}\PY{n}{LEVELS}\PY{p}{[}\PY{n}{mode}\PY{p}{]}\PY{p}{)}\PY{p}{)}\PY{p}{;}
+\PY{+w}{    }\PY{n}{Serial}\PY{p}{.}\PY{n}{printf}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{Яркость: \PYZpc{}d\PYZpc{}\PYZpc{}}\PY{l+s+se}{\PYZbs{}n}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{n}{LEVELS}\PY{p}{[}\PY{n}{mode}\PY{p}{]}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{p}{\PYZcb{}}
+\PY{p}{\PYZcb{}}
+\end{CodeVerbatim}

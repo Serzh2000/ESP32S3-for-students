@@ -1,0 +1,59 @@
+\begin{CodeVerbatim}
+\PY{c+c1}{// Button GPIO5 \PYZhy{}\PYZgt{} GND. Hold for 2 s to open a 120 s setup window.}
+\PY{c+c1}{// LED GPIO4 through a resistor; standalone example, no ESPUI server.}
+\PY{c+cp}{\PYZsh{}}\PY{c+cp}{include}\PY{+w}{ }\PY{c+cpf}{\PYZlt{}WiFi.h\PYZgt{}}
+\PY{c+cp}{\PYZsh{}}\PY{c+cp}{include}\PY{+w}{ }\PY{c+cpf}{\PYZlt{}WiFiManager.h\PYZgt{}}
+\PY{n}{WiFiManager}\PY{+w}{ }\PY{n}{wm}\PY{p}{;}\PY{+w}{ }\PY{c+c1}{// must outlive setup() in nonblocking mode}
+\PY{k+kt}{uint32\PYZus{}t}\PY{+w}{ }\PY{n}{portalStarted}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}
+\PY{k+kt}{bool}\PY{+w}{ }\PY{n}{buttonHeld}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n+nb}{false}\PY{p}{,}\PY{+w}{ }\PY{n}{handled}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n+nb}{false}\PY{p}{;}
+\PY{k+kt}{uint32\PYZus{}t}\PY{+w}{ }\PY{n}{pressedAt}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{openPortal}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{n}{wm}\PY{p}{.}\PY{n}{startConfigPortal}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{S3\PYZhy{}Setup}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{setup\PYZhy{}40\PYZhy{}demo}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{portalStarted}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{millis}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{Serial}\PY{p}{.}\PY{n}{println}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{Setup window requested; see AP address below}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{Serial}\PY{p}{.}\PY{n}{println}\PY{p}{(}\PY{n}{WiFi}\PY{p}{.}\PY{n}{softAPIP}\PY{p}{(}\PY{p}{)}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{setup}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{n}{Serial}\PY{p}{.}\PY{n}{begin}\PY{p}{(}\PY{l+m+mi}{115200}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{pinMode}\PY{p}{(}\PY{l+m+mi}{4}\PY{p}{,}\PY{+w}{ }\PY{n}{OUTPUT}\PY{p}{)}\PY{p}{;}\PY{+w}{ }\PY{n}{digitalWrite}\PY{p}{(}\PY{l+m+mi}{4}\PY{p}{,}\PY{+w}{ }\PY{n}{LOW}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{pinMode}\PY{p}{(}\PY{l+m+mi}{5}\PY{p}{,}\PY{+w}{ }\PY{n}{INPUT\PYZus{}PULLUP}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{WiFi}\PY{p}{.}\PY{n}{mode}\PY{p}{(}\PY{n}{WIFI\PYZus{}STA}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{wm}\PY{p}{.}\PY{n}{setDebugOutput}\PY{p}{(}\PY{n+nb}{false}\PY{p}{)}\PY{p}{;}\PY{+w}{ }\PY{c+c1}{// do not print network secrets}
+\PY{+w}{  }\PY{n}{wm}\PY{p}{.}\PY{n}{setConfigPortalBlocking}\PY{p}{(}\PY{n+nb}{false}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{wm}\PY{p}{.}\PY{n}{setConnectTimeout}\PY{p}{(}\PY{l+m+mi}{10}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{WiFi}\PY{p}{.}\PY{n}{begin}\PY{p}{(}\PY{p}{)}\PY{p}{;}\PY{+w}{ }\PY{c+c1}{// try credentials already stored on the board}
+\PY{+w}{  }\PY{n}{Serial}\PY{p}{.}\PY{n}{println}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{Hold GPIO5 button for 2 s to configure Wi\PYZhy{}Fi}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{loop}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{n}{wm}\PY{p}{.}\PY{n}{process}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{k+kt}{uint32\PYZus{}t}\PY{+w}{ }\PY{n}{now}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{millis}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{wm}\PY{p}{.}\PY{n}{getConfigPortalActive}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{o}{\PYZam{}}\PY{o}{\PYZam{}}\PY{+w}{ }\PY{n}{now}\PY{+w}{ }\PY{o}{\PYZhy{}}\PY{+w}{ }\PY{n}{portalStarted}\PY{+w}{ }\PY{o}{\PYZgt{}}\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{120000}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{    }\PY{n}{wm}\PY{p}{.}\PY{n}{stopConfigPortal}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+\PY{+w}{    }\PY{n}{Serial}\PY{p}{.}\PY{n}{println}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{Setup window closed}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{p}{\PYZcb{}}
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{digitalRead}\PY{p}{(}\PY{l+m+mi}{5}\PY{p}{)}\PY{+w}{ }\PY{o}{=}\PY{o}{=}\PY{+w}{ }\PY{n}{LOW}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{    }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{o}{!}\PY{n}{buttonHeld}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{      }\PY{n}{buttonHeld}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n+nb}{true}\PY{p}{;}\PY{+w}{ }\PY{n}{handled}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n+nb}{false}\PY{p}{;}\PY{+w}{ }\PY{n}{pressedAt}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{now}\PY{p}{;}
+\PY{+w}{    }\PY{p}{\PYZcb{}}
+\PY{+w}{    }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{o}{!}\PY{n}{handled}\PY{+w}{ }\PY{o}{\PYZam{}}\PY{o}{\PYZam{}}\PY{+w}{ }\PY{n}{now}\PY{+w}{ }\PY{o}{\PYZhy{}}\PY{+w}{ }\PY{n}{pressedAt}\PY{+w}{ }\PY{o}{\PYZgt{}}\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{2000}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{      }\PY{n}{handled}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n+nb}{true}\PY{p}{;}
+\PY{+w}{      }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{o}{!}\PY{n}{wm}\PY{p}{.}\PY{n}{getConfigPortalActive}\PY{p}{(}\PY{p}{)}\PY{p}{)}\PY{+w}{ }\PY{n}{openPortal}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+\PY{+w}{    }\PY{p}{\PYZcb{}}
+\PY{+w}{  }\PY{p}{\PYZcb{}}\PY{+w}{ }\PY{k}{else}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{    }\PY{n}{buttonHeld}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n+nb}{false}\PY{p}{;}\PY{+w}{ }\PY{n}{handled}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n+nb}{false}\PY{p}{;}
+\PY{+w}{  }\PY{p}{\PYZcb{}}
+\PY{+w}{  }\PY{k}{static}\PY{+w}{ }\PY{k+kt}{uint32\PYZus{}t}\PY{+w}{ }\PY{n}{last}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}
+\PY{+w}{  }\PY{k}{static}\PY{+w}{ }\PY{k+kt}{bool}\PY{+w}{ }\PY{n}{led}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n+nb}{false}\PY{p}{;}
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{now}\PY{+w}{ }\PY{o}{\PYZhy{}}\PY{+w}{ }\PY{n}{last}\PY{+w}{ }\PY{o}{\PYZgt{}}\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{500}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{    }\PY{n}{last}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{now}\PY{p}{;}\PY{+w}{ }\PY{n}{led}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{o}{!}\PY{n}{led}\PY{p}{;}\PY{+w}{ }\PY{n}{digitalWrite}\PY{p}{(}\PY{l+m+mi}{4}\PY{p}{,}\PY{+w}{ }\PY{n}{led}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{p}{\PYZcb{}}
+\PY{+w}{  }\PY{k}{static}\PY{+w}{ }\PY{k+kt}{bool}\PY{+w}{ }\PY{n}{reported}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n+nb}{false}\PY{p}{;}
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{WiFi}\PY{p}{.}\PY{n}{status}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{o}{=}\PY{o}{=}\PY{+w}{ }\PY{n}{WL\PYZus{}CONNECTED}\PY{+w}{ }\PY{o}{\PYZam{}}\PY{o}{\PYZam{}}\PY{+w}{ }\PY{o}{!}\PY{n}{reported}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{    }\PY{n}{Serial}\PY{p}{.}\PY{n}{print}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{Connected: }\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{;}\PY{+w}{ }\PY{n}{Serial}\PY{p}{.}\PY{n}{println}\PY{p}{(}\PY{n}{WiFi}\PY{p}{.}\PY{n}{localIP}\PY{p}{(}\PY{p}{)}\PY{p}{)}\PY{p}{;}
+\PY{+w}{    }\PY{n}{reported}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n+nb}{true}\PY{p}{;}
+\PY{+w}{  }\PY{p}{\PYZcb{}}
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{WiFi}\PY{p}{.}\PY{n}{status}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{o}{!}\PY{o}{=}\PY{+w}{ }\PY{n}{WL\PYZus{}CONNECTED}\PY{p}{)}\PY{+w}{ }\PY{n}{reported}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n+nb}{false}\PY{p}{;}
+\PY{+w}{  }\PY{n}{delay}\PY{p}{(}\PY{l+m+mi}{1}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+\end{CodeVerbatim}

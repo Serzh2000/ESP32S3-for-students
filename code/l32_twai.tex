@@ -1,0 +1,39 @@
+\begin{CodeVerbatim}
+\PY{c+c1}{// Two external 3.3V\PYZhy{}logic CAN transceivers; 500 kbit/s on both boards.}
+\PY{c+cp}{\PYZsh{}}\PY{c+cp}{include}\PY{+w}{ }\PY{c+cpf}{\PYZlt{}Arduino.h\PYZgt{}}
+\PY{c+cp}{\PYZsh{}}\PY{c+cp}{include}\PY{+w}{ }\PY{c+cpf}{\PYZdq{}driver/twai.h\PYZdq{}}
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{uint32\PYZus{}t}\PY{+w}{ }\PY{n}{NODE\PYZus{}ID}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mh}{0x101}\PY{p}{;}\PY{+w}{ }\PY{c+c1}{// second board: 0x102}
+\PY{k+kt}{bool}\PY{+w}{ }\PY{n}{ready}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n+nb}{false}\PY{p}{;}
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{setup}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{n}{Serial}\PY{p}{.}\PY{n}{begin}\PY{p}{(}\PY{l+m+mi}{115200}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{twai\PYZus{}general\PYZus{}config\PYZus{}t}\PY{+w}{ }\PY{n}{general}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{TWAI\PYZus{}GENERAL\PYZus{}CONFIG\PYZus{}DEFAULT}\PY{p}{(}\PY{n}{GPIO\PYZus{}NUM\PYZus{}16}\PY{p}{,}\PY{+w}{ }\PY{n}{GPIO\PYZus{}NUM\PYZus{}17}\PY{p}{,}
+\PY{+w}{                                            }\PY{n}{TWAI\PYZus{}MODE\PYZus{}NORMAL}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{twai\PYZus{}timing\PYZus{}config\PYZus{}t}\PY{+w}{ }\PY{n}{timing}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{TWAI\PYZus{}TIMING\PYZus{}CONFIG\PYZus{}500KBITS}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{twai\PYZus{}filter\PYZus{}config\PYZus{}t}\PY{+w}{ }\PY{n}{filter}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{TWAI\PYZus{}FILTER\PYZus{}CONFIG\PYZus{}ACCEPT\PYZus{}ALL}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{ESP\PYZus{}ERROR\PYZus{}CHECK}\PY{p}{(}\PY{n}{twai\PYZus{}driver\PYZus{}install}\PY{p}{(}\PY{o}{\PYZam{}}\PY{n}{general}\PY{p}{,}\PY{+w}{ }\PY{o}{\PYZam{}}\PY{n}{timing}\PY{p}{,}\PY{+w}{ }\PY{o}{\PYZam{}}\PY{n}{filter}\PY{p}{)}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{ESP\PYZus{}ERROR\PYZus{}CHECK}\PY{p}{(}\PY{n}{twai\PYZus{}start}\PY{p}{(}\PY{p}{)}\PY{p}{)}\PY{p}{;}\PY{+w}{ }\PY{n}{ready}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n+nb}{true}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{loop}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{o}{!}\PY{n}{ready}\PY{p}{)}\PY{+w}{ }\PY{k}{return}\PY{p}{;}
+\PY{+w}{  }\PY{k}{static}\PY{+w}{ }\PY{k+kt}{uint32\PYZus{}t}\PY{+w}{ }\PY{n}{last}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{,}\PY{+w}{ }\PY{n}{sequence}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{millis}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{o}{\PYZhy{}}\PY{+w}{ }\PY{n}{last}\PY{+w}{ }\PY{o}{\PYZgt{}}\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{1000}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{    }\PY{n}{last}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{millis}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+\PY{+w}{    }\PY{n}{twai\PYZus{}message\PYZus{}t}\PY{+w}{ }\PY{n}{tx}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{p}{\PYZcb{}}\PY{p}{;}\PY{+w}{ }\PY{n}{tx}\PY{p}{.}\PY{n}{identifier}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{NODE\PYZus{}ID}\PY{p}{;}
+\PY{+w}{    }\PY{n}{tx}\PY{p}{.}\PY{n}{data\PYZus{}length\PYZus{}code}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{4}\PY{p}{;}
+\PY{+w}{    }\PY{k}{for}\PY{+w}{ }\PY{p}{(}\PY{k+kt}{int}\PY{+w}{ }\PY{n}{i}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}\PY{+w}{ }\PY{n}{i}\PY{+w}{ }\PY{o}{\PYZlt{}}\PY{+w}{ }\PY{l+m+mi}{4}\PY{p}{;}\PY{+w}{ }\PY{o}{+}\PY{o}{+}\PY{n}{i}\PY{p}{)}\PY{+w}{ }\PY{n}{tx}\PY{p}{.}\PY{n}{data}\PY{p}{[}\PY{n}{i}\PY{p}{]}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{p}{(}\PY{n}{sequence}\PY{+w}{ }\PY{o}{\PYZgt{}}\PY{o}{\PYZgt{}}\PY{+w}{ }\PY{p}{(}\PY{l+m+mi}{8}\PY{+w}{ }\PY{o}{*}\PY{+w}{ }\PY{n}{i}\PY{p}{)}\PY{p}{)}\PY{+w}{ }\PY{o}{\PYZam{}}\PY{+w}{ }\PY{l+m+mi}{255}\PY{p}{;}
+\PY{+w}{    }\PY{n}{esp\PYZus{}err\PYZus{}t}\PY{+w}{ }\PY{n}{err}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{twai\PYZus{}transmit}\PY{p}{(}\PY{o}{\PYZam{}}\PY{n}{tx}\PY{p}{,}\PY{+w}{ }\PY{n}{pdMS\PYZus{}TO\PYZus{}TICKS}\PY{p}{(}\PY{l+m+mi}{20}\PY{p}{)}\PY{p}{)}\PY{p}{;}
+\PY{+w}{    }\PY{n}{Serial}\PY{p}{.}\PY{n}{printf}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{queue result=\PYZpc{}s seq=\PYZpc{}lu}\PY{l+s+se}{\PYZbs{}n}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{n}{esp\PYZus{}err\PYZus{}to\PYZus{}name}\PY{p}{(}\PY{n}{err}\PY{p}{)}\PY{p}{,}
+\PY{+w}{                  }\PY{p}{(}\PY{k+kt}{unsigned}\PY{+w}{ }\PY{k+kt}{long}\PY{p}{)}\PY{n}{sequence}\PY{o}{+}\PY{o}{+}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{p}{\PYZcb{}}
+\PY{+w}{  }\PY{n}{twai\PYZus{}message\PYZus{}t}\PY{+w}{ }\PY{n}{rx}\PY{p}{;}
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{twai\PYZus{}receive}\PY{p}{(}\PY{o}{\PYZam{}}\PY{n}{rx}\PY{p}{,}\PY{+w}{ }\PY{n}{pdMS\PYZus{}TO\PYZus{}TICKS}\PY{p}{(}\PY{l+m+mi}{10}\PY{p}{)}\PY{p}{)}\PY{+w}{ }\PY{o}{=}\PY{o}{=}\PY{+w}{ }\PY{n}{ESP\PYZus{}OK}\PY{p}{)}
+\PY{+w}{    }\PY{n}{Serial}\PY{p}{.}\PY{n}{printf}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{RX id=\PYZpc{}03lx bytes=\PYZpc{}d first=\PYZpc{}d}\PY{l+s+se}{\PYZbs{}n}\PY{l+s}{\PYZdq{}}\PY{p}{,}
+\PY{+w}{        }\PY{p}{(}\PY{k+kt}{unsigned}\PY{+w}{ }\PY{k+kt}{long}\PY{p}{)}\PY{n}{rx}\PY{p}{.}\PY{n}{identifier}\PY{p}{,}\PY{+w}{ }\PY{n}{rx}\PY{p}{.}\PY{n}{data\PYZus{}length\PYZus{}code}\PY{p}{,}\PY{+w}{ }\PY{n}{rx}\PY{p}{.}\PY{n}{data}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{]}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{twai\PYZus{}status\PYZus{}info\PYZus{}t}\PY{+w}{ }\PY{n}{status}\PY{p}{;}
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{twai\PYZus{}get\PYZus{}status\PYZus{}info}\PY{p}{(}\PY{o}{\PYZam{}}\PY{n}{status}\PY{p}{)}\PY{+w}{ }\PY{o}{=}\PY{o}{=}\PY{+w}{ }\PY{n}{ESP\PYZus{}OK}\PY{+w}{ }\PY{o}{\PYZam{}}\PY{o}{\PYZam{}}
+\PY{+w}{      }\PY{n}{status}\PY{p}{.}\PY{n}{state}\PY{+w}{ }\PY{o}{=}\PY{o}{=}\PY{+w}{ }\PY{n}{TWAI\PYZus{}STATE\PYZus{}BUS\PYZus{}OFF}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{    }\PY{n}{Serial}\PY{p}{.}\PY{n}{println}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{BUS OFF: check wiring, then reset}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{;}
+\PY{+w}{    }\PY{n}{ready}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n+nb}{false}\PY{p}{;}
+\PY{+w}{  }\PY{p}{\PYZcb{}}
+\PY{p}{\PYZcb{}}
+\end{CodeVerbatim}

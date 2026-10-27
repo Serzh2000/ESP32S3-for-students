@@ -1,0 +1,32 @@
+\begin{CodeVerbatim}
+\PY{c+c1}{// INMP441: VDD=3V3, GND=GND, L/R=GND (left slot).}
+\PY{c+cp}{\PYZsh{}}\PY{c+cp}{include}\PY{+w}{ }\PY{c+cpf}{\PYZlt{}ESP\PYZus{}I2S.h\PYZgt{}}
+\PY{c+cp}{\PYZsh{}}\PY{c+cp}{include}\PY{+w}{ }\PY{c+cpf}{\PYZlt{}math.h\PYZgt{}}
+\PY{n}{I2SClass}\PY{+w}{ }\PY{n}{mic}\PY{p}{;}
+\PY{k+kt}{bool}\PY{+w}{ }\PY{n}{ready}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n+nb}{false}\PY{p}{;}
+\PY{k+kt}{int32\PYZus{}t}\PY{+w}{ }\PY{n}{samples}\PY{p}{[}\PY{l+m+mi}{256}\PY{p}{]}\PY{p}{;}
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{setup}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{n}{Serial}\PY{p}{.}\PY{n}{begin}\PY{p}{(}\PY{l+m+mi}{115200}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{mic}\PY{p}{.}\PY{n}{setPins}\PY{p}{(}\PY{l+m+mi}{16}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{17}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{\PYZhy{}1}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{18}\PY{p}{)}\PY{p}{;}\PY{+w}{ }\PY{c+c1}{// BCLK, WS, DOUT unused, DIN}
+\PY{+w}{  }\PY{n}{ready}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{mic}\PY{p}{.}\PY{n}{begin}\PY{p}{(}\PY{n}{I2S\PYZus{}MODE\PYZus{}STD}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{16000}\PY{p}{,}
+\PY{+w}{                    }\PY{n}{I2S\PYZus{}DATA\PYZus{}BIT\PYZus{}WIDTH\PYZus{}32BIT}\PY{p}{,}\PY{+w}{ }\PY{n}{I2S\PYZus{}SLOT\PYZus{}MODE\PYZus{}MONO}\PY{p}{,}
+\PY{+w}{                    }\PY{n}{I2S\PYZus{}STD\PYZus{}SLOT\PYZus{}LEFT}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{o}{!}\PY{n}{ready}\PY{p}{)}\PY{+w}{ }\PY{n}{Serial}\PY{p}{.}\PY{n}{println}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{I2S init failed}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{loop}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{o}{!}\PY{n}{ready}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{ }\PY{n}{delay}\PY{p}{(}\PY{l+m+mi}{100}\PY{p}{)}\PY{p}{;}\PY{+w}{ }\PY{k}{return}\PY{p}{;}\PY{+w}{ }\PY{p}{\PYZcb{}}
+\PY{+w}{  }\PY{k+kt}{size\PYZus{}t}\PY{+w}{ }\PY{n}{bytes}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{mic}\PY{p}{.}\PY{n}{readBytes}\PY{p}{(}\PY{p}{(}\PY{k+kt}{char}\PY{o}{*}\PY{p}{)}\PY{n}{samples}\PY{p}{,}\PY{+w}{ }\PY{k}{sizeof}\PY{p}{(}\PY{n}{samples}\PY{p}{)}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{k+kt}{size\PYZus{}t}\PY{+w}{ }\PY{n}{n}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{bytes}\PY{+w}{ }\PY{o}{/}\PY{+w}{ }\PY{k}{sizeof}\PY{p}{(}\PY{n}{samples}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{]}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{o}{!}\PY{n}{n}\PY{p}{)}\PY{+w}{ }\PY{k}{return}\PY{p}{;}
+\PY{+w}{  }\PY{k+kt}{double}\PY{+w}{ }\PY{n}{mean}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{,}\PY{+w}{ }\PY{n}{energy}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}
+\PY{+w}{  }\PY{c+c1}{// INMP441: signed sample is left\PYZhy{}aligned in the 32\PYZhy{}bit slot.}
+\PY{+w}{  }\PY{k}{for}\PY{+w}{ }\PY{p}{(}\PY{k+kt}{size\PYZus{}t}\PY{+w}{ }\PY{n}{i}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}\PY{+w}{ }\PY{n}{i}\PY{+w}{ }\PY{o}{\PYZlt{}}\PY{+w}{ }\PY{n}{n}\PY{p}{;}\PY{+w}{ }\PY{o}{+}\PY{o}{+}\PY{n}{i}\PY{p}{)}\PY{+w}{ }\PY{n}{mean}\PY{+w}{ }\PY{o}{+}\PY{o}{=}\PY{+w}{ }\PY{n}{samples}\PY{p}{[}\PY{n}{i}\PY{p}{]}\PY{+w}{ }\PY{o}{/}\PY{+w}{ }\PY{l+m+mf}{256.0}\PY{p}{;}
+\PY{+w}{  }\PY{n}{mean}\PY{+w}{ }\PY{o}{/}\PY{o}{=}\PY{+w}{ }\PY{n}{n}\PY{p}{;}
+\PY{+w}{  }\PY{k}{for}\PY{+w}{ }\PY{p}{(}\PY{k+kt}{size\PYZus{}t}\PY{+w}{ }\PY{n}{i}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}\PY{+w}{ }\PY{n}{i}\PY{+w}{ }\PY{o}{\PYZlt{}}\PY{+w}{ }\PY{n}{n}\PY{p}{;}\PY{+w}{ }\PY{o}{+}\PY{o}{+}\PY{n}{i}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{    }\PY{k+kt}{double}\PY{+w}{ }\PY{n}{x}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{samples}\PY{p}{[}\PY{n}{i}\PY{p}{]}\PY{+w}{ }\PY{o}{/}\PY{+w}{ }\PY{l+m+mf}{256.0}\PY{+w}{ }\PY{o}{\PYZhy{}}\PY{+w}{ }\PY{n}{mean}\PY{p}{;}
+\PY{+w}{    }\PY{n}{energy}\PY{+w}{ }\PY{o}{+}\PY{o}{=}\PY{+w}{ }\PY{n}{x}\PY{+w}{ }\PY{o}{*}\PY{+w}{ }\PY{n}{x}\PY{p}{;}
+\PY{+w}{  }\PY{p}{\PYZcb{}}
+\PY{+w}{  }\PY{n}{Serial}\PY{p}{.}\PY{n}{printf}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{rms:\PYZpc{}.1f}\PY{l+s+se}{\PYZbs{}n}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{n}{sqrt}\PY{p}{(}\PY{n}{energy}\PY{+w}{ }\PY{o}{/}\PY{+w}{ }\PY{n}{n}\PY{p}{)}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{delay}\PY{p}{(}\PY{l+m+mi}{20}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+\end{CodeVerbatim}

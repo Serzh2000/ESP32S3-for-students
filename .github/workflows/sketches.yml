@@ -1,0 +1,47 @@
+name: Проверка примеров
+
+on:
+  push:
+    paths: ['code/**', 'examples/web-panels/**', 'tools/install_web_libraries.py', 'export_sketches.py', '.github/workflows/sketches.yml']
+  pull_request:
+    paths: ['code/**', 'examples/web-panels/**', 'tools/install_web_libraries.py', 'export_sketches.py', '.github/workflows/sketches.yml']
+
+jobs:
+  compile:
+    runs-on: ubuntu-latest
+    env:
+      ESP32_INDEX: https://espressif.github.io/arduino-esp32/package_esp32_index.json
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: arduino/setup-arduino-cli@v2
+
+      - name: Установить ядро ESP32 и библиотеки
+        run: |
+          arduino-cli core update-index --additional-urls "$ESP32_INDEX"
+          arduino-cli core install esp32:esp32@3.2.0 --additional-urls "$ESP32_INDEX"
+          arduino-cli lib install "Adafruit SSD1306" "Adafruit GFX Library" "PubSubClient" \
+            "OneWire" "DallasTemperature" "DHT sensor library" "Adafruit Unified Sensor" \
+            "Adafruit NeoPixel" "Adafruit ST7735 and ST7789 Library"
+
+      - name: Установить проверенные зависимости веб-панелей
+        run: python tools/install_web_libraries.py --output "$RUNNER_TEMP/web-libraries"
+
+      - name: Разложить примеры по скетчам
+        run: python export_sketches.py
+
+      - name: Скомпилировать для ESP32-S3
+        run: |
+          set -e
+          for dir in sketches/*/; do
+            echo "::group::$dir"
+            fqbn=esp32:esp32:esp32s3
+            case "$dir" in
+              *l19_*|*l34_*) fqbn="$fqbn:USBMode=default" ;;                          # нативный USB (HID)
+              *l20_*) fqbn="$fqbn:PSRAM=opi,PartitionScheme=huge_app" ;;       # камера
+            esac
+            arduino-cli compile --fqbn "$fqbn" --libraries "$RUNNER_TEMP/web-libraries" "$dir"
+            echo "::endgroup::"
+          done

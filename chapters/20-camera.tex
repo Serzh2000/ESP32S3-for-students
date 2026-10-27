@@ -1,0 +1,345 @@
+% =====================================================================
+\section{ESP32-S3 CAM: камера}
+% =====================================================================
+\lessonintro
+  {запустить камеру на плате ESP32-S3-CAM, показать видео в браузере и сохранить снимок на microSD}
+  {урок 8 (Wi-Fi и веб-сервер), урок 10 (карта памяти), урок 11 (PSRAM)}
+  {плата показывает поток MJPEG на странице в браузере, отдаёт снимок по адресу \code{/capture} и сохраняет фото на карту}
+  {плата ESP32-S3-CAM (например, ESP32-S3 WROOM CAM) с камерой OV2640, кабель USB, microSD-карта, питание \SI{5}{V} от порта с током не менее \SI{1}{A}}
+
+\subsection{Сначала: камера, которая сама сжимает картинку}
+
+Камера платы --- это крошечная микросхема-сенсор. Она смотрит на мир через линзу, превращает свет в
+цифровые числа и сразу упаковывает снимок в формат JPEG --- такой же, как фотографии в телефоне. Плата
+получает не миллионы отдельных точек, а готовый небольшой файл. Его можно сохранить на карту или передать
+по Wi-Fi в браузер. Если слать такие кадры один за другим, получится видео --- MJPEG. Поэтому для работы
+нужны три вещи: правильно подключённая камера, память для кадров (PSRAM) и аккуратное обращение с
+буферами --- об этом ниже.
+
+\subsection{Что такое плата ESP32-S3-CAM}
+
+\textbf{ESP32-S3-CAM} (в том числе ESP32-S3 WROOM CAM и совместимые платы разных производителей) --- это
+ESP32-S3 с разъёмом камеры, слотом microSD и памятью PSRAM на одной плате. Такая плата во многом похожа
+на знаменитую ESP32-CAM, но удобнее.
+
+\begin{center}\small
+\begin{tabularx}{\textwidth}{@{}l X X@{}}
+\toprule
+ & ESP32-CAM (старая) & ESP32-S3-CAM \\
+\midrule
+Чип & ESP32, 2 ядра Xtensa LX6 & ESP32-S3, 2 ядра Xtensa LX7 с инструкциями для ИИ \\
+Память PSRAM & около \SI{4}{MB}, шина Quad & обычно \SI{8}{MB}, шина Octal (OPI) \\
+USB и прошивка & нет USB, нужен внешний USB--UART-программатор & нативный USB: прошивка и порт по одному кабелю \\
+Камера & OV2640 & OV2640 или OV5640 (зависит от комплекта) \\
+microSD & есть & есть \\
+Bluetooth & Classic и BLE & только BLE 5 \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+Конкретные характеристики зависят от производителя: сверяйтесь с описанием своей платы.
+
+\subsection{Сенсоры OV2640 и OV5640}
+
+В комплекте обычно идёт сенсор OV2640 (2 Мп). Более новый OV5640 (5 Мп) даёт больше деталей, но греется
+сильнее и требует больше памяти. Оба умеют сами сжимать кадр в JPEG, и драйвер \code{esp32-camera}, который
+входит в ядро Arduino-ESP32, поддерживает оба.
+
+\begin{center}\small
+\begin{tabularx}{\textwidth}{@{}l X X@{}}
+\toprule
+ & OV2640 & OV5640 \\
+\midrule
+Матрица & 2 Мп, до $1600\times1200$ (UXGA) & 5 Мп, до $2592\times1944$ \\
+JPEG в самом датчике & есть & есть \\
+Автофокус & нет, объектив с фиксированным фокусом & есть у вариантов с механизмом фокусировки (AF) \\
+Нагрев и потребление & ниже & выше \\
+Для чего подходит & видеопоток, фото, учебные проекты & подробные фото, но нагрузка на память и Wi-Fi выше \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+Возможности указаны ориентировочно: они зависят от модуля, объектива и версии драйвера.
+
+\subsection{Интерфейс DVP и путь кадра}
+
+Камера соединяется с ESP32-S3 по \textbf{параллельному интерфейсу DVP} (Digital Video Port). Данные идут
+по восьми линиям D0--D7 сразу целым байтом, а ритм задают несколько служебных сигналов:
+\begin{itemize}[leftmargin=*]
+  \item \textbf{XCLK} --- тактовая частота, которую плата \emph{подаёт} камере (около \SI{20}{MHz});
+  \item \textbf{PCLK} --- тактовая частота, с которой камера \emph{выдаёт} байты данных;
+  \item \textbf{VSYNC} --- импульс «начался новый кадр»;
+  \item \textbf{HREF} --- уровень HIGH, пока идёт строка кадра.
+\end{itemize}
+Отдельно, по двум проводам, плата настраивает камеру (разрешение, яркость, качество JPEG). Эта шина
+называется \textbf{SCCB}, фактически она совместима с I\textsuperscript{2}C и называется SIOD/SIOC (данные/такт).
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[font=\sffamily\scriptsize,
+  box/.style={blk,minimum width=2.5cm,minimum height=1.8cm,font=\sffamily\scriptsize}]
+  \node[box,fill=blkper] (s) at (0,0) {\textbf{Сенсор}\\ OV2640\\ матрица и\\ JPEG-кодер};
+  \node[box,fill=blkcpu] (e) at (4.5,0) {\textbf{ESP32-S3}\\ интерфейс\\ камеры + DMA};
+  \node[box,fill=blkmem] (m) at (9,0) {\textbf{PSRAM}\\ буфер кадра\\ (готовый JPEG)};
+  \node[box,fill=blkrf,minimum height=1.2cm] (w) at (13.4,1.1) {Wi-Fi\\ браузер};
+  \node[box,fill=blkper,minimum height=1.2cm] (c) at (13.4,-1.1) {microSD};
+  \draw[arr,thick] (s) -- node[above,align=center]{DVP\\ D0--D7,\\ PCLK,\\ VSYNC,\\ HREF} (e);
+  \draw[arr,thick] (e) -- node[above,align=center]{DMA} (m);
+  \draw[arr,okgreen] (m.east) -- (w.west);
+  \draw[arr,okgreen] (m.east) -- (c.west);
+  \draw[arr,accent] ([xshift=-0.4cm]e.south) -- ++(0,-0.9) -| node[pos=0.25,above]{SCCB (I\textsuperscript{2}C): настройки} ([xshift=0.4cm]s.south);
+  \draw[arr,esp] ([xshift=0.4cm]e.south) -- ++(0,-1.6) -| node[pos=0.25,below]{XCLK $\approx\SI{20}{MHz}$} ([xshift=-0.4cm]s.south);
+\end{tikzpicture}
+\caption{Путь кадра: сенсор формирует JPEG, интерфейс DVP передаёт байты в ESP32-S3,
+DMA кладёт кадр в PSRAM, а программа отправляет его по Wi-Fi или записывает на карту}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[x=0.95cm,y=0.75cm,font=\sffamily\scriptsize]
+  \node[left,text=esp] at (-0.2,6.5) {VSYNC};
+  \draw[very thick,esp] (0,6) -- (0.5,6) -- (0.5,7) -- (1.4,7) -- (1.4,6) -- (14,6);
+  \node[left,text=accent] at (-0.2,4.5) {HREF};
+  \draw[very thick,accent] (0,4) -- (2,4)
+    \foreach \k in {0,1,2}{ -- ({2+\k*4},5) -- ({5+\k*4},5) -- ({5+\k*4},4) -- ({6+\k*4},4) }
+    -- (14,4);
+  \node[left,text=okgreen] at (-0.2,2.5) {PCLK};
+  \foreach \k in {0,1,2}{
+    \draw[thick,okgreen] ({2+\k*4},2) \foreach \j in {0,...,3}{ -- ({2+\k*4+\j*0.75},3) -- ({2.375+\k*4+\j*0.75},3) -- ({2.375+\k*4+\j*0.75},2) -- ({2.75+\k*4+\j*0.75},2) };
+  }
+  \node[left,text=black] at (-0.2,0.5) {D0--D7};
+  \foreach \k in {0,1,2}{
+    \foreach \j/\b in {0/B1,1/B2,2/B3,3/B4}{
+      \draw[thick] ({2+\k*4+\j*0.75},0) -- ++(0.1,1) -- ++(0.55,0) -- ++(0.1,-1) -- ++(-0.1,-1) -- ++(-0.55,0) -- cycle;
+      \node[font=\sffamily\tiny] at ({2.375+\k*4+\j*0.75},0) {\b};
+    }
+  }
+  \draw[dashed,gray] (2,-1.3) -- (2,7.3);
+  \node[below] at (3.5,-1.1) {строка 1};
+  \node[below] at (7.5,-1.1) {строка 2};
+  \node[below] at (11.5,-1.1) {строка 3};
+  \node[above,align=center] at (0.95,7.1) {начало\\ кадра};
+\end{tikzpicture}
+\caption{Временная диаграмма DVP (упрощённо). VSYNC открывает кадр, HREF охватывает строку, а на каждый
+такт PCLK приходит один байт данных. Для JPEG-режима байты --- это уже сжатый поток, поэтому «строка»
+условна}
+\end{figure}
+
+\subsection{Распиновка плат типа ESP32-S3-EYE}
+
+Какой GPIO соединён с каким выводом камеры, определяется разводкой платы. Большинство плат ESP32-S3-CAM
+повторяет схему \emph{Espressif ESP32-S3-EYE}; в примере CameraWebServer из ядра она называется
+\code{CAMERA\_MODEL\_ESP32S3\_EYE}.
+
+\begin{center}\small
+\begin{tabular}{@{}lc|lc|lc|lc@{}}
+\toprule
+Сигнал & GPIO & Сигнал & GPIO & Сигнал & GPIO & Сигнал & GPIO \\
+\midrule
+XCLK & 15 & SIOD (SDA) & 4  & SIOC (SCL) & 5  & PCLK  & 13 \\
+VSYNC & 6 & HREF & 7 & PWDN & $-1$ & RESET & $-1$ \\
+D0 & 11 & D1 & 9 & D2 & 8 & D3 & 10 \\
+D4 & 12 & D5 & 18 & D6 & 17 & D7 & 16 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Значение $-1$ означает, что вывод не используется. \textbf{Эта таблица верна для платы типа ESP32-S3-EYE.}
+Сверьте её со схемой (schematic) именно вашей платы: производитель мог выбрать другие выводы.
+
+\begin{caution}
+Камера занимает \pin{4}, \pin{5}, \pin{6}, \pin{7}, \pin{8}, \pin{9}, \pin{10}, \pin{11}, \pin{12}, \pin{13}, \pin{15}, \pin{16}, \pin{17}
+и \pin{18}. Поэтому на плате с камерой светодиод, кнопку и I\textsuperscript{2}C из прошлых уроков (\pin{4}, \pin{5},
+\pin{8}, \pin{9}) \textbf{придётся перенести} на свободные выводы, например \pin{1}, \pin{2}, \pin{14}, \pin{21}, \pin{41}, \pin{42}
+(проверьте по схеме, какие из них выведены на разъём). Выводы \pin{19} и \pin{20} заняты USB.
+\end{caution}
+
+\subsection{Настройки Arduino IDE}
+
+Выберите плату \textsf{ESP32S3 Dev Module}. Затем в меню \textsf{Tools} задайте:
+\begin{itemize}[leftmargin=*]
+  \item \textsf{PSRAM} $\to$ \textsf{OPI PSRAM} для модулей с Octal PSRAM (например, N16R8, N8R8). Для модулей с
+        Quad PSRAM (N4R2, N8R2) выбирайте \textsf{QSPI PSRAM}. Неверный выбор приведёт к ошибке запуска PSRAM.
+  \item \textsf{Partition Scheme} $\to$ \textsf{Huge APP (3MB No OTA/1MB SPIFFS)}: программа с камерой и Wi-Fi
+        большая и в стандартный раздел не помещается.
+  \item \textsf{USB CDC On Boot} $\to$ \textsf{Enabled}, если Serial Monitor подключён через нативный порт «USB».
+  \item \textsf{Flash Size} --- по вашей плате (чаще всего 8 или 16 МБ).
+\end{itemize}
+
+\subsection{Пример 1: запуск камеры}
+
+Минимальная программа: проверить PSRAM, инициализировать камеру, взять один кадр, вывести его размер и
+вернуть кадр драйверу. Значения в структуре \code{camera\_config\_t} задают выводы (таблица выше) и параметры
+кадра.
+
+\codecap{Инициализация камеры и размер кадра}
+\codeinput{l20_camera_init}
+
+\subsection{Параметры качества и буферы кадра}
+
+Четыре поля структуры задают баланс между качеством, скоростью и памятью.
+
+\begin{center}\small
+\begin{tabularx}{\textwidth}{@{}l X@{}}
+\toprule
+Поле & Что делает \\
+\midrule
+\code{frame\_size} & разрешение: \code{FRAMESIZE\_QVGA} ($320\times240$), \code{VGA} ($640\times480$), \code{SVGA} ($800\times600$), \code{XGA}, \code{UXGA} ($1600\times1200$) \\
+\code{jpeg\_quality} & 0--63: \emph{меньше число --- лучше качество и больше файл}; обычно 10--12 \\
+\code{fb\_count} & число буферов кадра в PSRAM; два буфера позволяют снимать новый кадр, пока предыдущий отправляется \\
+\code{grab\_mode} & \code{CAMERA\_GRAB\_WHEN\_EMPTY} --- новый кадр, когда буфер свободен; \code{CAMERA\_GRAB\_LATEST} --- всегда самый свежий кадр \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[font=\sffamily\scriptsize]
+  \node[blk,fill=blkper,minimum width=2.4cm,minimum height=1.4cm] (c) at (0,0) {Камера\\ (DMA)};
+  \node[blk,fill=blkmem,minimum width=2.2cm,minimum height=1.1cm] (a) at (5,0.9) {буфер A};
+  \node[blk,fill=blkmem,minimum width=2.2cm,minimum height=1.1cm] (b) at (5,-0.9) {буфер B};
+  \node[blk,fill=blkcpu,minimum width=2.8cm,minimum height=1.4cm] (p) at (11.6,0) {Ваш код};
+  \draw[arr] (c.east) -- node[above,sloped,pos=0.45]{пишет} (a.west);
+  \draw[arr,dashed] (c.east) -- (b.west);
+  \draw[arr,accent] (a.east) -- node[above,sloped]{\code{esp\_camera\_fb\_get()}} (p.west);
+  \draw[arr,esp] (p.north) -- ++(0,1.0) -| node[pos=0.25,above]{\code{esp\_camera\_fb\_return()}: буфер снова свободен} (a.north);
+\end{tikzpicture}
+\caption{Кадровые буферы. Драйвер заполняет буферы по очереди, а программа берёт готовый кадр и
+обязательно возвращает его. Если не вернуть, свободные буферы закончатся и \code{fb\_get()} начнёт
+возвращать \code{NULL}}
+\end{figure}
+
+\begin{caution}
+Каждый вызов \code{esp\_camera\_fb\_get()} должен закончиться вызовом \code{esp\_camera\_fb\_return()} с этим же
+кадром --- в том числе при ошибке записи или отключении клиента. Забытый кадр навсегда занимает буфер,
+и через несколько секунд видеопоток остановится. После возврата указатель \code{fb} использовать нельзя.
+\end{caution}
+
+Ориентировочный размер JPEG-кадра и скорость при качестве 10--12. Реальные цифры зависят от сцены,
+освещения и качества Wi-Fi.
+
+\begin{center}\small
+\begin{tabular}{@{}lccc@{}}
+\toprule
+Разрешение & Размер кадра & Размер JPEG (ориентировочно) & Кадров в секунду \\
+\midrule
+QVGA $320\times240$ & 76\,800 точек & \SIrange{5}{15}{kB} & 20--30 \\
+VGA $640\times480$ & 307\,200 точек & \SIrange{15}{40}{kB} & 10--25 \\
+SVGA $800\times600$ & 480\,000 точек & \SIrange{25}{60}{kB} & 8--20 \\
+UXGA $1600\times1200$ & 1\,920\,000 точек & \SIrange{100}{250}{kB} & 3--10 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Пример 2: снимок и видеопоток в браузере}
+
+Во втором примере плата работает как веб-сервер (урок 8). Адрес \code{/capture} возвращает один JPEG,
+а адрес \code{/stream} --- поток \textbf{MJPEG}: ответ сервера не заканчивается, а превращается в бесконечную
+последовательность JPEG-кадров, которую браузер показывает как видео внутри обычного тега
+\code{<img>}. Простой \code{WebServer} обслуживает одного клиента за раз, и пока идёт поток, остальные ждут: для урока
+этого достаточно. Поток сам заканчивается через 10 минут (\code{MAX\_STREAM\_MS}).
+
+\codecap{Снимок \code{/capture} и поток \code{/stream}}
+\codeinput{l20_camera_web}
+
+Запустите программу, откройте Serial Monitor, скопируйте IP-адрес в браузер. Если картинка вверх ногами,
+поверните плату или вызовите после инициализации \code{s->set\_vflip(s, 1)}, где \code{s} --- это \code{esp\_camera\_sensor\_get()}.
+
+\subsection{Пример 3: снимок на microSD}
+
+На платах типа ESP32-S3-EYE слот microSD подключён к периферии SDMMC, а не к SPI из урока 10. Используется
+библиотека \code{SD\_MMC}, выводы: CLK --- \pin{39}, CMD --- \pin{38}, D0 --- \pin{40}. Режим «1-bit» использует одну
+линию данных, этого хватает для фотографий. Выводы слота, как и камеры, \textbf{сверяйте со схемой
+своей платы}. Карта должна быть отформатирована в FAT32.
+
+\codecap{Фото на карту раз в 5 секунд}
+\codeinput{l20_camera_sd}
+
+\subsection{Питание, нагрев, антенна}
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Питание.} Камера, Wi-Fi и карта вместе потребляют ориентировочно до \SIrange{300}{500}{mA}
+        в пике. Используйте хороший USB-порт и короткий качественный кабель: слабый порт или длинный
+        тонкий провод приводят к перезагрузкам из-за brownout (урок 14).
+  \item \textbf{Нагрев.} Во время потока модуль заметно тёплый: это нормально. Если корпус обжигает
+        палец, снизьте разрешение, частоту кадров или добавьте небольшой радиатор.
+  \item \textbf{Антенна.} Плата с печатной антенной не любит металлических корпусов и руки у края модуля.
+        У плат с разъёмом для внешней антенны нужно проверить, какая антенна выбрана перемычкой.
+  \item \textbf{Шлейф камеры} вставляйте и вынимайте только при отключённом питании, контактами в нужную сторону.
+\end{itemize}
+
+\subsection{Типичные ошибки}
+
+\begin{center}\small
+\begin{tabularx}{\textwidth}{@{}l X@{}}
+\toprule
+Сообщение или признак & Что проверить \\
+\midrule
+\code{Camera probe failed with error 0x105} & шлейф вставлен не до конца или не той стороной; неверные \pin{4}/\pin{5} (SCCB); камера не получает питание \\
+\code{0x20001} (камера не найдена) & то же: проблемы с шлейфом или SCCB; неверный тип сенсора \\
+\code{PSRAM ID read error} или \code{psramFound() == false} & в меню выбран не тот тип PSRAM (OPI/QSPI) \\
+Полосы, шум и искажения на кадре & помехи по питанию или длинному шлейфу; снизьте \code{xclk\_freq\_hz} до \SI{10}{MHz} \\
+Перезагрузки и \code{Brownout detector} & недостаточное питание; другой кабель или порт \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\subsection{Что дальше}
+
+Когда видеопоток работает, камеру можно «научить» понимать картинку. Библиотеки Espressif \textbf{ESP-DL}
+(нейросети на ESP32-S3) и \textbf{ESP-WHO} (готовые примеры: обнаружение лиц, распознавание объектов,
+чтение QR-кодов) используют те же буферы кадров, что и этот урок. Это отдельная большая тема, с которой
+удобно начать после освоения базового курса.
+
+\subsection{Самостоятельный опыт: фотоловушка}
+
+Сделайте отдельный скетч. Подключите кнопку между свободным выводом (например, \pin{21}) и GND, подтяжка
+внутренняя. Когда кнопка нажата, плата делает снимок и сохраняет его на microSD с очередным номером в имени.
+Добавьте светодиод, мигающий на время съёмки. Не забывайте про дребезг (урок 3) и про \code{esp\_camera\_fb\_return()}.
+
+\begin{caution}
+\textbf{Этика и безопасность съёмки.} Камера --- не игрушка.
+\begin{itemize}[leftmargin=*]
+  \item Снимать людей можно только с их согласия; в школе, спортзале и других местах, где есть дети,
+        --- только с разрешения педагога.
+  \item Не выкладывайте видеопоток в открытую сеть и не открывайте порт камеры в интернет. Без пароля
+        на вашу камеру сможет смотреть любой.
+  \item Если используете собственную точку доступа (урок 8, SoftAP), обязательно задайте пароль
+        не короче 8 символов; не оставляйте камеру включённой без присмотра.
+\end{itemize}
+\end{caution}
+
+\begin{trouble}
+\begin{itemize}[leftmargin=*]
+  \item \textbf{«Camera probe failed»} --- проверьте шлейф, выводы SCCB (\pin{4}, \pin{5}) и питание; убедитесь, что распиновка соответствует вашей плате.
+  \item \textbf{Нет PSRAM или программа не помещается} --- выберите \textsf{OPI PSRAM} (или QSPI по модулю) и схему \textsf{Huge APP}.
+  \item \textbf{Поток зависает через несколько секунд или плата перезагружается} --- не возвращается кадр (\code{esp\_camera\_fb\_return()}) либо слабое питание.
+\end{itemize}
+\end{trouble}
+
+\begin{summary}
+\begin{itemize}[leftmargin=*]
+  \item Камера по DVP передаёт байты в PSRAM; сенсор сам формирует JPEG, а настраивается по SCCB.
+  \item Распиновку камеры сверяйте со схемой платы; камера занимает много GPIO, и прежние выводы нужно переносить.
+  \item Каждый кадр обязательно возвращают драйверу; качество и скорость задают \code{frame\_size}, \code{jpeg\_quality}, \code{fb\_count}.
+\end{itemize}
+\end{summary}
+
+\begin{selfcheck}
+\begin{enumerate}
+  \item Какие сигналы входят в интерфейс DVP и для чего нужна шина SCCB?
+  \item Зачем после \code{esp\_camera\_fb\_get()} нужен вызов \code{esp\_camera\_fb\_return()}?
+  \item Какие настройки Arduino IDE нужны для камеры и почему?
+\end{enumerate}
+\end{selfcheck}
+
+\begin{tasks}
+\begin{enumerate}
+\item \lv{1} Запустите камеру и выведите в Serial Monitor размер кадра.
+\item \lv{1} Измените \code{frame\_size} на QVGA и на UXGA и сравните размер кадра.
+\item \lv{2} Измените качество JPEG и постройте таблицу «качество --- размер кадра».
+\item \lv{2} Добавьте на страницу кнопку «Сохранить на карту» (обработчик \code{/save}).
+\item \lv{3} Сделайте покадровую съёмку: снимок раз в 10 секунд с именем файла по времени NTP.
+\item \lv{4} Сделайте фотоловушку: кадр сохраняется, когда датчик движения срабатывает, а между снимками плата спит.
+\end{enumerate}
+\end{tasks}

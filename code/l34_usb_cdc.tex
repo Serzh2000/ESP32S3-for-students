@@ -1,0 +1,27 @@
+\begin{CodeVerbatim}
+\PY{c+c1}{// USB Mode: USB\PYZhy{}OTG (TinyUSB); USB CDC On Boot: Disabled.}
+\PY{c+cp}{\PYZsh{}}\PY{c+cp}{include}\PY{+w}{ }\PY{c+cpf}{\PYZlt{}USB.h\PYZgt{}}
+\PY{c+cp}{\PYZsh{}}\PY{c+cp}{include}\PY{+w}{ }\PY{c+cpf}{\PYZlt{}USBCDC.h\PYZgt{}}
+\PY{n}{USBCDC}\PY{+w}{ }\PY{n}{console}\PY{p}{;}
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{setup}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{n}{Serial}\PY{p}{.}\PY{n}{begin}\PY{p}{(}\PY{l+m+mi}{115200}\PY{p}{)}\PY{p}{;}\PY{+w}{ }\PY{c+c1}{// bridge UART for diagnostics with CDC on boot disabled}
+\PY{+w}{  }\PY{n}{console}\PY{p}{.}\PY{n}{begin}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{USB}\PY{p}{.}\PY{n}{begin}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{loop}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{k}{static}\PY{+w}{ }\PY{k+kt}{char}\PY{+w}{ }\PY{n}{line}\PY{p}{[}\PY{l+m+mi}{32}\PY{p}{]}\PY{p}{;}\PY{+w}{ }\PY{k}{static}\PY{+w}{ }\PY{k+kt}{size\PYZus{}t}\PY{+w}{ }\PY{n}{used}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}
+\PY{+w}{  }\PY{k}{while}\PY{+w}{ }\PY{p}{(}\PY{n}{console}\PY{p}{.}\PY{n}{available}\PY{p}{(}\PY{p}{)}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{    }\PY{k+kt}{char}\PY{+w}{ }\PY{n}{c}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{console}\PY{p}{.}\PY{n}{read}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+\PY{+w}{    }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{c}\PY{+w}{ }\PY{o}{=}\PY{o}{=}\PY{+w}{ }\PY{l+s+sc}{\PYZsq{}}\PY{l+s+sc}{\PYZbs{}n}\PY{l+s+sc}{\PYZsq{}}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{      }\PY{n}{line}\PY{p}{[}\PY{n}{used}\PY{p}{]}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}
+\PY{+w}{      }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{strcmp}\PY{p}{(}\PY{n}{line}\PY{p}{,}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{ping}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{+w}{ }\PY{o}{=}\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{)}\PY{+w}{ }\PY{n}{console}\PY{p}{.}\PY{n}{println}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{pong}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{;}
+\PY{+w}{      }\PY{k}{else}\PY{+w}{ }\PY{n}{console}\PY{p}{.}\PY{n}{println}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{unknown command}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{;}
+\PY{+w}{      }\PY{n}{used}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}
+\PY{+w}{    }\PY{p}{\PYZcb{}}\PY{+w}{ }\PY{k}{else}\PY{+w}{ }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{c}\PY{+w}{ }\PY{o}{!}\PY{o}{=}\PY{+w}{ }\PY{l+s+sc}{\PYZsq{}}\PY{l+s+sc}{\PYZbs{}r}\PY{l+s+sc}{\PYZsq{}}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{      }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{used}\PY{+w}{ }\PY{o}{\PYZlt{}}\PY{+w}{ }\PY{k}{sizeof}\PY{p}{(}\PY{n}{line}\PY{p}{)}\PY{l+m+mi}{\PYZhy{}1}\PY{p}{)}\PY{+w}{ }\PY{n}{line}\PY{p}{[}\PY{n}{used}\PY{o}{+}\PY{o}{+}\PY{p}{]}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{c}\PY{p}{;}
+\PY{+w}{      }\PY{k}{else}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{ }\PY{n}{used}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}\PY{+w}{ }\PY{n}{console}\PY{p}{.}\PY{n}{println}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{line too long}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{;}\PY{+w}{ }\PY{p}{\PYZcb{}}
+\PY{+w}{    }\PY{p}{\PYZcb{}}
+\PY{+w}{  }\PY{p}{\PYZcb{}}
+\PY{+w}{  }\PY{n}{delay}\PY{p}{(}\PY{l+m+mi}{1}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+\end{CodeVerbatim}

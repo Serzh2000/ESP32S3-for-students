@@ -1,0 +1,16 @@
+\begin{CodeVerbatim}
+\PY{c+cp}{\PYZsh{}}\PY{c+cp}{include}\PY{+w}{ }\PY{c+cpf}{\PYZdq{}soc/gpio\PYZus{}struct.h\PYZdq{}}
+
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{int}\PY{+w}{ }\PY{n}{LED\PYZus{}PIN}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{4}\PY{p}{;}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{setup}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{n}{pinMode}\PY{p}{(}\PY{n}{LED\PYZus{}PIN}\PY{p}{,}\PY{+w}{ }\PY{n}{OUTPUT}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{loop}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{n}{GPIO}\PY{p}{.}\PY{n}{out\PYZus{}w1ts}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{p}{(}\PY{l+m+mi}{1UL}\PY{+w}{ }\PY{o}{\PYZlt{}}\PY{o}{\PYZlt{}}\PY{+w}{ }\PY{n}{LED\PYZus{}PIN}\PY{p}{)}\PY{p}{;}\PY{+w}{   }\PY{c+c1}{// регистр «установить»: бит 4 \PYZhy{}\PYZgt{} вывод GPIO4 в HIGH}
+\PY{+w}{  }\PY{n}{delay}\PY{p}{(}\PY{l+m+mi}{500}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{GPIO}\PY{p}{.}\PY{n}{out\PYZus{}w1tc}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{p}{(}\PY{l+m+mi}{1UL}\PY{+w}{ }\PY{o}{\PYZlt{}}\PY{o}{\PYZlt{}}\PY{+w}{ }\PY{n}{LED\PYZus{}PIN}\PY{p}{)}\PY{p}{;}\PY{+w}{   }\PY{c+c1}{// регистр «сбросить»: бит 4 \PYZhy{}\PYZgt{} вывод GPIO4 в LOW}
+\PY{+w}{  }\PY{n}{delay}\PY{p}{(}\PY{l+m+mi}{500}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+\end{CodeVerbatim}

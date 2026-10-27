@@ -1,0 +1,37 @@
+\begin{CodeVerbatim}
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{int}\PY{+w}{ }\PY{n}{ROWS}\PY{p}{[}\PY{l+m+mi}{4}\PY{p}{]}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{l+m+mi}{15}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{16}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{17}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{18}\PY{p}{\PYZcb{}}\PY{p}{;}\PY{+w}{       }\PY{c+c1}{// строки клавиатуры}
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{int}\PY{+w}{ }\PY{n}{COLS}\PY{p}{[}\PY{l+m+mi}{4}\PY{p}{]}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{l+m+mi}{6}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{7}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{21}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{47}\PY{p}{\PYZcb{}}\PY{p}{;}\PY{+w}{         }\PY{c+c1}{// столбцы клавиатуры}
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{char}\PY{+w}{ }\PY{n}{KEYS}\PY{p}{[}\PY{l+m+mi}{4}\PY{p}{]}\PY{p}{[}\PY{l+m+mi}{4}\PY{p}{]}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{p}{\PYZob{}}\PY{l+s+sc}{\PYZsq{}}\PY{l+s+sc}{1}\PY{l+s+sc}{\PYZsq{}}\PY{p}{,}\PY{+w}{ }\PY{l+s+sc}{\PYZsq{}}\PY{l+s+sc}{2}\PY{l+s+sc}{\PYZsq{}}\PY{p}{,}\PY{+w}{ }\PY{l+s+sc}{\PYZsq{}}\PY{l+s+sc}{3}\PY{l+s+sc}{\PYZsq{}}\PY{p}{,}\PY{+w}{ }\PY{l+s+sc}{\PYZsq{}}\PY{l+s+sc}{A}\PY{l+s+sc}{\PYZsq{}}\PY{p}{\PYZcb{}}\PY{p}{,}
+\PY{+w}{  }\PY{p}{\PYZob{}}\PY{l+s+sc}{\PYZsq{}}\PY{l+s+sc}{4}\PY{l+s+sc}{\PYZsq{}}\PY{p}{,}\PY{+w}{ }\PY{l+s+sc}{\PYZsq{}}\PY{l+s+sc}{5}\PY{l+s+sc}{\PYZsq{}}\PY{p}{,}\PY{+w}{ }\PY{l+s+sc}{\PYZsq{}}\PY{l+s+sc}{6}\PY{l+s+sc}{\PYZsq{}}\PY{p}{,}\PY{+w}{ }\PY{l+s+sc}{\PYZsq{}}\PY{l+s+sc}{B}\PY{l+s+sc}{\PYZsq{}}\PY{p}{\PYZcb{}}\PY{p}{,}
+\PY{+w}{  }\PY{p}{\PYZob{}}\PY{l+s+sc}{\PYZsq{}}\PY{l+s+sc}{7}\PY{l+s+sc}{\PYZsq{}}\PY{p}{,}\PY{+w}{ }\PY{l+s+sc}{\PYZsq{}}\PY{l+s+sc}{8}\PY{l+s+sc}{\PYZsq{}}\PY{p}{,}\PY{+w}{ }\PY{l+s+sc}{\PYZsq{}}\PY{l+s+sc}{9}\PY{l+s+sc}{\PYZsq{}}\PY{p}{,}\PY{+w}{ }\PY{l+s+sc}{\PYZsq{}}\PY{l+s+sc}{C}\PY{l+s+sc}{\PYZsq{}}\PY{p}{\PYZcb{}}\PY{p}{,}
+\PY{+w}{  }\PY{p}{\PYZob{}}\PY{l+s+sc}{\PYZsq{}}\PY{l+s+sc}{*}\PY{l+s+sc}{\PYZsq{}}\PY{p}{,}\PY{+w}{ }\PY{l+s+sc}{\PYZsq{}}\PY{l+s+sc}{0}\PY{l+s+sc}{\PYZsq{}}\PY{p}{,}\PY{+w}{ }\PY{l+s+sc}{\PYZsq{}}\PY{l+s+sc}{\PYZsh{}}\PY{l+s+sc}{\PYZsq{}}\PY{p}{,}\PY{+w}{ }\PY{l+s+sc}{\PYZsq{}}\PY{l+s+sc}{D}\PY{l+s+sc}{\PYZsq{}}\PY{p}{\PYZcb{}}\PY{p}{\PYZcb{}}\PY{p}{;}
+
+\PY{k+kt}{char}\PY{+w}{ }\PY{n+nf}{scanKeypad}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{                         }\PY{c+c1}{// 0, если ничего не нажато}
+\PY{+w}{  }\PY{k+kt}{char}\PY{+w}{ }\PY{n}{found}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}
+\PY{+w}{  }\PY{k}{for}\PY{+w}{ }\PY{p}{(}\PY{k+kt}{int}\PY{+w}{ }\PY{n}{r}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}\PY{+w}{ }\PY{n}{r}\PY{+w}{ }\PY{o}{\PYZlt{}}\PY{+w}{ }\PY{l+m+mi}{4}\PY{p}{;}\PY{+w}{ }\PY{n}{r}\PY{o}{+}\PY{o}{+}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{    }\PY{n}{pinMode}\PY{p}{(}\PY{n}{ROWS}\PY{p}{[}\PY{n}{r}\PY{p}{]}\PY{p}{,}\PY{+w}{ }\PY{n}{OUTPUT}\PY{p}{)}\PY{p}{;}\PY{+w}{               }\PY{c+c1}{// активна только одна строка}
+\PY{+w}{    }\PY{n}{digitalWrite}\PY{p}{(}\PY{n}{ROWS}\PY{p}{[}\PY{n}{r}\PY{p}{]}\PY{p}{,}\PY{+w}{ }\PY{n}{LOW}\PY{p}{)}\PY{p}{;}
+\PY{+w}{    }\PY{n}{delayMicroseconds}\PY{p}{(}\PY{l+m+mi}{50}\PY{p}{)}\PY{p}{;}\PY{+w}{                  }\PY{c+c1}{// дать уровню установиться}
+\PY{+w}{    }\PY{k}{for}\PY{+w}{ }\PY{p}{(}\PY{k+kt}{int}\PY{+w}{ }\PY{n}{c}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}\PY{+w}{ }\PY{n}{c}\PY{+w}{ }\PY{o}{\PYZlt{}}\PY{+w}{ }\PY{l+m+mi}{4}\PY{p}{;}\PY{+w}{ }\PY{n}{c}\PY{o}{+}\PY{o}{+}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{      }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{digitalRead}\PY{p}{(}\PY{n}{COLS}\PY{p}{[}\PY{n}{c}\PY{p}{]}\PY{p}{)}\PY{+w}{ }\PY{o}{=}\PY{o}{=}\PY{+w}{ }\PY{n}{LOW}\PY{p}{)}\PY{+w}{ }\PY{n}{found}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{KEYS}\PY{p}{[}\PY{n}{r}\PY{p}{]}\PY{p}{[}\PY{n}{c}\PY{p}{]}\PY{p}{;}
+\PY{+w}{    }\PY{p}{\PYZcb{}}
+\PY{+w}{    }\PY{n}{pinMode}\PY{p}{(}\PY{n}{ROWS}\PY{p}{[}\PY{n}{r}\PY{p}{]}\PY{p}{,}\PY{+w}{ }\PY{n}{INPUT}\PY{p}{)}\PY{p}{;}\PY{+w}{                }\PY{c+c1}{// остальные строки «отключены»}
+\PY{+w}{  }\PY{p}{\PYZcb{}}
+\PY{+w}{  }\PY{k}{return}\PY{+w}{ }\PY{n}{found}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{setup}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{n}{Serial}\PY{p}{.}\PY{n}{begin}\PY{p}{(}\PY{l+m+mi}{115200}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{k}{for}\PY{+w}{ }\PY{p}{(}\PY{k+kt}{int}\PY{+w}{ }\PY{n}{c}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}\PY{+w}{ }\PY{n}{c}\PY{+w}{ }\PY{o}{\PYZlt{}}\PY{+w}{ }\PY{l+m+mi}{4}\PY{p}{;}\PY{+w}{ }\PY{n}{c}\PY{o}{+}\PY{o}{+}\PY{p}{)}\PY{+w}{ }\PY{n}{pinMode}\PY{p}{(}\PY{n}{COLS}\PY{p}{[}\PY{n}{c}\PY{p}{]}\PY{p}{,}\PY{+w}{ }\PY{n}{INPUT\PYZus{}PULLUP}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{k}{for}\PY{+w}{ }\PY{p}{(}\PY{k+kt}{int}\PY{+w}{ }\PY{n}{r}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}\PY{+w}{ }\PY{n}{r}\PY{+w}{ }\PY{o}{\PYZlt{}}\PY{+w}{ }\PY{l+m+mi}{4}\PY{p}{;}\PY{+w}{ }\PY{n}{r}\PY{o}{+}\PY{o}{+}\PY{p}{)}\PY{+w}{ }\PY{n}{pinMode}\PY{p}{(}\PY{n}{ROWS}\PY{p}{[}\PY{n}{r}\PY{p}{]}\PY{p}{,}\PY{+w}{ }\PY{n}{INPUT}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{loop}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{k}{static}\PY{+w}{ }\PY{k+kt}{char}\PY{+w}{ }\PY{n}{last}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}
+\PY{+w}{  }\PY{k+kt}{char}\PY{+w}{ }\PY{n}{key}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{scanKeypad}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{key}\PY{+w}{ }\PY{o}{\PYZam{}}\PY{o}{\PYZam{}}\PY{+w}{ }\PY{n}{key}\PY{+w}{ }\PY{o}{!}\PY{o}{=}\PY{+w}{ }\PY{n}{last}\PY{p}{)}\PY{+w}{ }\PY{n}{Serial}\PY{p}{.}\PY{n}{printf}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{Клавиша: \PYZpc{}c}\PY{l+s+se}{\PYZbs{}n}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{n}{key}\PY{p}{)}\PY{p}{;}\PY{+w}{  }\PY{c+c1}{// только новое нажатие}
+\PY{+w}{  }\PY{n}{last}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{key}\PY{p}{;}
+\PY{+w}{  }\PY{n}{delay}\PY{p}{(}\PY{l+m+mi}{20}\PY{p}{)}\PY{p}{;}\PY{+w}{                                }\PY{c+c1}{// опрос 50 раз в секунду гасит дребезг}
+\PY{p}{\PYZcb{}}
+\end{CodeVerbatim}

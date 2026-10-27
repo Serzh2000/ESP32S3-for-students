@@ -1,0 +1,31 @@
+\begin{CodeVerbatim}
+\PY{c+cp}{\PYZsh{}}\PY{c+cp}{include}\PY{+w}{ }\PY{c+cpf}{\PYZlt{}SPI.h\PYZgt{}}
+\PY{c+cp}{\PYZsh{}}\PY{c+cp}{include}\PY{+w}{ }\PY{c+cpf}{\PYZlt{}SD.h\PYZgt{}}
+
+\PY{k}{constexpr}\PY{+w}{ }\PY{k+kt}{int}\PY{+w}{ }\PY{n}{PIN\PYZus{}SCK}\PY{+w}{  }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{12}\PY{p}{;}
+\PY{k}{constexpr}\PY{+w}{ }\PY{k+kt}{int}\PY{+w}{ }\PY{n}{PIN\PYZus{}MISO}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{13}\PY{p}{;}
+\PY{k}{constexpr}\PY{+w}{ }\PY{k+kt}{int}\PY{+w}{ }\PY{n}{PIN\PYZus{}MOSI}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{11}\PY{p}{;}
+\PY{k}{constexpr}\PY{+w}{ }\PY{k+kt}{int}\PY{+w}{ }\PY{n}{PIN\PYZus{}CS}\PY{+w}{   }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{10}\PY{p}{;}\PY{+w}{  }\PY{c+c1}{// отдельный CS только для SD\PYZhy{}карты}
+
+\PY{n}{SPIClass}\PY{+w}{ }\PY{n+nf}{spi}\PY{p}{(}\PY{n}{FSPI}\PY{p}{)}\PY{p}{;}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{setup}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{n}{Serial}\PY{p}{.}\PY{n}{begin}\PY{p}{(}\PY{l+m+mi}{115200}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{spi}\PY{p}{.}\PY{n}{begin}\PY{p}{(}\PY{n}{PIN\PYZus{}SCK}\PY{p}{,}\PY{+w}{ }\PY{n}{PIN\PYZus{}MISO}\PY{p}{,}\PY{+w}{ }\PY{n}{PIN\PYZus{}MOSI}\PY{p}{,}\PY{+w}{ }\PY{n}{PIN\PYZus{}CS}\PY{p}{)}\PY{p}{;}
+
+\PY{+w}{  }\PY{c+c1}{// Начинаем с 4 МГц: это надёжнее для макетной платы и длинных проводов.}
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{o}{!}\PY{n}{SD}\PY{p}{.}\PY{n}{begin}\PY{p}{(}\PY{n}{PIN\PYZus{}CS}\PY{p}{,}\PY{+w}{ }\PY{n}{spi}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{4000000}\PY{p}{)}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{    }\PY{n}{Serial}\PY{p}{.}\PY{n}{println}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{SD\PYZhy{}карта не найдена: проверьте питание, CS и общую землю}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{;}
+\PY{+w}{    }\PY{k}{return}\PY{p}{;}
+\PY{+w}{  }\PY{p}{\PYZcb{}}
+
+\PY{+w}{  }\PY{n}{File}\PY{+w}{ }\PY{n}{log}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{SD}\PY{p}{.}\PY{n}{open}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{/log.txt}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{n}{FILE\PYZus{}APPEND}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{log}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{    }\PY{n}{log}\PY{p}{.}\PY{n}{println}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{ESP32\PYZhy{}S3 запустился}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{;}
+\PY{+w}{    }\PY{n}{log}\PY{p}{.}\PY{n}{close}\PY{p}{(}\PY{p}{)}\PY{p}{;}\PY{+w}{                 }\PY{c+c1}{// обязательно: данные уйдут из буфера в карту}
+\PY{+w}{    }\PY{n}{Serial}\PY{p}{.}\PY{n}{println}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{Строка записана в /log.txt}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{p}{\PYZcb{}}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{loop}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{p}{\PYZcb{}}
+\end{CodeVerbatim}

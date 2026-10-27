@@ -1,0 +1,60 @@
+\begin{CodeVerbatim}
+\PY{c+cp}{\PYZsh{}}\PY{c+cp}{include}\PY{+w}{ }\PY{c+cpf}{\PYZlt{}Wire.h\PYZgt{}}
+
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{uint8\PYZus{}t}\PY{+w}{ }\PY{n}{MPU\PYZus{}ADDR}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mh}{0x68}\PY{p}{;}
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{uint8\PYZus{}t}\PY{+w}{ }\PY{n}{REG\PYZus{}PWR\PYZus{}MGMT\PYZus{}1}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mh}{0x6B}\PY{p}{;}\PY{+w}{      }\PY{c+c1}{// управление питанием}
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{uint8\PYZus{}t}\PY{+w}{ }\PY{n}{REG\PYZus{}ACCEL\PYZus{}XOUT}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mh}{0x3B}\PY{p}{;}\PY{+w}{      }\PY{c+c1}{// отсюда подряд идут 14 байт измерений}
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{uint8\PYZus{}t}\PY{+w}{ }\PY{n}{REG\PYZus{}WHO\PYZus{}AM\PYZus{}I}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mh}{0x75}\PY{p}{;}\PY{+w}{        }\PY{c+c1}{// «паспорт» микросхемы}
+
+\PY{k+kt}{float}\PY{+w}{ }\PY{n}{angle}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}\PY{+w}{                          }\PY{c+c1}{// отфильтрованный угол наклона, градусы}
+\PY{k+kt}{uint32\PYZus{}t}\PY{+w}{ }\PY{n}{lastUs}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{writeReg}\PY{p}{(}\PY{k+kt}{uint8\PYZus{}t}\PY{+w}{ }\PY{n}{reg}\PY{p}{,}\PY{+w}{ }\PY{k+kt}{uint8\PYZus{}t}\PY{+w}{ }\PY{n}{value}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{n}{Wire}\PY{p}{.}\PY{n}{beginTransmission}\PY{p}{(}\PY{n}{MPU\PYZus{}ADDR}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{Wire}\PY{p}{.}\PY{n}{write}\PY{p}{(}\PY{n}{reg}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{Wire}\PY{p}{.}\PY{n}{write}\PY{p}{(}\PY{n}{value}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{Wire}\PY{p}{.}\PY{n}{endTransmission}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{bool}\PY{+w}{ }\PY{n+nf}{readRegs}\PY{p}{(}\PY{k+kt}{uint8\PYZus{}t}\PY{+w}{ }\PY{n}{reg}\PY{p}{,}\PY{+w}{ }\PY{k+kt}{uint8\PYZus{}t}\PY{o}{*}\PY{+w}{ }\PY{n}{buf}\PY{p}{,}\PY{+w}{ }\PY{k+kt}{size\PYZus{}t}\PY{+w}{ }\PY{n}{n}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{n}{Wire}\PY{p}{.}\PY{n}{beginTransmission}\PY{p}{(}\PY{n}{MPU\PYZus{}ADDR}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{Wire}\PY{p}{.}\PY{n}{write}\PY{p}{(}\PY{n}{reg}\PY{p}{)}\PY{p}{;}\PY{+w}{                                    }\PY{c+c1}{// с какого регистра читать}
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{Wire}\PY{p}{.}\PY{n}{endTransmission}\PY{p}{(}\PY{n+nb}{false}\PY{p}{)}\PY{+w}{ }\PY{o}{!}\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{)}\PY{+w}{ }\PY{k}{return}\PY{+w}{ }\PY{n+nb}{false}\PY{p}{;}\PY{+w}{ }\PY{c+c1}{// датчик не ответил}
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{Wire}\PY{p}{.}\PY{n}{requestFrom}\PY{p}{(}\PY{n}{MPU\PYZus{}ADDR}\PY{p}{,}\PY{+w}{ }\PY{n}{n}\PY{p}{)}\PY{+w}{ }\PY{o}{!}\PY{o}{=}\PY{+w}{ }\PY{n}{n}\PY{p}{)}\PY{+w}{ }\PY{k}{return}\PY{+w}{ }\PY{n+nb}{false}\PY{p}{;}
+\PY{+w}{  }\PY{k}{for}\PY{+w}{ }\PY{p}{(}\PY{k+kt}{size\PYZus{}t}\PY{+w}{ }\PY{n}{i}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}\PY{+w}{ }\PY{n}{i}\PY{+w}{ }\PY{o}{\PYZlt{}}\PY{+w}{ }\PY{n}{n}\PY{p}{;}\PY{+w}{ }\PY{n}{i}\PY{o}{+}\PY{o}{+}\PY{p}{)}\PY{+w}{ }\PY{n}{buf}\PY{p}{[}\PY{n}{i}\PY{p}{]}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{Wire}\PY{p}{.}\PY{n}{read}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{k}{return}\PY{+w}{ }\PY{n+nb}{true}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{setup}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{n}{Serial}\PY{p}{.}\PY{n}{begin}\PY{p}{(}\PY{l+m+mi}{115200}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{Wire}\PY{p}{.}\PY{n}{begin}\PY{p}{(}\PY{l+m+mi}{8}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{9}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{k+kt}{uint8\PYZus{}t}\PY{+w}{ }\PY{n}{id}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{o}{!}\PY{n}{readRegs}\PY{p}{(}\PY{n}{REG\PYZus{}WHO\PYZus{}AM\PYZus{}I}\PY{p}{,}\PY{+w}{ }\PY{o}{\PYZam{}}\PY{n}{id}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{1}\PY{p}{)}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{    }\PY{n}{Serial}\PY{p}{.}\PY{n}{println}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{MPU6050 не отвечает: проверьте провода и адрес}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{p}{\PYZcb{}}\PY{+w}{ }\PY{k}{else}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{    }\PY{n}{Serial}\PY{p}{.}\PY{n}{printf}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{WHO\PYZus{}AM\PYZus{}I = 0x\PYZpc{}02X}\PY{l+s+se}{\PYZbs{}n}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{n}{id}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{p}{\PYZcb{}}
+\PY{+w}{  }\PY{n}{writeReg}\PY{p}{(}\PY{n}{REG\PYZus{}PWR\PYZus{}MGMT\PYZus{}1}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{;}\PY{+w}{            }\PY{c+c1}{// после включения датчик спит \PYZhy{}\PYZhy{} будим}
+\PY{+w}{  }\PY{n}{lastUs}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{micros}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{loop}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{k+kt}{uint8\PYZus{}t}\PY{+w}{ }\PY{n}{b}\PY{p}{[}\PY{l+m+mi}{14}\PY{p}{]}\PY{p}{;}
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{o}{!}\PY{n}{readRegs}\PY{p}{(}\PY{n}{REG\PYZus{}ACCEL\PYZus{}XOUT}\PY{p}{,}\PY{+w}{ }\PY{n}{b}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{14}\PY{p}{)}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{ }\PY{n}{delay}\PY{p}{(}\PY{l+m+mi}{500}\PY{p}{)}\PY{p}{;}\PY{+w}{ }\PY{k}{return}\PY{p}{;}\PY{+w}{ }\PY{p}{\PYZcb{}}
+
+\PY{+w}{  }\PY{k+kt}{int16\PYZus{}t}\PY{+w}{ }\PY{n}{ay}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{p}{(}\PY{k+kt}{int16\PYZus{}t}\PY{p}{)}\PY{p}{(}\PY{p}{(}\PY{n}{b}\PY{p}{[}\PY{l+m+mi}{2}\PY{p}{]}\PY{+w}{ }\PY{o}{\PYZlt{}}\PY{o}{\PYZlt{}}\PY{+w}{ }\PY{l+m+mi}{8}\PY{p}{)}\PY{+w}{ }\PY{o}{|}\PY{+w}{ }\PY{n}{b}\PY{p}{[}\PY{l+m+mi}{3}\PY{p}{]}\PY{p}{)}\PY{p}{;}\PY{+w}{         }\PY{c+c1}{// два байта \PYZhy{}\PYZgt{} число со знаком}
+\PY{+w}{  }\PY{k+kt}{int16\PYZus{}t}\PY{+w}{ }\PY{n}{az}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{p}{(}\PY{k+kt}{int16\PYZus{}t}\PY{p}{)}\PY{p}{(}\PY{p}{(}\PY{n}{b}\PY{p}{[}\PY{l+m+mi}{4}\PY{p}{]}\PY{+w}{ }\PY{o}{\PYZlt{}}\PY{o}{\PYZlt{}}\PY{+w}{ }\PY{l+m+mi}{8}\PY{p}{)}\PY{+w}{ }\PY{o}{|}\PY{+w}{ }\PY{n}{b}\PY{p}{[}\PY{l+m+mi}{5}\PY{p}{]}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{k+kt}{int16\PYZus{}t}\PY{+w}{ }\PY{n}{gx}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{p}{(}\PY{k+kt}{int16\PYZus{}t}\PY{p}{)}\PY{p}{(}\PY{p}{(}\PY{n}{b}\PY{p}{[}\PY{l+m+mi}{8}\PY{p}{]}\PY{+w}{ }\PY{o}{\PYZlt{}}\PY{o}{\PYZlt{}}\PY{+w}{ }\PY{l+m+mi}{8}\PY{p}{)}\PY{+w}{ }\PY{o}{|}\PY{+w}{ }\PY{n}{b}\PY{p}{[}\PY{l+m+mi}{9}\PY{p}{]}\PY{p}{)}\PY{p}{;}
+
+\PY{+w}{  }\PY{k+kt}{uint32\PYZus{}t}\PY{+w}{ }\PY{n}{now}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{micros}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{k+kt}{float}\PY{+w}{ }\PY{n}{dt}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{p}{(}\PY{n}{now}\PY{+w}{ }\PY{o}{\PYZhy{}}\PY{+w}{ }\PY{n}{lastUs}\PY{p}{)}\PY{+w}{ }\PY{o}{/}\PY{+w}{ }\PY{l+m+mf}{1000000.0}\PY{p}{;}\PY{+w}{              }\PY{c+c1}{// секунд с прошлого замера}
+\PY{+w}{  }\PY{n}{lastUs}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{now}\PY{p}{;}
+
+\PY{+w}{  }\PY{k+kt}{float}\PY{+w}{ }\PY{n}{accAngle}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{atan2}\PY{p}{(}\PY{n}{ay}\PY{p}{,}\PY{+w}{ }\PY{n}{az}\PY{p}{)}\PY{+w}{ }\PY{o}{*}\PY{+w}{ }\PY{l+m+mf}{57.2958}\PY{p}{;}\PY{+w}{           }\PY{c+c1}{// наклон по акселерометру}
+\PY{+w}{  }\PY{k+kt}{float}\PY{+w}{ }\PY{n}{gyroRate}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{gx}\PY{+w}{ }\PY{o}{/}\PY{+w}{ }\PY{l+m+mf}{131.0}\PY{p}{;}\PY{+w}{                        }\PY{c+c1}{// скорость поворота, град/с}
+\PY{+w}{  }\PY{n}{angle}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mf}{0.98}\PY{+w}{ }\PY{o}{*}\PY{+w}{ }\PY{p}{(}\PY{n}{angle}\PY{+w}{ }\PY{o}{+}\PY{+w}{ }\PY{n}{gyroRate}\PY{+w}{ }\PY{o}{*}\PY{+w}{ }\PY{n}{dt}\PY{p}{)}\PY{+w}{ }\PY{o}{+}\PY{+w}{ }\PY{l+m+mf}{0.02}\PY{+w}{ }\PY{o}{*}\PY{+w}{ }\PY{n}{accAngle}\PY{p}{;}\PY{+w}{   }\PY{c+c1}{// комплементарный фильтр}
+
+\PY{+w}{  }\PY{n}{Serial}\PY{p}{.}\PY{n}{printf}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{acc:\PYZpc{}.1f angle:\PYZpc{}.1f}\PY{l+s+se}{\PYZbs{}n}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{n}{accAngle}\PY{p}{,}\PY{+w}{ }\PY{n}{angle}\PY{p}{)}\PY{p}{;}\PY{+w}{    }\PY{c+c1}{// формат для Serial Plotter}
+\PY{+w}{  }\PY{n}{delay}\PY{p}{(}\PY{l+m+mi}{20}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+\end{CodeVerbatim}

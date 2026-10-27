@@ -1,0 +1,26 @@
+\begin{CodeVerbatim}
+\PY{c+c1}{// Плавная «волна» на четырёх светодиодах}
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{int}\PY{+w}{ }\PY{n}{LEDS}\PY{p}{[}\PY{p}{]}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{l+m+mi}{4}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{5}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{6}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{7}\PY{p}{\PYZcb{}}\PY{p}{;}
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{int}\PY{+w}{ }\PY{n}{COUNT}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{4}\PY{p}{;}
+
+\PY{k+kt}{uint32\PYZus{}t}\PY{+w}{ }\PY{n+nf}{gammaDuty}\PY{p}{(}\PY{k+kt}{int}\PY{+w}{ }\PY{n}{percent}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{k}{return}\PY{+w}{ }\PY{p}{(}\PY{k+kt}{uint32\PYZus{}t}\PY{p}{)}\PY{p}{(}\PY{l+m+mi}{255}\PY{+w}{ }\PY{o}{*}\PY{+w}{ }\PY{n}{pow}\PY{p}{(}\PY{n}{percent}\PY{+w}{ }\PY{o}{/}\PY{+w}{ }\PY{l+m+mf}{100.0}\PY{p}{,}\PY{+w}{ }\PY{l+m+mf}{2.2}\PY{p}{)}\PY{+w}{ }\PY{o}{+}\PY{+w}{ }\PY{l+m+mf}{0.5}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{setup}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{k}{for}\PY{+w}{ }\PY{p}{(}\PY{k+kt}{int}\PY{+w}{ }\PY{n}{i}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}\PY{+w}{ }\PY{n}{i}\PY{+w}{ }\PY{o}{\PYZlt{}}\PY{+w}{ }\PY{n}{COUNT}\PY{p}{;}\PY{+w}{ }\PY{n}{i}\PY{o}{+}\PY{o}{+}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{    }\PY{n}{ledcAttach}\PY{p}{(}\PY{n}{LEDS}\PY{p}{[}\PY{n}{i}\PY{p}{]}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{5000}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{8}\PY{p}{)}\PY{p}{;}\PY{+w}{            }\PY{c+c1}{// каждому светодиоду \PYZhy{}\PYZhy{} свой ШИМ}
+\PY{+w}{  }\PY{p}{\PYZcb{}}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{loop}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{k+kt}{float}\PY{+w}{ }\PY{n}{t}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{millis}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{o}{/}\PY{+w}{ }\PY{l+m+mf}{1000.0}\PY{p}{;}\PY{+w}{               }\PY{c+c1}{// время в секундах}
+\PY{+w}{  }\PY{k}{for}\PY{+w}{ }\PY{p}{(}\PY{k+kt}{int}\PY{+w}{ }\PY{n}{i}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}\PY{+w}{ }\PY{n}{i}\PY{+w}{ }\PY{o}{\PYZlt{}}\PY{+w}{ }\PY{n}{COUNT}\PY{p}{;}\PY{+w}{ }\PY{n}{i}\PY{o}{+}\PY{o}{+}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{    }\PY{c+c1}{// синусоида, сдвинутая для каждого светодиода на четверть периода}
+\PY{+w}{    }\PY{k+kt}{float}\PY{+w}{ }\PY{n}{s}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{sin}\PY{p}{(}\PY{l+m+mi}{2}\PY{+w}{ }\PY{o}{*}\PY{+w}{ }\PY{n}{PI}\PY{+w}{ }\PY{o}{*}\PY{+w}{ }\PY{p}{(}\PY{n}{t}\PY{+w}{ }\PY{o}{\PYZhy{}}\PY{+w}{ }\PY{n}{i}\PY{+w}{ }\PY{o}{*}\PY{+w}{ }\PY{l+m+mf}{0.25}\PY{p}{)}\PY{p}{)}\PY{p}{;}\PY{+w}{  }\PY{c+c1}{// от \PYZhy{}1 до 1}
+\PY{+w}{    }\PY{k+kt}{int}\PY{+w}{ }\PY{n}{percent}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{p}{(}\PY{n}{s}\PY{+w}{ }\PY{o}{+}\PY{+w}{ }\PY{l+m+mi}{1}\PY{p}{)}\PY{+w}{ }\PY{o}{*}\PY{+w}{ }\PY{l+m+mi}{50}\PY{p}{;}\PY{+w}{              }\PY{c+c1}{// от 0 до 100}
+\PY{+w}{    }\PY{n}{ledcWrite}\PY{p}{(}\PY{n}{LEDS}\PY{p}{[}\PY{n}{i}\PY{p}{]}\PY{p}{,}\PY{+w}{ }\PY{n}{gammaDuty}\PY{p}{(}\PY{n}{percent}\PY{p}{)}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{p}{\PYZcb{}}
+\PY{+w}{  }\PY{n}{delay}\PY{p}{(}\PY{l+m+mi}{10}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+\end{CodeVerbatim}

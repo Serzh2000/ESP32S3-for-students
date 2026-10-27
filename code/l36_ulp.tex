@@ -1,0 +1,16 @@
+\begin{CodeVerbatim}
+\PY{c+cp}{\PYZsh{}}\PY{c+cp}{include}\PY{+w}{ }\PY{c+cpf}{\PYZlt{}stdint.h\PYZgt{}}
+\PY{c+cp}{\PYZsh{}}\PY{c+cp}{include}\PY{+w}{ }\PY{c+cpf}{\PYZdq{}ulp\PYZus{}riscv.h\PYZdq{}}
+\PY{c+cp}{\PYZsh{}}\PY{c+cp}{include}\PY{+w}{ }\PY{c+cpf}{\PYZdq{}ulp\PYZus{}riscv\PYZus{}utils.h\PYZdq{}}
+\PY{c+cp}{\PYZsh{}}\PY{c+cp}{include}\PY{+w}{ }\PY{c+cpf}{\PYZdq{}ulp\PYZus{}riscv\PYZus{}gpio.h\PYZdq{}}
+\PY{k+kt}{uint32\PYZus{}t}\PY{+w}{ }\PY{n}{consecutive}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}\PY{+w}{ }\PY{c+c1}{// RTC slow memory, retained between timer starts}
+\PY{k+kt}{int}\PY{+w}{ }\PY{n+nf}{main}\PY{p}{(}\PY{k+kt}{void}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{    }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{ulp\PYZus{}riscv\PYZus{}gpio\PYZus{}get\PYZus{}level}\PY{p}{(}\PY{n}{GPIO\PYZus{}NUM\PYZus{}4}\PY{p}{)}\PY{+w}{ }\PY{o}{=}\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{)}\PY{+w}{ }\PY{o}{+}\PY{o}{+}\PY{n}{consecutive}\PY{p}{;}
+\PY{+w}{    }\PY{k}{else}\PY{+w}{ }\PY{n}{consecutive}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}
+\PY{+w}{    }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{consecutive}\PY{+w}{ }\PY{o}{\PYZgt{}}\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{10}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{        }\PY{n}{consecutive}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}
+\PY{+w}{        }\PY{n}{ulp\PYZus{}riscv\PYZus{}wakeup\PYZus{}main\PYZus{}processor}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+\PY{+w}{    }\PY{p}{\PYZcb{}}
+\PY{+w}{    }\PY{k}{return}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}\PY{+w}{ }\PY{c+c1}{// automatic halt; next timer period starts another scan}
+\PY{p}{\PYZcb{}}
+\end{CodeVerbatim}

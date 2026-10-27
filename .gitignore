@@ -13,3 +13,18 @@ _minted*/
 
 # Python
 __pycache__/
+
+# Сборка
+build.txt
+output/
+
+# Скетчи, созданные export_sketches.py
+sketches/
+
+# Временные материалы сравнения и проверки PDF
+tmp/
+
+# Локальная сборка учебных проектов ESP-IDF
+/examples/*/build/
+/examples/*/sdkconfig
+/examples/*/sdkconfig.old

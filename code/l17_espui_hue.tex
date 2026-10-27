@@ -1,0 +1,60 @@
+\begin{CodeVerbatim}
+\PY{c+c1}{// Встроенный RGB\PYZhy{}светодиод (GPIO48, на ревизии v1.1 \PYZhy{}\PYZhy{} GPIO38): оттенок и яркость с телефона.}
+\PY{c+cp}{\PYZsh{}}\PY{c+cp}{include}\PY{+w}{ }\PY{c+cpf}{\PYZlt{}WiFi.h\PYZgt{}}
+\PY{c+cp}{\PYZsh{}}\PY{c+cp}{include}\PY{+w}{ }\PY{c+cpf}{\PYZlt{}ESPUI.h\PYZgt{}}
+\PY{c+cp}{\PYZsh{}}\PY{c+cp}{include}\PY{+w}{ }\PY{c+cpf}{\PYZlt{}atomic\PYZgt{}}
+
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{int}\PY{+w}{ }\PY{n}{RGB\PYZus{}PIN}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{48}\PY{p}{;}
+\PY{n}{std}\PY{o}{:}\PY{o}{:}\PY{n}{atomic}\PY{o}{\PYZlt{}}\PY{k+kt}{int}\PY{o}{\PYZgt{}}\PY{+w}{ }\PY{n}{hueValue}\PY{p}{\PYZob{}}\PY{l+m+mi}{0}\PY{p}{\PYZcb{}}\PY{p}{;}\PY{+w}{             }\PY{c+c1}{// 0..359}
+\PY{n}{std}\PY{o}{:}\PY{o}{:}\PY{n}{atomic}\PY{o}{\PYZlt{}}\PY{k+kt}{int}\PY{o}{\PYZgt{}}\PY{+w}{ }\PY{n}{brightness}\PY{p}{\PYZob{}}\PY{l+m+mi}{40}\PY{p}{\PYZcb{}}\PY{p}{;}\PY{+w}{          }\PY{c+c1}{// 0..255, для глаз берём небольшую}
+\PY{k+kt}{uint16\PYZus{}t}\PY{+w}{ }\PY{n}{colorId}\PY{p}{;}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{hsvToRgb}\PY{p}{(}\PY{k+kt}{int}\PY{+w}{ }\PY{n}{hue}\PY{p}{,}\PY{+w}{ }\PY{k+kt}{uint8\PYZus{}t}\PY{+w}{ }\PY{n}{sat}\PY{p}{,}\PY{+w}{ }\PY{k+kt}{uint8\PYZus{}t}\PY{+w}{ }\PY{n}{val}\PY{p}{,}\PY{+w}{ }\PY{k+kt}{uint8\PYZus{}t}\PY{+w}{ }\PY{o}{\PYZam{}}\PY{n}{r}\PY{p}{,}\PY{+w}{ }\PY{k+kt}{uint8\PYZus{}t}\PY{+w}{ }\PY{o}{\PYZam{}}\PY{n}{g}\PY{p}{,}\PY{+w}{ }\PY{k+kt}{uint8\PYZus{}t}\PY{+w}{ }\PY{o}{\PYZam{}}\PY{n}{b}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{k+kt}{int}\PY{+w}{ }\PY{n}{region}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{hue}\PY{+w}{ }\PY{o}{/}\PY{+w}{ }\PY{l+m+mi}{60}\PY{p}{;}\PY{+w}{                  }\PY{c+c1}{// тот же перевод HSV \PYZhy{}\PYZgt{} RGB, что в уроке}
+\PY{+w}{  }\PY{k+kt}{int}\PY{+w}{ }\PY{n}{rem}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{p}{(}\PY{n}{hue}\PY{+w}{ }\PY{o}{\PYZpc{}}\PY{+w}{ }\PY{l+m+mi}{60}\PY{p}{)}\PY{+w}{ }\PY{o}{*}\PY{+w}{ }\PY{l+m+mi}{255}\PY{+w}{ }\PY{o}{/}\PY{+w}{ }\PY{l+m+mi}{60}\PY{p}{;}
+\PY{+w}{  }\PY{k+kt}{uint8\PYZus{}t}\PY{+w}{ }\PY{n}{p}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{val}\PY{+w}{ }\PY{o}{*}\PY{+w}{ }\PY{p}{(}\PY{l+m+mi}{255}\PY{+w}{ }\PY{o}{\PYZhy{}}\PY{+w}{ }\PY{n}{sat}\PY{p}{)}\PY{+w}{ }\PY{o}{/}\PY{+w}{ }\PY{l+m+mi}{255}\PY{p}{;}
+\PY{+w}{  }\PY{k+kt}{uint8\PYZus{}t}\PY{+w}{ }\PY{n}{q}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{val}\PY{+w}{ }\PY{o}{*}\PY{+w}{ }\PY{p}{(}\PY{l+m+mi}{255}\PY{+w}{ }\PY{o}{\PYZhy{}}\PY{+w}{ }\PY{n}{sat}\PY{+w}{ }\PY{o}{*}\PY{+w}{ }\PY{n}{rem}\PY{+w}{ }\PY{o}{/}\PY{+w}{ }\PY{l+m+mi}{255}\PY{p}{)}\PY{+w}{ }\PY{o}{/}\PY{+w}{ }\PY{l+m+mi}{255}\PY{p}{;}
+\PY{+w}{  }\PY{k+kt}{uint8\PYZus{}t}\PY{+w}{ }\PY{n}{t}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{val}\PY{+w}{ }\PY{o}{*}\PY{+w}{ }\PY{p}{(}\PY{l+m+mi}{255}\PY{+w}{ }\PY{o}{\PYZhy{}}\PY{+w}{ }\PY{n}{sat}\PY{+w}{ }\PY{o}{*}\PY{+w}{ }\PY{p}{(}\PY{l+m+mi}{255}\PY{+w}{ }\PY{o}{\PYZhy{}}\PY{+w}{ }\PY{n}{rem}\PY{p}{)}\PY{+w}{ }\PY{o}{/}\PY{+w}{ }\PY{l+m+mi}{255}\PY{p}{)}\PY{+w}{ }\PY{o}{/}\PY{+w}{ }\PY{l+m+mi}{255}\PY{p}{;}
+\PY{+w}{  }\PY{k}{switch}\PY{+w}{ }\PY{p}{(}\PY{n}{region}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{    }\PY{k}{case}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{:}\PY{+w}{  }\PY{n}{r}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{val}\PY{p}{;}\PY{+w}{ }\PY{n}{g}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{t}\PY{p}{;}\PY{+w}{   }\PY{n}{b}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{p}\PY{p}{;}\PY{+w}{   }\PY{k}{break}\PY{p}{;}
+\PY{+w}{    }\PY{k}{case}\PY{+w}{ }\PY{l+m+mi}{1}\PY{p}{:}\PY{+w}{  }\PY{n}{r}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{q}\PY{p}{;}\PY{+w}{   }\PY{n}{g}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{val}\PY{p}{;}\PY{+w}{ }\PY{n}{b}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{p}\PY{p}{;}\PY{+w}{   }\PY{k}{break}\PY{p}{;}
+\PY{+w}{    }\PY{k}{case}\PY{+w}{ }\PY{l+m+mi}{2}\PY{p}{:}\PY{+w}{  }\PY{n}{r}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{p}\PY{p}{;}\PY{+w}{   }\PY{n}{g}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{val}\PY{p}{;}\PY{+w}{ }\PY{n}{b}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{t}\PY{p}{;}\PY{+w}{   }\PY{k}{break}\PY{p}{;}
+\PY{+w}{    }\PY{k}{case}\PY{+w}{ }\PY{l+m+mi}{3}\PY{p}{:}\PY{+w}{  }\PY{n}{r}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{p}\PY{p}{;}\PY{+w}{   }\PY{n}{g}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{q}\PY{p}{;}\PY{+w}{   }\PY{n}{b}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{val}\PY{p}{;}\PY{+w}{ }\PY{k}{break}\PY{p}{;}
+\PY{+w}{    }\PY{k}{case}\PY{+w}{ }\PY{l+m+mi}{4}\PY{p}{:}\PY{+w}{  }\PY{n}{r}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{t}\PY{p}{;}\PY{+w}{   }\PY{n}{g}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{p}\PY{p}{;}\PY{+w}{   }\PY{n}{b}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{val}\PY{p}{;}\PY{+w}{ }\PY{k}{break}\PY{p}{;}
+\PY{+w}{    }\PY{k}{default}\PY{o}{:}\PY{+w}{ }\PY{n}{r}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{val}\PY{p}{;}\PY{+w}{ }\PY{n}{g}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{p}\PY{p}{;}\PY{+w}{   }\PY{n}{b}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{q}\PY{p}{;}\PY{+w}{   }\PY{k}{break}\PY{p}{;}
+\PY{+w}{  }\PY{p}{\PYZcb{}}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{hueCallback}\PY{p}{(}\PY{n}{Control}\PY{o}{*}\PY{+w}{ }\PY{n}{sender}\PY{p}{,}\PY{+w}{ }\PY{k+kt}{int}\PY{+w}{ }\PY{n}{event}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{event}\PY{+w}{ }\PY{o}{=}\PY{o}{=}\PY{+w}{ }\PY{n}{SL\PYZus{}VALUE}\PY{p}{)}\PY{+w}{ }\PY{n}{hueValue}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{constrain}\PY{p}{(}\PY{n}{sender}\PY{o}{\PYZhy{}}\PY{o}{\PYZgt{}}\PY{n}{value}\PY{p}{.}\PY{n}{toInt}\PY{p}{(}\PY{p}{)}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{359}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{brightCallback}\PY{p}{(}\PY{n}{Control}\PY{o}{*}\PY{+w}{ }\PY{n}{sender}\PY{p}{,}\PY{+w}{ }\PY{k+kt}{int}\PY{+w}{ }\PY{n}{event}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{event}\PY{+w}{ }\PY{o}{=}\PY{o}{=}\PY{+w}{ }\PY{n}{SL\PYZus{}VALUE}\PY{p}{)}\PY{+w}{ }\PY{n}{brightness}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{constrain}\PY{p}{(}\PY{n}{sender}\PY{o}{\PYZhy{}}\PY{o}{\PYZgt{}}\PY{n}{value}\PY{p}{.}\PY{n}{toInt}\PY{p}{(}\PY{p}{)}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{255}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{setup}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{n}{Serial}\PY{p}{.}\PY{n}{begin}\PY{p}{(}\PY{l+m+mi}{115200}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{WiFi}\PY{p}{.}\PY{n}{mode}\PY{p}{(}\PY{n}{WIFI\PYZus{}AP}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{o}{!}\PY{n}{WiFi}\PY{p}{.}\PY{n}{softAP}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{S3\PYZhy{}Hue}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{lesson\PYZhy{}39\PYZhy{}demo}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{ }\PY{n}{Serial}\PY{p}{.}\PY{n}{println}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{AP failed}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{;}\PY{+w}{ }\PY{k}{return}\PY{p}{;}\PY{+w}{ }\PY{p}{\PYZcb{}}
+
+\PY{+w}{  }\PY{n}{ESPUI}\PY{p}{.}\PY{n}{sliderContinuous}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n+nb}{true}\PY{p}{;}\PY{+w}{          }\PY{c+c1}{// цвет должен меняться, пока двигаем ползунок}
+\PY{+w}{  }\PY{n}{ESPUI}\PY{p}{.}\PY{n}{slider}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{Hue, °}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{n}{hueCallback}\PY{p}{,}\PY{+w}{ }\PY{n}{ControlColor}\PY{o}{:}\PY{o}{:}\PY{n}{Carrot}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{359}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{ESPUI}\PY{p}{.}\PY{n}{slider}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{Яркость (0..255)}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{n}{brightCallback}\PY{p}{,}\PY{+w}{ }\PY{n}{ControlColor}\PY{o}{:}\PY{o}{:}\PY{n}{Wetasphalt}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{40}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{255}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{colorId}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{ESPUI}\PY{p}{.}\PY{n}{label}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{Цвет RGB}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{n}{ControlColor}\PY{o}{:}\PY{o}{:}\PY{n}{Turquoise}\PY{p}{,}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{0, 0, 0}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{ESPUI}\PY{p}{.}\PY{n}{begin}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{ESP32\PYZhy{}S3 hue}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{Serial}\PY{p}{.}\PY{n}{println}\PY{p}{(}\PY{n}{WiFi}\PY{p}{.}\PY{n}{softAPIP}\PY{p}{(}\PY{p}{)}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{loop}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{k+kt}{uint8\PYZus{}t}\PY{+w}{ }\PY{n}{r}\PY{p}{,}\PY{+w}{ }\PY{n}{g}\PY{p}{,}\PY{+w}{ }\PY{n}{b}\PY{p}{;}
+\PY{+w}{  }\PY{n}{hsvToRgb}\PY{p}{(}\PY{n}{hueValue}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{255}\PY{p}{,}\PY{+w}{ }\PY{n}{brightness}\PY{p}{,}\PY{+w}{ }\PY{n}{r}\PY{p}{,}\PY{+w}{ }\PY{n}{g}\PY{p}{,}\PY{+w}{ }\PY{n}{b}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{rgbLedWrite}\PY{p}{(}\PY{n}{RGB\PYZus{}PIN}\PY{p}{,}\PY{+w}{ }\PY{n}{r}\PY{p}{,}\PY{+w}{ }\PY{n}{g}\PY{p}{,}\PY{+w}{ }\PY{n}{b}\PY{p}{)}\PY{p}{;}
+
+\PY{+w}{  }\PY{k}{static}\PY{+w}{ }\PY{k+kt}{uint32\PYZus{}t}\PY{+w}{ }\PY{n}{last}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{millis}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{o}{\PYZhy{}}\PY{+w}{ }\PY{n}{last}\PY{+w}{ }\PY{o}{\PYZgt{}}\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{300}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{           }\PY{c+c1}{// подпись обновляем редко, цвет \PYZhy{}\PYZhy{} каждый проход}
+\PY{+w}{    }\PY{n}{last}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{millis}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+\PY{+w}{    }\PY{n}{ESPUI}\PY{p}{.}\PY{n}{updateLabel}\PY{p}{(}\PY{n}{colorId}\PY{p}{,}\PY{+w}{ }\PY{n}{String}\PY{p}{(}\PY{n}{r}\PY{p}{)}\PY{+w}{ }\PY{o}{+}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{, }\PY{l+s}{\PYZdq{}}\PY{+w}{ }\PY{o}{+}\PY{+w}{ }\PY{n}{String}\PY{p}{(}\PY{n}{g}\PY{p}{)}\PY{+w}{ }\PY{o}{+}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{, }\PY{l+s}{\PYZdq{}}\PY{+w}{ }\PY{o}{+}\PY{+w}{ }\PY{n}{String}\PY{p}{(}\PY{n}{b}\PY{p}{)}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{p}{\PYZcb{}}
+\PY{+w}{  }\PY{n}{delay}\PY{p}{(}\PY{l+m+mi}{10}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+\end{CodeVerbatim}

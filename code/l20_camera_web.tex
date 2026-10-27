@@ -1,0 +1,99 @@
+\begin{CodeVerbatim}
+\PY{c+cp}{\PYZsh{}}\PY{c+cp}{include}\PY{+w}{ }\PY{c+cpf}{\PYZlt{}WiFi.h\PYZgt{}}
+\PY{c+cp}{\PYZsh{}}\PY{c+cp}{include}\PY{+w}{ }\PY{c+cpf}{\PYZlt{}WebServer.h\PYZgt{}}
+\PY{c+cp}{\PYZsh{}}\PY{c+cp}{include}\PY{+w}{ }\PY{c+cpf}{\PYZdq{}esp\PYZus{}camera.h\PYZdq{}}
+
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{char}\PY{o}{*}\PY{+w}{ }\PY{n}{SSID}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{MyNetwork}\PY{l+s}{\PYZdq{}}\PY{p}{;}
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{char}\PY{o}{*}\PY{+w}{ }\PY{n}{PASS}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{MyPassword}\PY{l+s}{\PYZdq{}}\PY{p}{;}
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{uint32\PYZus{}t}\PY{+w}{ }\PY{n}{MAX\PYZus{}STREAM\PYZus{}MS}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{10UL}\PY{+w}{ }\PY{o}{*}\PY{+w}{ }\PY{l+m+mi}{60}\PY{+w}{ }\PY{o}{*}\PY{+w}{ }\PY{l+m+mi}{1000}\PY{p}{;}\PY{+w}{   }\PY{c+c1}{// поток сам закончится через 10 минут}
+
+\PY{c+c1}{// Выводы камеры (ESP32\PYZhy{}S3\PYZhy{}EYE). Сверьте со схемой своей платы!}
+\PY{c+cp}{\PYZsh{}}\PY{c+cp}{define XCLK\PYZus{}GPIO\PYZus{}NUM  15}
+\PY{c+cp}{\PYZsh{}}\PY{c+cp}{define SIOD\PYZus{}GPIO\PYZus{}NUM  4}
+\PY{c+cp}{\PYZsh{}}\PY{c+cp}{define SIOC\PYZus{}GPIO\PYZus{}NUM  5}
+\PY{c+cp}{\PYZsh{}}\PY{c+cp}{define VSYNC\PYZus{}GPIO\PYZus{}NUM 6}
+\PY{c+cp}{\PYZsh{}}\PY{c+cp}{define HREF\PYZus{}GPIO\PYZus{}NUM  7}
+\PY{c+cp}{\PYZsh{}}\PY{c+cp}{define PCLK\PYZus{}GPIO\PYZus{}NUM  13}
+
+\PY{n}{WebServer}\PY{+w}{ }\PY{n+nf}{server}\PY{p}{(}\PY{l+m+mi}{80}\PY{p}{)}\PY{p}{;}
+
+\PY{k+kt}{bool}\PY{+w}{ }\PY{n+nf}{startCamera}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{n}{camera\PYZus{}config\PYZus{}t}\PY{+w}{ }\PY{n}{config}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{p}{\PYZcb{}}\PY{p}{;}
+\PY{+w}{  }\PY{n}{config}\PY{p}{.}\PY{n}{ledc\PYZus{}channel}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{LEDC\PYZus{}CHANNEL\PYZus{}0}\PY{p}{;}
+\PY{+w}{  }\PY{n}{config}\PY{p}{.}\PY{n}{ledc\PYZus{}timer}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{LEDC\PYZus{}TIMER\PYZus{}0}\PY{p}{;}
+\PY{+w}{  }\PY{n}{config}\PY{p}{.}\PY{n}{pin\PYZus{}d0}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{11}\PY{p}{;}\PY{+w}{  }\PY{n}{config}\PY{p}{.}\PY{n}{pin\PYZus{}d1}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{9}\PY{p}{;}\PY{+w}{   }\PY{n}{config}\PY{p}{.}\PY{n}{pin\PYZus{}d2}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{8}\PY{p}{;}\PY{+w}{   }\PY{n}{config}\PY{p}{.}\PY{n}{pin\PYZus{}d3}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{10}\PY{p}{;}
+\PY{+w}{  }\PY{n}{config}\PY{p}{.}\PY{n}{pin\PYZus{}d4}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{12}\PY{p}{;}\PY{+w}{  }\PY{n}{config}\PY{p}{.}\PY{n}{pin\PYZus{}d5}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{18}\PY{p}{;}\PY{+w}{  }\PY{n}{config}\PY{p}{.}\PY{n}{pin\PYZus{}d6}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{17}\PY{p}{;}\PY{+w}{  }\PY{n}{config}\PY{p}{.}\PY{n}{pin\PYZus{}d7}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{16}\PY{p}{;}
+\PY{+w}{  }\PY{n}{config}\PY{p}{.}\PY{n}{pin\PYZus{}xclk}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{XCLK\PYZus{}GPIO\PYZus{}NUM}\PY{p}{;}
+\PY{+w}{  }\PY{n}{config}\PY{p}{.}\PY{n}{pin\PYZus{}pclk}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{PCLK\PYZus{}GPIO\PYZus{}NUM}\PY{p}{;}
+\PY{+w}{  }\PY{n}{config}\PY{p}{.}\PY{n}{pin\PYZus{}vsync}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{VSYNC\PYZus{}GPIO\PYZus{}NUM}\PY{p}{;}
+\PY{+w}{  }\PY{n}{config}\PY{p}{.}\PY{n}{pin\PYZus{}href}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{HREF\PYZus{}GPIO\PYZus{}NUM}\PY{p}{;}
+\PY{+w}{  }\PY{n}{config}\PY{p}{.}\PY{n}{pin\PYZus{}sccb\PYZus{}sda}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{SIOD\PYZus{}GPIO\PYZus{}NUM}\PY{p}{;}
+\PY{+w}{  }\PY{n}{config}\PY{p}{.}\PY{n}{pin\PYZus{}sccb\PYZus{}scl}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{SIOC\PYZus{}GPIO\PYZus{}NUM}\PY{p}{;}
+\PY{+w}{  }\PY{n}{config}\PY{p}{.}\PY{n}{pin\PYZus{}pwdn}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{\PYZhy{}1}\PY{p}{;}
+\PY{+w}{  }\PY{n}{config}\PY{p}{.}\PY{n}{pin\PYZus{}reset}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{\PYZhy{}1}\PY{p}{;}
+\PY{+w}{  }\PY{n}{config}\PY{p}{.}\PY{n}{xclk\PYZus{}freq\PYZus{}hz}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{20000000}\PY{p}{;}
+\PY{+w}{  }\PY{n}{config}\PY{p}{.}\PY{n}{pixel\PYZus{}format}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{PIXFORMAT\PYZus{}JPEG}\PY{p}{;}
+\PY{+w}{  }\PY{n}{config}\PY{p}{.}\PY{n}{frame\PYZus{}size}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{FRAMESIZE\PYZus{}VGA}\PY{p}{;}\PY{+w}{      }\PY{c+c1}{// для потока хватает 640x480}
+\PY{+w}{  }\PY{n}{config}\PY{p}{.}\PY{n}{jpeg\PYZus{}quality}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{12}\PY{p}{;}
+\PY{+w}{  }\PY{n}{config}\PY{p}{.}\PY{n}{fb\PYZus{}count}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{2}\PY{p}{;}
+\PY{+w}{  }\PY{n}{config}\PY{p}{.}\PY{n}{fb\PYZus{}location}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{CAMERA\PYZus{}FB\PYZus{}IN\PYZus{}PSRAM}\PY{p}{;}
+\PY{+w}{  }\PY{n}{config}\PY{p}{.}\PY{n}{grab\PYZus{}mode}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{CAMERA\PYZus{}GRAB\PYZus{}LATEST}\PY{p}{;}
+\PY{+w}{  }\PY{k}{return}\PY{+w}{ }\PY{n}{esp\PYZus{}camera\PYZus{}init}\PY{p}{(}\PY{o}{\PYZam{}}\PY{n}{config}\PY{p}{)}\PY{+w}{ }\PY{o}{=}\PY{o}{=}\PY{+w}{ }\PY{n}{ESP\PYZus{}OK}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{handleRoot}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{                       }\PY{c+c1}{// страница с картинкой, подключённой к потоку}
+\PY{+w}{  }\PY{n}{server}\PY{p}{.}\PY{n}{send}\PY{p}{(}\PY{l+m+mi}{200}\PY{p}{,}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{text/html}\PY{l+s}{\PYZdq{}}\PY{p}{,}
+\PY{+w}{              }\PY{l+s}{\PYZdq{}}\PY{l+s}{\PYZlt{}!DOCTYPE html\PYZgt{}\PYZlt{}html\PYZgt{}\PYZlt{}head\PYZgt{}\PYZlt{}meta charset=\PYZsq{}utf\PYZhy{}8\PYZsq{}\PYZgt{}\PYZlt{}/head\PYZgt{}\PYZlt{}body\PYZgt{}}\PY{l+s}{\PYZdq{}}
+\PY{+w}{              }\PY{l+s}{\PYZdq{}}\PY{l+s}{\PYZlt{}h3\PYZgt{}ESP32\PYZhy{}S3 CAM\PYZlt{}/h3\PYZgt{}\PYZlt{}img src=\PYZsq{}/stream\PYZsq{} width=\PYZsq{}640\PYZsq{}\PYZgt{}}\PY{l+s}{\PYZdq{}}
+\PY{+w}{              }\PY{l+s}{\PYZdq{}}\PY{l+s}{\PYZlt{}p\PYZgt{}\PYZlt{}a href=\PYZsq{}/capture\PYZsq{}\PYZgt{}Один снимок\PYZlt{}/a\PYZgt{}\PYZlt{}/p\PYZgt{}\PYZlt{}/body\PYZgt{}\PYZlt{}/html\PYZgt{}}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{handleCapture}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{                    }\PY{c+c1}{// один JPEG\PYZhy{}кадр по адресу /capture}
+\PY{+w}{  }\PY{n}{camera\PYZus{}fb\PYZus{}t}\PY{+w}{ }\PY{o}{*}\PY{n}{fb}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{esp\PYZus{}camera\PYZus{}fb\PYZus{}get}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{o}{!}\PY{n}{fb}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{ }\PY{n}{server}\PY{p}{.}\PY{n}{send}\PY{p}{(}\PY{l+m+mi}{500}\PY{p}{,}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{text/plain}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{Кадр не получен}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{;}\PY{+w}{ }\PY{k}{return}\PY{p}{;}\PY{+w}{ }\PY{p}{\PYZcb{}}
+\PY{+w}{  }\PY{n}{server}\PY{p}{.}\PY{n}{sendHeader}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{Content\PYZhy{}Disposition}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{inline; filename=capture.jpg}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{server}\PY{p}{.}\PY{n}{send\PYZus{}P}\PY{p}{(}\PY{l+m+mi}{200}\PY{p}{,}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{image/jpeg}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{p}{(}\PY{k}{const}\PY{+w}{ }\PY{k+kt}{char}\PY{o}{*}\PY{p}{)}\PY{n}{fb}\PY{o}{\PYZhy{}}\PY{o}{\PYZgt{}}\PY{n}{buf}\PY{p}{,}\PY{+w}{ }\PY{n}{fb}\PY{o}{\PYZhy{}}\PY{o}{\PYZgt{}}\PY{n}{len}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{esp\PYZus{}camera\PYZus{}fb\PYZus{}return}\PY{p}{(}\PY{n}{fb}\PY{p}{)}\PY{p}{;}\PY{+w}{               }\PY{c+c1}{// вернуть буфер, иначе кадры закончатся}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{handleStream}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{                     }\PY{c+c1}{// MJPEG: непрерывная череда JPEG\PYZhy{}кадров}
+\PY{+w}{  }\PY{n}{WiFiClient}\PY{+w}{ }\PY{n}{client}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{server}\PY{p}{.}\PY{n}{client}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{client}\PY{p}{.}\PY{n}{print}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{HTTP/1.1 200 OK}\PY{l+s+se}{\PYZbs{}r}\PY{l+s+se}{\PYZbs{}n}\PY{l+s}{\PYZdq{}}
+\PY{+w}{               }\PY{l+s}{\PYZdq{}}\PY{l+s}{Content\PYZhy{}Type: multipart/x\PYZhy{}mixed\PYZhy{}replace; boundary=frame}\PY{l+s+se}{\PYZbs{}r}\PY{l+s+se}{\PYZbs{}n}\PY{l+s+se}{\PYZbs{}r}\PY{l+s+se}{\PYZbs{}n}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{k+kt}{uint32\PYZus{}t}\PY{+w}{ }\PY{n}{start}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{millis}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{k}{while}\PY{+w}{ }\PY{p}{(}\PY{n}{client}\PY{p}{.}\PY{n}{connected}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{o}{\PYZam{}}\PY{o}{\PYZam{}}\PY{+w}{ }\PY{n}{millis}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{o}{\PYZhy{}}\PY{+w}{ }\PY{n}{start}\PY{+w}{ }\PY{o}{\PYZlt{}}\PY{+w}{ }\PY{n}{MAX\PYZus{}STREAM\PYZus{}MS}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{    }\PY{n}{camera\PYZus{}fb\PYZus{}t}\PY{+w}{ }\PY{o}{*}\PY{n}{fb}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{esp\PYZus{}camera\PYZus{}fb\PYZus{}get}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+\PY{+w}{    }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{o}{!}\PY{n}{fb}\PY{p}{)}\PY{+w}{ }\PY{k}{break}\PY{p}{;}
+\PY{+w}{    }\PY{k+kt}{size\PYZus{}t}\PY{+w}{ }\PY{n}{len}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{fb}\PY{o}{\PYZhy{}}\PY{o}{\PYZgt{}}\PY{n}{len}\PY{p}{;}
+\PY{+w}{    }\PY{n}{client}\PY{p}{.}\PY{n}{printf}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{\PYZhy{}\PYZhy{}frame}\PY{l+s+se}{\PYZbs{}r}\PY{l+s+se}{\PYZbs{}n}\PY{l+s}{Content\PYZhy{}Type: image/jpeg}\PY{l+s+se}{\PYZbs{}r}\PY{l+s+se}{\PYZbs{}n}\PY{l+s}{Content\PYZhy{}Length: \PYZpc{}u}\PY{l+s+se}{\PYZbs{}r}\PY{l+s+se}{\PYZbs{}n}\PY{l+s+se}{\PYZbs{}r}\PY{l+s+se}{\PYZbs{}n}\PY{l+s}{\PYZdq{}}\PY{p}{,}
+\PY{+w}{                  }\PY{p}{(}\PY{k+kt}{unsigned}\PY{p}{)}\PY{n}{len}\PY{p}{)}\PY{p}{;}
+\PY{+w}{    }\PY{k+kt}{size\PYZus{}t}\PY{+w}{ }\PY{n}{sent}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{client}\PY{p}{.}\PY{n}{write}\PY{p}{(}\PY{n}{fb}\PY{o}{\PYZhy{}}\PY{o}{\PYZgt{}}\PY{n}{buf}\PY{p}{,}\PY{+w}{ }\PY{n}{len}\PY{p}{)}\PY{p}{;}
+\PY{+w}{    }\PY{n}{client}\PY{p}{.}\PY{n}{print}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s+se}{\PYZbs{}r}\PY{l+s+se}{\PYZbs{}n}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{;}
+\PY{+w}{    }\PY{n}{esp\PYZus{}camera\PYZus{}fb\PYZus{}return}\PY{p}{(}\PY{n}{fb}\PY{p}{)}\PY{p}{;}\PY{+w}{             }\PY{c+c1}{// вернуть кадр до любого выхода из цикла}
+\PY{+w}{    }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{sent}\PY{+w}{ }\PY{o}{!}\PY{o}{=}\PY{+w}{ }\PY{n}{len}\PY{p}{)}\PY{+w}{ }\PY{k}{break}\PY{p}{;}\PY{+w}{               }\PY{c+c1}{// клиент отключился \PYZhy{}\PYZhy{} выходим}
+\PY{+w}{  }\PY{p}{\PYZcb{}}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{setup}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{n}{Serial}\PY{p}{.}\PY{n}{begin}\PY{p}{(}\PY{l+m+mi}{115200}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{o}{!}\PY{n}{psramFound}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{o}{|}\PY{o}{|}\PY{+w}{ }\PY{o}{!}\PY{n}{startCamera}\PY{p}{(}\PY{p}{)}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{    }\PY{n}{Serial}\PY{p}{.}\PY{n}{println}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{Камера не запустилась: проверьте PSRAM, шлейф и выводы}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{;}
+\PY{+w}{    }\PY{k}{return}\PY{p}{;}
+\PY{+w}{  }\PY{p}{\PYZcb{}}
+\PY{+w}{  }\PY{n}{WiFi}\PY{p}{.}\PY{n}{begin}\PY{p}{(}\PY{n}{SSID}\PY{p}{,}\PY{+w}{ }\PY{n}{PASS}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{k+kt}{uint32\PYZus{}t}\PY{+w}{ }\PY{n}{start}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{millis}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{k}{while}\PY{+w}{ }\PY{p}{(}\PY{n}{WiFi}\PY{p}{.}\PY{n}{status}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{o}{!}\PY{o}{=}\PY{+w}{ }\PY{n}{WL\PYZus{}CONNECTED}\PY{+w}{ }\PY{o}{\PYZam{}}\PY{o}{\PYZam{}}\PY{+w}{ }\PY{n}{millis}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{o}{\PYZhy{}}\PY{+w}{ }\PY{n}{start}\PY{+w}{ }\PY{o}{\PYZlt{}}\PY{+w}{ }\PY{l+m+mi}{15000}\PY{p}{)}\PY{+w}{ }\PY{n}{delay}\PY{p}{(}\PY{l+m+mi}{300}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{WiFi}\PY{p}{.}\PY{n}{status}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{o}{!}\PY{o}{=}\PY{+w}{ }\PY{n}{WL\PYZus{}CONNECTED}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{ }\PY{n}{Serial}\PY{p}{.}\PY{n}{println}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{Нет Wi\PYZhy{}Fi}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{;}\PY{+w}{ }\PY{k}{return}\PY{p}{;}\PY{+w}{ }\PY{p}{\PYZcb{}}
+\PY{+w}{  }\PY{n}{Serial}\PY{p}{.}\PY{n}{print}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{Откройте в браузере: http://}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{Serial}\PY{p}{.}\PY{n}{println}\PY{p}{(}\PY{n}{WiFi}\PY{p}{.}\PY{n}{localIP}\PY{p}{(}\PY{p}{)}\PY{p}{)}\PY{p}{;}
+
+\PY{+w}{  }\PY{n}{server}\PY{p}{.}\PY{n}{on}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{/}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{n}{handleRoot}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{server}\PY{p}{.}\PY{n}{on}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{/capture}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{n}{handleCapture}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{server}\PY{p}{.}\PY{n}{on}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{/stream}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{n}{handleStream}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{server}\PY{p}{.}\PY{n}{begin}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{loop}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{n}{server}\PY{p}{.}\PY{n}{handleClient}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+\end{CodeVerbatim}

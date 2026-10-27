@@ -1,0 +1,40 @@
+\begin{CodeVerbatim}
+\PY{c+cp}{\PYZsh{}}\PY{c+cp}{include}\PY{+w}{ }\PY{c+cpf}{\PYZlt{}WiFi.h\PYZgt{}}
+\PY{c+cp}{\PYZsh{}}\PY{c+cp}{include}\PY{+w}{ }\PY{c+cpf}{\PYZlt{}esp\PYZus{}now.h\PYZgt{}}
+
+\PY{k}{struct}\PY{+w}{ }\PY{n+nc}{\PYZus{}\PYZus{}attribute\PYZus{}\PYZus{}}\PY{p}{(}\PY{p}{(}\PY{n}{packed}\PY{p}{)}\PY{p}{)}\PY{+w}{ }\PY{n}{SensorPacket}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{k+kt}{uint32\PYZus{}t}\PY{+w}{ }\PY{n}{sequence}\PY{p}{;}
+\PY{+w}{  }\PY{k+kt}{float}\PY{+w}{ }\PY{n}{temperature}\PY{p}{;}
+\PY{p}{\PYZcb{}}\PY{p}{;}
+
+\PY{n}{SensorPacket}\PY{+w}{ }\PY{n}{packet}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{l+m+mi}{0}\PY{p}{,}\PY{+w}{ }\PY{l+m+mf}{23.5f}\PY{p}{\PYZcb{}}\PY{p}{;}
+\PY{k+kt}{uint8\PYZus{}t}\PY{+w}{ }\PY{n}{receiver}\PY{p}{[}\PY{p}{]}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{l+m+mh}{0x24}\PY{p}{,}\PY{+w}{ }\PY{l+m+mh}{0x6F}\PY{p}{,}\PY{+w}{ }\PY{l+m+mh}{0x28}\PY{p}{,}\PY{+w}{ }\PY{l+m+mh}{0x00}\PY{p}{,}\PY{+w}{ }\PY{l+m+mh}{0x00}\PY{p}{,}\PY{+w}{ }\PY{l+m+mh}{0x00}\PY{p}{\PYZcb{}}\PY{p}{;}\PY{+w}{ }\PY{c+c1}{// замените MAC адресом приёмника}
+
+\PY{c+c1}{// В ядре 3.3 изменился первый аргумент колбэка отправки}
+\PY{c+cp}{\PYZsh{}}\PY{c+cp}{if ESP\PYZus{}ARDUINO\PYZus{}VERSION \PYZgt{}= ESP\PYZus{}ARDUINO\PYZus{}VERSION\PYZus{}VAL(3, 3, 0)}
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{onSent}\PY{p}{(}\PY{k}{const}\PY{+w}{ }\PY{n}{esp\PYZus{}now\PYZus{}send\PYZus{}info\PYZus{}t}\PY{o}{*}\PY{p}{,}\PY{+w}{ }\PY{n}{esp\PYZus{}now\PYZus{}send\PYZus{}status\PYZus{}t}\PY{+w}{ }\PY{n}{status}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{c+cp}{\PYZsh{}}\PY{c+cp}{else}
+\PY{k+kt}{void}\PY{+w}{ }\PY{n}{onSent}\PY{p}{(}\PY{k}{const}\PY{+w}{ }\PY{k+kt}{uint8\PYZus{}t}\PY{o}{*}\PY{p}{,}\PY{+w}{ }\PY{n}{esp\PYZus{}now\PYZus{}send\PYZus{}status\PYZus{}t}\PY{+w}{ }\PY{n}{status}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{c+cp}{\PYZsh{}}\PY{c+cp}{endif}
+\PY{+w}{  }\PY{n}{Serial}\PY{p}{.}\PY{n}{println}\PY{p}{(}\PY{n}{status}\PY{+w}{ }\PY{o}{=}\PY{o}{=}\PY{+w}{ }\PY{n}{ESP\PYZus{}NOW\PYZus{}SEND\PYZus{}SUCCESS}\PY{+w}{ }\PY{o}{?}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{приёмник подтвердил (ACK)}\PY{l+s}{\PYZdq{}}\PY{+w}{ }\PY{o}{:}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{нет ACK}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n}{setup}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{n}{Serial}\PY{p}{.}\PY{n}{begin}\PY{p}{(}\PY{l+m+mi}{115200}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{WiFi}\PY{p}{.}\PY{n}{mode}\PY{p}{(}\PY{n}{WIFI\PYZus{}STA}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{esp\PYZus{}now\PYZus{}init}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{o}{!}\PY{o}{=}\PY{+w}{ }\PY{n}{ESP\PYZus{}OK}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{ }\PY{n}{Serial}\PY{p}{.}\PY{n}{println}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{ESP\PYZhy{}NOW не запустился}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{;}\PY{+w}{ }\PY{k}{return}\PY{p}{;}\PY{+w}{ }\PY{p}{\PYZcb{}}
+\PY{+w}{  }\PY{n}{esp\PYZus{}now\PYZus{}register\PYZus{}send\PYZus{}cb}\PY{p}{(}\PY{n}{onSent}\PY{p}{)}\PY{p}{;}
+
+\PY{+w}{  }\PY{n}{esp\PYZus{}now\PYZus{}peer\PYZus{}info\PYZus{}t}\PY{+w}{ }\PY{n}{peer}\PY{p}{\PYZob{}}\PY{p}{\PYZcb{}}\PY{p}{;}
+\PY{+w}{  }\PY{n}{memcpy}\PY{p}{(}\PY{n}{peer}\PY{p}{.}\PY{n}{peer\PYZus{}addr}\PY{p}{,}\PY{+w}{ }\PY{n}{receiver}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{6}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{peer}\PY{p}{.}\PY{n}{channel}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}\PY{+w}{                 }\PY{c+c1}{// текущий канал; у обеих плат он должен совпадать}
+\PY{+w}{  }\PY{n}{peer}\PY{p}{.}\PY{n}{encrypt}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n+nb}{false}\PY{p}{;}
+\PY{+w}{  }\PY{n}{esp\PYZus{}now\PYZus{}add\PYZus{}peer}\PY{p}{(}\PY{o}{\PYZam{}}\PY{n}{peer}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n}{loop}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{n}{packet}\PY{p}{.}\PY{n}{sequence}\PY{o}{+}\PY{o}{+}\PY{p}{;}
+\PY{+w}{  }\PY{n}{esp\PYZus{}now\PYZus{}send}\PY{p}{(}\PY{n}{receiver}\PY{p}{,}\PY{+w}{ }\PY{k}{reinterpret\PYZus{}cast}\PY{o}{\PYZlt{}}\PY{k+kt}{uint8\PYZus{}t}\PY{o}{*}\PY{o}{\PYZgt{}}\PY{p}{(}\PY{o}{\PYZam{}}\PY{n}{packet}\PY{p}{)}\PY{p}{,}\PY{+w}{ }\PY{k}{sizeof}\PY{p}{(}\PY{n}{packet}\PY{p}{)}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{delay}\PY{p}{(}\PY{l+m+mi}{1000}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+\end{CodeVerbatim}

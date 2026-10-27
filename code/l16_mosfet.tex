@@ -1,0 +1,18 @@
+\begin{CodeVerbatim}
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{int}\PY{+w}{ }\PY{n}{GATE\PYZus{}PIN}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{7}\PY{p}{;}\PY{+w}{                   }\PY{c+c1}{// затвор N\PYZhy{}MOSFET через резистор 100 Ом}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{setup}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{n}{ledcAttach}\PY{p}{(}\PY{n}{GATE\PYZus{}PIN}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{20000}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{8}\PY{p}{)}\PY{p}{;}\PY{+w}{         }\PY{c+c1}{// 20 кГц: выше слышимого диапазона}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{loop}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{k}{for}\PY{+w}{ }\PY{p}{(}\PY{k+kt}{int}\PY{+w}{ }\PY{n}{d}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}\PY{+w}{ }\PY{n}{d}\PY{+w}{ }\PY{o}{\PYZlt{}}\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{255}\PY{p}{;}\PY{+w}{ }\PY{n}{d}\PY{+w}{ }\PY{o}{+}\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{5}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{     }\PY{c+c1}{// плавный разгон нагрузки}
+\PY{+w}{    }\PY{n}{ledcWrite}\PY{p}{(}\PY{n}{GATE\PYZus{}PIN}\PY{p}{,}\PY{+w}{ }\PY{n}{d}\PY{p}{)}\PY{p}{;}
+\PY{+w}{    }\PY{n}{delay}\PY{p}{(}\PY{l+m+mi}{30}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{p}{\PYZcb{}}
+\PY{+w}{  }\PY{k}{for}\PY{+w}{ }\PY{p}{(}\PY{k+kt}{int}\PY{+w}{ }\PY{n}{d}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{255}\PY{p}{;}\PY{+w}{ }\PY{n}{d}\PY{+w}{ }\PY{o}{\PYZgt{}}\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}\PY{+w}{ }\PY{n}{d}\PY{+w}{ }\PY{o}{\PYZhy{}}\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{5}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{     }\PY{c+c1}{// и плавное затухание}
+\PY{+w}{    }\PY{n}{ledcWrite}\PY{p}{(}\PY{n}{GATE\PYZus{}PIN}\PY{p}{,}\PY{+w}{ }\PY{n}{d}\PY{p}{)}\PY{p}{;}
+\PY{+w}{    }\PY{n}{delay}\PY{p}{(}\PY{l+m+mi}{30}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{p}{\PYZcb{}}
+\PY{p}{\PYZcb{}}
+\end{CodeVerbatim}

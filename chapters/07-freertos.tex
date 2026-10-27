@@ -1,10 +1,10 @@
 % =====================================================================
-\section{FreeRTOS: задачи и синхронизация}
+\section{FreeRTOS: задачи и синхронизация}\label{les:rtos}
 % =====================================================================
 \lessonintro
   {разделить программу на независимые задачи, организовать безопасный обмен данными, задействовать оба ядра}
-  {весь проект шагов 1--6; прерывания из урока 3}
-  {лампа разбита на задачи: ввод, экран, связь}
+  {уроки 1--6 (неблокирующий \code{loop()}, кнопка, АЦП, экран), прерывания из урока 3}
+  {кнопка, экран и Serial работают как отдельные задачи}
   {ничего нового из «железа»}
 
 \subsection{Зачем нужна операционная система реального времени}
@@ -22,15 +22,15 @@ ESP32-S3 задачи могут выполняться на двух ядрах
 \centering
 \begin{tikzpicture}[state/.style={blk,circle,minimum size=19mm,fill=blkmem}]
   \node[state,fill=blkrf] (run) at (0,0) {Выпол-\\няется};
-  \node[state] (ready) at (-4,0) {Готова};
-  \node[state,fill=blkper] (blk) at (4,0) {Блоки-\\рована};
+  \node[state] (ready) at (-5,0) {Готова};
+  \node[state,fill=blkper] (blk) at (5,0) {Блоки-\\рована};
   \node[state,fill=blkrtc] (susp) at (0,-4.2) {Приоста-\\новлена};
   \draw[arr] (ready) to[bend left=25] node[above,font=\scriptsize]{выбрана планировщиком} (run);
   \draw[arr] (run) to[bend left=25] node[below,font=\scriptsize]{вытеснена} (ready);
   \draw[arr] (run) to[bend left=25] node[above,font=\scriptsize,align=center]{\code{vTaskDelay}, ждёт\\ очередь/мьютекс} (blk);
-  \draw[arr] (blk.south) .. controls (3,-1.8) and (-3,-1.8) .. node[above,font=\scriptsize,pos=0.5,xshift=-12mm]{событие / таймаут} (ready.south);
+  \draw[arr] (blk.south) .. controls (3.5,-2.1) and (-3.5,-2.1) .. node[below,font=\scriptsize,pos=0.3]{событие / таймаут} (ready.south);
   \draw[arr] (run) -- node[right,font=\scriptsize,pos=0.75]{\code{vTaskSuspend}} (susp);
-  \draw[arr] (susp.west) to[bend left=25] node[below left,font=\scriptsize]{\code{vTaskResume}} (ready.south west);
+  \draw[arr] (susp.west) to[bend left=25] node[pos=0.35,below left,font=\scriptsize]{\code{vTaskResume}} (ready.south west);
 \end{tikzpicture}
 \caption{Состояния задачи FreeRTOS. Задача, ждущая в \code{vTaskDelay()}, не тратит процессорное время}
 \end{figure}
@@ -42,13 +42,23 @@ ESP32-S3 задачи могут выполняться на двух ядрах
 \begin{tikzpicture}[x=0.9cm,y=0.9cm]
   \node[left,font=\sffamily\small] at (0,1.5) {Ядро 0};
   \node[left,font=\sffamily\small] at (0,0) {Ядро 1};
-  \draw[->] (0,-0.8) -- (15,-0.8) node[right,font=\scriptsize]{$t$};
-  \foreach \s/\e/\c/\l in {0/2/blkrf/Wi-Fi,2/4/blkper/b1,4/5/blkrf/Wi-Fi,5/9/gray!20/idle,9/11/blkper/b1,11/12/blkrf/Wi-Fi,12/14.5/gray!20/idle}
-    \draw[fill=\c] (\s,1.2) rectangle (\e,1.8) node[midway,font=\scriptsize]{\l};
-  \foreach \s/\e/\c/\l in {0/3/blkcpu/loop,3/4/blkmem/b2,4/7/blkcpu/loop,7/8/blkmem/b2,8/11/blkcpu/loop,11/12/blkmem/b2,12/14.5/blkcpu/loop}
-    \draw[fill=\c] (\s,-0.3) rectangle (\e,0.3) node[midway,font=\scriptsize]{\l};
+  \fill[gray!12] (0,1.2) rectangle (14.5,1.8);
+  \fill[gray!12] (0,-0.3) rectangle (14.5,0.3);
+  \node[font=\scriptsize,text=gray] at (13.5,1.5) {idle};
+  \node[font=\scriptsize,text=gray] at (13.5,0) {idle};
+  \foreach \s in {0,3,6,9,12}{
+    \draw[fill=blkmem] (\s,1.2) rectangle ++(0.45,0.6);
+    \node[above,font=\scriptsize] at (\s+0.22,1.8) {b1};}
+  \foreach \s in {0.1,7.1}{
+    \draw[fill=blkmem] (\s,-0.3) rectangle ++(0.45,0.6);
+    \node[below,font=\scriptsize] at (\s+0.22,-0.3) {b2};}
+  \draw[fill=blkcpu] (0.7,-0.3) rectangle ++(0.9,0.6) node[midway,font=\scriptsize]{loop};
+  \draw[->] (0,-1.2) -- (15,-1.2) node[right,font=\scriptsize]{$t$};
+  \foreach \x/\l in {0/0,3/300,7/700,14/1400}
+    \draw (\x,-1.15) -- (\x,-1.25) node[below,font=\scriptsize]{\l\,мс};
 \end{tikzpicture}
-\caption{Задачи на двух ядрах: пока одна ждёт, процессор занят другой}
+\caption{Задачи из листинга ниже: \code{b1} (GPIO4, каждые 300 мс) на ядре 0, \code{b2} (GPIO7, каждые 700 мс)
+и \code{loop()} на ядре 1. Каждая работает доли миллисекунды, остальное время ядро свободно (idle)}
 \end{figure}
 
 \codecap{Две независимые задачи (отдельный эксперимент, светодиоды на GPIO4 и GPIO7)}
@@ -68,10 +78,10 @@ ESP32-S3 задачи могут выполняться на двух ядрах
 \begin{tikzpicture}
   \node[blk,fill=blkper,minimum width=3cm,minimum height=1.2cm] (p) {Задача-производитель\\ \scriptsize читает АЦП};
   \foreach \i/\v in {0/1820,1/1835,2/1790,3/,4/}{
-    \node[draw,minimum width=11mm,minimum height=8mm,fill=\ifx\v\empty white\else blkmem\fi,font=\ttfamily\scriptsize]
-      (c\i) at ($(p.east)+(3.0+\i*1.1,0)$) {\v};
+    \node[draw,minimum width=9mm,minimum height=8mm,fill=\ifx\v\empty white\else blkmem\fi,font=\ttfamily\scriptsize]
+      (c\i) at ($(p.east)+(2.4+\i*0.9,0)$) {\v};
   }
-  \node[blk,fill=blkcpu,minimum width=3cm,minimum height=1.2cm,right=24mm of c4] (c) {Задача-потребитель\\ \scriptsize печатает в Serial};
+  \node[blk,fill=blkcpu,minimum width=2.9cm,minimum height=1.2cm,right=29mm of c4] (c) {Задача-потребитель\\ \scriptsize печатает в Serial};
   \draw[arr] (p) -- node[above,font=\ttfamily\scriptsize]{xQueueSend} (c0);
   \draw[arr] (c4) -- node[above,font=\ttfamily\scriptsize]{xQueueReceive} (c);
   \node[font=\sffamily\scriptsize,below=1mm of c2] {очередь на 5 элементов};
@@ -82,7 +92,7 @@ ESP32-S3 задачи могут выполняться на двух ядрах
 \codecap{Производитель и потребитель}
 \codeinput{l7_queue}
 
-Если же данные --- это общее \emph{состояние}, которое все читают и меняют (как \code{lamp}),
+Если же данные --- это общее \emph{состояние}, которое все читают и меняют (например, «светодиод включён, яркость 60 \%»),
 удобнее \textbf{мьютекс}: «ключ», который задача берёт перед работой с данными и возвращает после.
 Пока ключ у одной задачи, остальные ждут.
 
@@ -102,30 +112,81 @@ ESP32-S3 задачи могут выполняться на двух ядрах
 \caption{Основные средства синхронизации FreeRTOS}
 \end{table}
 
-\subsection{Шаг проекта 7: лампа на задачах}
+\subsection{Практика: мьютекс --- «ключ» от общего ресурса}
 
-\progress{7}
+Когда две задачи пользуются одной вещью --- например, \code{Serial}, --- они могут мешать друг другу. Проверим!
+Две задачи печатают свои фразы по одной букве. Сначала поставь в программе \code{USE\_MUTEX = false}:
+
+\codecap{Две задачи и мьютекс}
+\codeinput{l13_mutex}
+
+Без мьютекса в Serial Monitor получится каша: «Кошка говСобака говорит: гаорит: мяу\ldots». Задачи
+перебивают друг друга на полуслове. Теперь поставь \code{true}: фразы идут ровно, по очереди.
+
+\textbf{Мьютекс} (от англ. \emph{mutual exclusion} --- взаимное исключение) работает как ключ от единственной
+комнаты: задача берёт ключ (\code{xSemaphoreTake}), делает свою работу и возвращает ключ
+(\code{xSemaphoreGive}). Пока ключ у одной задачи, другая ждёт.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[x=1cm,y=1cm]
+  \node[font=\sffamily\small,anchor=east] at (-0.2,1) {без мьютекса};
+  \foreach \s/\e/\c in {0/0.5/esp,0.5/1/accent,1/1.5/esp,1.5/2/accent,2/2.5/esp,2.5/3/accent,3/3.5/esp,3.5/4/accent,4/4.5/esp,4.5/5/accent}
+    \fill[\c!40] (\s,0.8) rectangle (\e,1.2);
+  \node[font=\sffamily\scriptsize,anchor=west] at (5.2,1) {буквы вперемешку};
+  \node[font=\sffamily\small,anchor=east] at (-0.2,0) {с мьютексом};
+  \fill[esp!40] (0,-0.2) rectangle (2.5,0.2) node[midway,font=\sffamily\scriptsize]{кошка};
+  \fill[accent!40] (2.5,-0.2) rectangle (5,0.2) node[midway,font=\sffamily\scriptsize]{собака};
+  \node[font=\sffamily\scriptsize,anchor=west] at (5.2,0) {фразы целиком, по очереди};
+\end{tikzpicture}
+\caption{Мьютекс не даёт задачам перебивать друг друга}
+\end{figure}
+
+\begin{table}[H]
+\centering\small
+\begin{tabularx}{\textwidth}{@{}l X@{}}
+\toprule
+Инструмент FreeRTOS & Когда пригодится \\
+\midrule
+Задача (\code{xTaskCreate}) & отдельное дело со своим циклом \\
+Очередь (\code{xQueue\ldots}) & передать данные из одной задачи в другую (или из прерывания) \\
+Мьютекс (\code{xSemaphoreCreateMutex}) & не дать двум задачам одновременно пользоваться \code{Serial}, экраном, общей переменной \\
+Уведомление (\code{xTaskNotify}) & разбудить конкретную задачу: «событие произошло» \\
+Программный таймер (\code{xTimerCreate}) & вызывать короткую функцию периодически \\
+\bottomrule
+\end{tabularx}
+\caption{Главные инструменты FreeRTOS}
+\end{table}
+
+\begin{caution}
+Если задаче не хватает памяти стека, плата перезагружается с сообщением \code{Stack canary watchpoint triggered}.
+Тогда увеличь третий параметр \code{xTaskCreatePinnedToCore()} --- например, с 2048 до 4096.
+\end{caution}
+
+
+\subsection{Самостоятельная работа: устройство на задачах}
 
 \begin{figure}[H]
 \centering
 \begin{tikzpicture}[node distance=8mm]
-  \node[blk,fill=blkmem,minimum width=34mm,minimum height=14mm] (st) {\code{lamp}\\ \scriptsize + мьютекс \code{lampMutex}};
-  \node[blk,fill=blkper,minimum width=30mm,minimum height=12mm,left=22mm of st] (in) {\code{inputTask}\\ \scriptsize кнопка, ручка · 10 мс\\ \scriptsize приоритет 2};
+  \node[blk,fill=blkmem,minimum width=34mm,minimum height=14mm] (st) {\code{state}\\ \scriptsize + мьютекс \code{stateMutex}};
+  \node[blk,fill=blkper,minimum width=30mm,minimum height=12mm,left=22mm of st] (in) {\code{inputTask}\\ \scriptsize кнопка, потенциометр · 10 мс\\ \scriptsize приоритет 2};
   \node[blk,fill=blkrf,minimum width=30mm,minimum height=12mm,right=22mm of st] (dsp) {\code{displayTask}\\ \scriptsize экран · 100 мс\\ \scriptsize приоритет 1};
-  \node[blk,fill=blkcpu,minimum width=30mm,minimum height=12mm,below=10mm of st] (lp) {\code{loop()}\\ \scriptsize Serial, «пульс»};
-  \draw[arr] (in) -- node[above,font=\scriptsize]{\code{lampToggle()}} node[below,font=\scriptsize]{\code{lampSetLevel()}} (st);
-  \draw[arr] (st) -- node[above,font=\scriptsize]{\code{getLamp()}} (dsp);
-  \draw[darr] (lp) -- node[right,font=\scriptsize]{\code{lampSetOn()}, \code{getLamp()}} (st);
+  \node[blk,fill=blkcpu,minimum width=30mm,minimum height=12mm,below=10mm of st] (lp) {\code{loop()}\\ \scriptsize команды Serial};
+  \draw[arr] (in) -- node[above,font=\scriptsize]{\code{toggle()}} node[below,font=\scriptsize]{\code{setLevel()}} (st);
+  \draw[arr] (st) -- node[above,font=\scriptsize]{\code{getState()}} (dsp);
+  \draw[darr] (lp) -- node[right,font=\scriptsize]{\code{setOn()}, \code{getState()}} (st);
   \node[below=1mm of dsp,font=\sffamily\scriptsize,align=center] {единственная задача,\\ работающая с I\textsuperscript{2}C};
 \end{tikzpicture}
-\caption{Архитектура лампы: задачи обращаются к общему состоянию только через функции под мьютексом}
+\caption{Устройство на задачах: задачи обращаются к общему состоянию только через функции под мьютексом}
 \end{figure}
 
-Здесь окупается решение из урока 4: состояние лампы меняется только через функции, поэтому защитить
-его достаточно в одном месте --- внутри этих функций.
+Главное правило: общее состояние меняется только через функции \code{toggle()}, \code{setLevel()},
+\code{setOn()} и читается через \code{getState()}. Мьютекс берётся внутри этих функций, поэтому
+защищать данные нужно в одном месте, а не в каждой задаче.
 
-\codecap{Умная лампа, шаг 7 (изменения относительно шага 6)}
-\codeinput{lamp_step7}
+Соберите по этой схеме отдельный скетч: кнопка и потенциометр (уроки 3 и 5), OLED (урок 6), команды
+Serial (урок 2) и светодиод на ШИМ (урок 4). Экран должен обновляться независимо от нажатий.
 
 Кнопка теперь опрашивается каждые \SI{10}{ms} независимо от того, чем занят экран: у задачи ввода
 выше приоритет, и планировщик прервёт рисование, как только ей пора работать.
@@ -136,6 +197,14 @@ ESP32-S3 задачи могут выполняться на двух ядрах
 использовании \code{printf}, \code{String} и больших локальных массивов.
 \end{caution}
 
+\begin{trouble}
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Перезагрузка с \code{Stack canary}} --- увеличьте размер стека задачи в \code{xTaskCreatePinnedToCore()}.
+  \item \textbf{Срабатывает watchdog} --- в бесконечном цикле задачи нет \code{vTaskDelay()} или ожидания очереди.
+  \item \textbf{Данные «перемешиваются»} --- общая переменная меняется без мьютекса или сразу из нескольких задач.
+\end{itemize}
+\end{trouble}
+
 \begin{summary}
 \begin{itemize}[leftmargin=*]
   \item Задача --- функция с бесконечным циклом; \code{vTaskDelay()} отдаёт процессор другим.
@@ -144,10 +213,21 @@ ESP32-S3 задачи могут выполняться на двух ядрах
 \end{itemize}
 \end{summary}
 
+\begin{selfcheck}
+\begin{enumerate}
+  \item Чем задача отличается от функции \code{loop()}?
+  \item Когда нужна очередь, а когда мьютекс?
+  \item Как заметить переполнение стека задачи?
+\end{enumerate}
+\end{selfcheck}
+
 \begin{tasks}
 \begin{enumerate}
-  \item Переведите кнопку на прерывание (урок 3): обработчик будит \code{inputTask} через \code{vTaskNotifyGiveFromISR()}.
-  \item Раз в 5 секунд печатайте в Serial запас стека каждой задачи.
-  \item Вынесите «пульс» в отдельную задачу и уберите \code{delay(10)} из \code{loop()}. Что изменилось?
+\item \lv{1} Запустите пример с двумя задачами и убедитесь, что они работают одновременно. Измените период одной из них.
+\item \lv{1} Раз в 5 секунд печатайте в Serial запас стека каждой задачи (\code{uxTaskGetStackHighWaterMark}).
+\item \lv{2} Вынесите мигание встроенного RGB-светодиода в отдельную задачу. Как упростился \code{loop()}?
+\item \lv{2} Передайте число из одной задачи в другую через очередь и выведите его на экран.
+\item \lv{3} Переведите кнопку на прерывание (урок 3): обработчик будит задачу через \code{vTaskNotifyGiveFromISR}.
+\item \lv{4} Защитите общий ресурс (например, Serial) мьютексом, а затем намеренно уберите его и найдите, когда сообщения перемешиваются.
 \end{enumerate}
 \end{tasks}

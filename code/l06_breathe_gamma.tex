@@ -1,0 +1,17 @@
+\begin{CodeVerbatim}
+\PY{c+c1}{// «Дыхание» с поправкой на глаз (гамма\PYZhy{}коррекция)}
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{int}\PY{+w}{ }\PY{n}{LED\PYZus{}PIN}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{4}\PY{p}{;}
+
+\PY{k+kt}{uint32\PYZus{}t}\PY{+w}{ }\PY{n+nf}{gammaDuty}\PY{p}{(}\PY{k+kt}{int}\PY{+w}{ }\PY{n}{percent}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{            }\PY{c+c1}{// 0..100 \PYZpc{} \PYZhy{}\PYZgt{} 0..255}
+\PY{+w}{  }\PY{k}{return}\PY{+w}{ }\PY{p}{(}\PY{k+kt}{uint32\PYZus{}t}\PY{p}{)}\PY{p}{(}\PY{l+m+mi}{255}\PY{+w}{ }\PY{o}{*}\PY{+w}{ }\PY{n}{pow}\PY{p}{(}\PY{n}{percent}\PY{+w}{ }\PY{o}{/}\PY{+w}{ }\PY{l+m+mf}{100.0}\PY{p}{,}\PY{+w}{ }\PY{l+m+mf}{2.2}\PY{p}{)}\PY{+w}{ }\PY{o}{+}\PY{+w}{ }\PY{l+m+mf}{0.5}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{setup}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{n}{ledcAttach}\PY{p}{(}\PY{n}{LED\PYZus{}PIN}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{5000}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{8}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{loop}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{k}{for}\PY{+w}{ }\PY{p}{(}\PY{k+kt}{int}\PY{+w}{ }\PY{n}{p}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}\PY{+w}{ }\PY{n}{p}\PY{+w}{ }\PY{o}{\PYZlt{}}\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{100}\PY{p}{;}\PY{+w}{ }\PY{n}{p}\PY{o}{+}\PY{o}{+}\PY{p}{)}\PY{+w}{  }\PY{p}{\PYZob{}}\PY{+w}{ }\PY{n}{ledcWrite}\PY{p}{(}\PY{n}{LED\PYZus{}PIN}\PY{p}{,}\PY{+w}{ }\PY{n}{gammaDuty}\PY{p}{(}\PY{n}{p}\PY{p}{)}\PY{p}{)}\PY{p}{;}\PY{+w}{ }\PY{n}{delay}\PY{p}{(}\PY{l+m+mi}{10}\PY{p}{)}\PY{p}{;}\PY{+w}{ }\PY{p}{\PYZcb{}}
+\PY{+w}{  }\PY{k}{for}\PY{+w}{ }\PY{p}{(}\PY{k+kt}{int}\PY{+w}{ }\PY{n}{p}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{100}\PY{p}{;}\PY{+w}{ }\PY{n}{p}\PY{+w}{ }\PY{o}{\PYZgt{}}\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}\PY{+w}{ }\PY{n}{p}\PY{o}{\PYZhy{}}\PY{o}{\PYZhy{}}\PY{p}{)}\PY{+w}{  }\PY{p}{\PYZob{}}\PY{+w}{ }\PY{n}{ledcWrite}\PY{p}{(}\PY{n}{LED\PYZus{}PIN}\PY{p}{,}\PY{+w}{ }\PY{n}{gammaDuty}\PY{p}{(}\PY{n}{p}\PY{p}{)}\PY{p}{)}\PY{p}{;}\PY{+w}{ }\PY{n}{delay}\PY{p}{(}\PY{l+m+mi}{10}\PY{p}{)}\PY{p}{;}\PY{+w}{ }\PY{p}{\PYZcb{}}
+\PY{p}{\PYZcb{}}
+\end{CodeVerbatim}

@@ -1,11 +1,176 @@
 % =====================================================================
-\section{Цифровой выход: светодиод}
+\section{Цифровой выход: светодиод}\label{les:led}
 % =====================================================================
 \lessonintro
   {научиться управлять выводом GPIO как выходом, правильно подключать светодиод, отмерять время без остановки программы}
   {урок 0: установка среды, \code{setup()} и \code{loop()}}
-  {подключаем светодиод лампы и «пульс» --- индикатор того, что плата работает}
+  {светодиод на \pin{4} мигает, не останавливая программу; встроенный RGB-светодиод меняет цвет}
   {макетная плата, светодиод, резистор \SIrange{220}{330}{\ohm}, провода}
+
+\subsection{Идея урока коротко}
+
+GPIO4 создаёт HIGH (около 3,3 В) или LOW (около 0 В), а светодиод показывает этот сигнал светом.
+Току нужен замкнутый путь: GPIO4 $\rightarrow$ резистор $\rightarrow$ LED $\rightarrow$ GND.
+\code{const int} даёт имя номеру пина; \code{pinMode} назначает OUTPUT; \code{digitalWrite} выбирает
+HIGH или LOW; \code{delay} ждёт миллисекунды.
+
+\subsection{Зачем нужен резистор: закон Ома}
+
+Электричество удобно сравнивать с водой в трубах:
+\begin{itemize}
+  \item \textbf{напряжение} $U$ (вольты, В) --- это «давление», которое толкает воду;
+  \item \textbf{ток} $I$ (амперы, А) --- сколько воды протекает за секунду;
+  \item \textbf{сопротивление} $R$ (омы, \si{\ohm}) --- насколько узкая труба: чем уже, тем меньше воды пройдёт.
+\end{itemize}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[x=1cm,y=1cm]
+  \fill[blue!12] (0,0) rectangle (1.6,3);
+  \fill[blue!35] (0,0) rectangle (1.6,2.3);
+  \draw[thick] (0,3.2) -- (0,0) -- (1.6,0) -- (1.6,3.2);
+  \node[font=\sffamily\small,align=center] at (0.8,3.6) {давление\\ = напряжение $U$};
+  \fill[blue!35] (1.6,0.1) rectangle (3.6,0.6);
+  \fill[blue!35] (3.6,0.25) rectangle (5.4,0.45);
+  \fill[blue!35] (5.4,0.1) rectangle (7.6,0.6);
+  \draw[thick] (1.6,0.6) -- (3.6,0.6) -- (3.6,0.45) -- (5.4,0.45) -- (5.4,0.6) -- (7.6,0.6);
+  \draw[thick] (1.6,0.1) -- (3.6,0.1) -- (3.6,0.25) -- (5.4,0.25) -- (5.4,0.1) -- (7.6,0.1);
+  \node[font=\sffamily\small,align=center] at (4.5,1.4) {узкое место\\ = сопротивление $R$};
+  \draw[->,very thick,esp] (6,-0.3) -- (7.4,-0.3) node[right,font=\sffamily\small,text=black]{поток = ток $I$};
+\end{tikzpicture}
+\caption{«Водяная» модель электрической цепи}
+\end{figure}
+
+Эти три величины связаны \textbf{законом Ома} --- главным законом электроники:
+\[
+  I = \frac{U}{R}
+  \qquad\text{или}\qquad
+  R = \frac{U}{I}.
+\]
+Больше давление --- больше поток. Уже труба --- меньше поток.
+
+\subsubsection{Почему светодиод сгорает без резистора}
+
+Светодиод ведёт себя необычно: пока напряжение на нём маленькое, ток почти не течёт. Но стоит
+напряжению превысить определённый порог --- \textbf{прямое напряжение} $U_F$, для красного светодиода
+около 2~В, --- ток начинает расти \emph{очень} быстро:
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  width=0.62\textwidth, height=5.4cm,
+  xlabel={напряжение на светодиоде, В}, ylabel={ток, мА},
+  xmin=0, xmax=2.4, ymin=0, ymax=60,
+  grid=major, grid style={gray!25},
+  tick label style={font=\scriptsize}, label style={font=\small},
+]
+  \addplot[very thick,esp,samples=150,domain=0:2.2] {min(80,0.5*exp((x-1.75)*14))};
+  \addplot[dashed,okgreen!70!black,thick] coordinates {(0,6) (2.4,6)};
+  \node[font=\scriptsize,anchor=south west,text=okgreen!50!black] at (axis cs:0.05,6) {нужный ток $\approx$ 6 мА};
+  \node[circle,fill=okgreen!70!black,inner sep=1.5pt] at (axis cs:1.93,6) {};
+  \draw[<-,thin] (axis cs:2.08,50) -- (axis cs:1.2,45) node[left,font=\scriptsize,align=right]{чуть больше напряжения ---\\ ток огромный,\\ светодиод сгорает};
+  \draw[<-,thin] (axis cs:1.0,0.8) -- (axis cs:0.7,20) node[above,font=\scriptsize,align=center]{ток почти\\ не течёт};
+\end{axis}
+\end{tikzpicture}
+\caption{Как ток через красный светодиод зависит от напряжения на нём (вольт-амперная характеристика)}
+\end{figure}
+
+Вывод платы выдаёт 3,3~В --- намного больше, чем нужно светодиоду. Если подключить его напрямую, ток
+окажется огромным, и светодиод (а может, и вывод платы) сгорит. \textbf{Резистор} забирает на себя
+«лишнее» напряжение и ограничивает ток. Поэтому правило:
+
+\begin{center}
+\fcolorbox{esp}{esp!6}{\parbox{0.8\textwidth}{\centering\sffamily\bfseries
+Светодиод подключается к выводу только через резистор!}}
+\end{center}
+
+\subsubsection{Рассчитываем резистор}
+
+Из 3,3~В на светодиод придётся $U_F \approx 2{,}0$~В (для красного), значит, на резистор ---
+оставшиеся $3{,}3 - 2{,}0 = 1{,}3$~В. Светодиоду достаточно тока около 6~мА = 0,006~А. По закону Ома:
+\[
+  R = \frac{U_\text{питания} - U_F}{I} = \frac{3{,}3~\text{В} - 2{,}0~\text{В}}{0{,}006~\text{А}} \approx 217~\si{\ohm}.
+\]
+Резисторы продаются только определённых номиналов, поэтому берём ближайший: \textbf{\SI{220}{\ohm}}.
+
+Разные светодиоды требуют разного напряжения: красному хватает около 2~В, а синему нужно почти 3~В.%
+\footnote{Всё дело в энергии света. Свет состоит из крошечных порций --- фотонов, и у синего света
+каждый фотон несёт больше энергии, чем у красного. Чтобы «выбить» из светодиода синий фотон, электрону
+нужно больше энергии --- значит, нужно и большее напряжение. Поэтому ультрафиолетовые светодиоды
+требуют ещё больше, чем синие, а инфракрасные (в пульте от телевизора) --- меньше всего, около 1,2~В.}
+Поэтому и резистор для них нужен разный:
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  ybar, width=0.8\textwidth, height=5cm,
+  ylabel={прямое напряжение $U_F$, В},
+  symbolic x coords={ИК,красный,жёлтый,зелёный,синий,белый},
+  xtick=data, x tick label style={font=\sffamily\small},
+  tick label style={font=\scriptsize}, label style={font=\small},
+  ymin=0, ymax=4.2, bar width=9mm, clip=false,
+  nodes near coords, nodes near coords align={anchor=north},
+  nodes near coords style={font=\scriptsize,yshift=-2pt},
+  every node near coord/.append style={/pgf/number format/use comma},
+  ymajorgrids, grid style={gray!25},
+]
+  \addplot[fill=esp!60,draw=espdark] coordinates {(ИК,1.2) (красный,1.9) (жёлтый,2.1) (зелёный,2.2) (синий,3.0) (белый,3.0)};
+  \draw[dashed,thick,accent] (rel axis cs:0,0.7857) -- (rel axis cs:1,0.7857) node[pos=0.02,above right=1pt,font=\scriptsize,text=accent]{3,3 В --- выход ESP32-S3};
+\end{axis}
+\end{tikzpicture}
+\caption{Прямое напряжение светодиодов разных цветов (примерные значения)}
+\end{figure}
+
+\begin{table}[H]
+\centering\small
+\begin{tabular}{@{}lccc@{}}
+\toprule
+Цвет светодиода & $U_F$, В & На резисторе, В & Резистор для 6~мА\\
+\midrule
+Красный & 1,9 & $3{,}3-1{,}9=1{,}4$ & $1{,}4 / 0{,}006 \approx$ \SI{230}{\ohm} → \SI{220}{\ohm}\\
+Жёлтый, зелёный & 2,1--2,2 & 1,1--1,2 & $\approx$ \SI{190}{\ohm} → \SI{180}{\ohm}--\SI{220}{\ohm}\\
+Синий, белый & 3,0 & 0,3 & $0{,}3 / 0{,}006 = $ \SI{50}{\ohm} → \SI{47}{\ohm}\\
+\bottomrule
+\end{tabular}
+\caption{Пример расчёта резисторов при питании от вывода 3,3~В}
+\end{table}
+
+Синему и белому светодиоду от 3,3~В достаётся совсем небольшой запас, поэтому они светят чуть слабее.
+Для опытов в курсе лучше всего подходят красные, жёлтые и зелёные светодиоды с резистором \SI{220}{\ohm}.
+
+\subsubsection{Как узнать сопротивление резистора}
+
+Номинал резистора закодирован цветными полосками. Первые две --- цифры, третья --- сколько нулей
+дописать, а золотая полоска с краю --- точность:
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[x=1cm,y=1cm]
+  \draw[line width=1.5pt,black!45] (-3.4,0) -- (3.4,0);
+  \fill[resbody,draw=black!45,rounded corners=3mm] (-2,-0.55) rectangle (2,0.55);
+  \fill[rr] (-1.35,-0.55) rectangle (-1.0,0.55);
+  \fill[rr] (-0.7,-0.55) rectangle (-0.35,0.55);
+  \fill[rn] (-0.05,-0.55) rectangle (0.3,0.55);
+  \fill[rgold] (1.1,-0.55) rectangle (1.45,0.55);
+  \foreach \x/\lx/\t in {-1.175/-3.2/{красный: \textbf{2}},-0.525/-1.2/{красный: \textbf{2}},0.125/1.0/{коричневый: \textbf{×10}},1.275/3.2/{золотой: ±5\%}}
+    \draw[thin] (\x,-0.6) -- (\x,-0.9) -- (\lx,-1.2) node[below,font=\sffamily\scriptsize,align=center]{\t};
+  \node[font=\sffamily\bfseries] at (0,1.1) {2 2 0 = \SI{220}{\ohm}};
+\end{tikzpicture}
+
+\vspace{2mm}
+\small
+\begin{tabular}{@{}*{10}{c}@{}}
+\toprule
+\colorbox{black}{\textcolor{white}{0}} & \colorbox{rn}{\textcolor{white}{1}} & \colorbox{rr}{\textcolor{white}{2}} & \colorbox{ro}{3} & \colorbox{ry}{4} &
+\colorbox{rg}{\textcolor{white}{5}} & \colorbox{rb}{\textcolor{white}{6}} & \colorbox{rv}{\textcolor{white}{7}} & \colorbox{gray}{\textcolor{white}{8}} & \fcolorbox{gray}{white}{9}\\
+чёрный & коричн. & красный & оранж. & жёлтый & зелёный & синий & фиолет. & серый & белый\\
+\bottomrule
+\end{tabular}
+\caption{Цветовая маркировка резисторов. Например, коричневый--чёрный--оранжевый = 1, 0 и три нуля = \SI{10000}{\ohm} = \SI{10}{k\ohm}}
+\end{figure}
+
 
 \subsection{Как устроен выход GPIO}
 
@@ -45,7 +210,7 @@
 \begin{circuitikz}
   \draw (0,0) node[left]{\pin{4}} to[short,o-] (0.5,0)
         to[R, l=$R$, a=\SI{220}{\ohm}] (3,0)
-        to[led, l=LED, v^>=$U_F\approx$\SI{2}{V}] (5.5,0) -- (5.5,-1.2) node[ground]{};
+        to[led, l_=LED, v^>=$U_F\approx$\SI{2}{V}] (5.5,0) -- (5.5,-1.2) node[ground]{};
   \draw[->,thick,accent] (0.8,0.9) -- node[above,font=\sffamily\small]{$I$} (2.6,0.9);
   \node[font=\sffamily\small] at (2.8,-2) {Вариант A: ток вытекает (светит при HIGH)};
   \begin{scope}[xshift=8cm]
@@ -55,7 +220,7 @@
   \node[font=\sffamily\small,align=center] at (1,-5.2) {Вариант B: ток втекает\\(светит при LOW)};
   \end{scope}
 \end{circuitikz}
-\caption{Два способа подключить светодиод. В проекте используем вариант A}
+\caption{Два способа подключить светодиод. В опытах используем вариант A}
 \end{figure}
 
 Резистор ограничивает ток. По закону Ома:
@@ -78,10 +243,48 @@
 \caption{Ориентировочные номиналы резисторов при питании 3,3 В}
 \end{table}
 
+\subsection{Подключаем светодиод}
+
+Соберём схему: вывод \pin{4} → резистор \SI{220}{\ohm} → анод светодиода, катод → земля (GND).
+
+\begin{twoview}{Подключение светодиода к выводу GPIO4}{fig:led}
+\begin{tikzpicture}[bb]
+  \bbBoard{24}
+  \bbDevKit{29}{25}
+  \bbR{10}{13}{14}{13}{rr}{rr}{rn}
+  \bbLED{red}{14}{11}{-1.8}
+  \draw[wire=wyellow] (dk-4) -- (10,22) -- (10,14);
+  \draw[wire=wblack] (15,14) -- (15,16);
+  \draw[wire=wblack] (dk-GND) -- (26.5,4) -- (26.5,16) -- (24,16);
+\end{tikzpicture}
+\nextview
+\begin{circuitikz}
+  \draw (0,0) node[left]{\pin{4}} to[short,o-] (0.5,0)
+        to[R, l=$R$, a=\SI{220}{\ohm}] (3.3,0)
+        to[led, l=LED] (5.8,0) -- (5.8,-1.2) node[ground]{};
+  \draw[->,thick,esp] (0.8,0.9) -- node[above,font=\sffamily\small]{ток $I$} (2.8,0.9);
+\end{circuitikz}
+\end{twoview}
+
+Сравни две картинки: жёлтый провод на макетной плате --- это линия от \pin{4} на схеме, чёрные
+провода --- значок земли. Проследи путь тока пальцем: от вывода платы через резистор и светодиод
+к земле и обратно в плату --- цепь замкнута.
+
+
 \subsection{Классический Blink}
 
 \codecap{Мигание светодиодом}
 \codeinput{l1_blink}
+
+\subsection{Разберём Blink по строкам}
+\begin{itemize}
+  \item \code{const int LED\_PIN = 4;} не включает светодиод: это только удобное имя для GPIO4.
+  \item \code{setup()} выполняется один раз и сообщает плате, что GPIO4 теперь \code{OUTPUT}.
+  \item В \code{loop()} строка \code{digitalWrite(LED\_PIN, HIGH)} даёт на GPIO4 3,3 В; LED загорается.
+  \item \code{delay(500)} ждёт полсекунды. Потом LOW даёт 0 В, LED гаснет, и цикл начинается снова.
+\end{itemize}
+Если LED не мигает, сначала проверьте длинную ножку LED (анод), резистор и провод GND. Не меняйте
+программу, пока не убедились в схеме.
 
 \begin{figure}[H]
 \centering
@@ -99,11 +302,181 @@
 \subsection{Мигание без \texttt{delay()}}
 
 \code{delay()} останавливает всю программу: пока идёт ожидание, она не может делать ничего другого.
-В лампе нам предстоит одновременно следить за кнопкой, ручкой, экраном и сетью, поэтому сразу
+Настоящее устройство одновременно следит за кнопкой, датчиками, экраном и сетью, поэтому сразу
 привыкаем к другому приёму --- сравнивать текущее время \code{millis()} с моментом последнего действия:
 
 \codecap{Неблокирующее мигание}
 \codeinput{l1_blink_millis}
+
+\subsection{Учимся программировать: условие \texttt{if}}
+
+Часто нужно сделать что-то \emph{только если} выполняется условие: «если прошло полсекунды --- переключи
+светодиод». Для этого есть команда \code{if} («если»). Команды внутри фигурных скобок выполняются, только
+когда условие в круглых скобках верно. А после \code{else} («иначе») пишут, что делать, если условие неверно.
+
+Алгоритмы удобно рисовать \textbf{блок-схемами}. Овал --- начало и конец, прямоугольник --- действие,
+ромб --- вопрос с ответами «да» и «нет». Вот блок-схема функции \code{loop()} из программы ниже:
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=7mm]
+  \node[fcterm] (s) {начало \code{loop()}};
+  \node[fcproc,below=of s] (now) {now = millis()};
+  \node[fcdec,below=of now] (q) {now − lastToggle\\ >= 500 ?};
+  \node[fcproc,below=9mm of q] (a) {lastToggle = now\\ ledState = !ledState\\ digitalWrite(\ldots)};
+  \node[fcterm,below=of a] (e) {конец \code{loop()}};
+  \draw[arr] (s) -- (now); \draw[arr] (now) -- (q);
+  \draw[arr] (q) -- node[left,font=\sffamily\scriptsize]{да} (a);
+  \draw[arr] (a) -- (e);
+  \draw[arr] (q.east) -- node[above,font=\sffamily\scriptsize]{нет} ++(14mm,0) |- (e.east);
+  \draw[arr,gray,dashed] (e.west) -- ++(-22mm,0) |- node[pos=0.25,left,font=\sffamily\scriptsize,text=gray,align=right]{и снова\\ сначала} (s.west);
+\end{tikzpicture}
+\caption{Блок-схема неблокирующего мигания: \code{loop()} крутится тысячи раз в секунду,
+но светодиод переключается, только когда ответ на вопрос --- «да»}
+\end{figure}
+
+Для сравнения чисел используются такие знаки:
+
+\begin{table}[H]
+\centering\small
+\begin{tabular}{@{}lll@{\hspace{12mm}}lll@{}}
+\toprule
+Знак & Смысл & Пример & Знак & Смысл & Пример\\
+\midrule
+\code{==} & равно & \code{x == 5} & \code{!=} & не равно & \code{x != 0}\\
+\code{<} & меньше & \code{t < 0} & \code{>} & больше & \code{t > 30}\\
+\code{<=} & меньше или равно & \code{n <= 10} & \code{>=} & больше или равно & \code{now - last >= 500}\\
+\bottomrule
+\end{tabular}
+\caption{Операции сравнения. Результат сравнения --- \code{true} (верно) или \code{false} (неверно)}
+\end{table}
+
+\begin{caution}
+Не путай \code{=} и \code{==}! Одно равно --- «положить в коробку», два равно --- «сравнить». Запись
+\code{if (x = 5)} не проверит, равен ли \code{x} пяти, а \emph{положит} в него 5. Это одна из самых частых ошибок.
+\end{caution}
+
+В программе есть ещё два новых приёма. Переменная \code{ledState} типа \code{bool} помнит, горит ли светодиод.
+Восклицательный знак \code{!} означает «наоборот»: \code{ledState = !ledState} превращает \code{true} в
+\code{false} и обратно. А время хранится в \code{uint32\_t} --- \code{millis()} быстро вырастает до огромных чисел.
+
+\codecap{Мигание без остановки программы}
+\codeinput{l05_blink_millis}
+
+Запомни этот приём: \code{if (millis() - last >= INTERVAL)}. Он будет встречаться почти в каждом
+уроке.
+
+\subsection{Практика: бегущий огонь}
+
+Подключим четыре светодиода к выводам \pin{4}--\pin{7}, каждый со своим резистором, и будем
+зажигать их по очереди. Получится огонёк, который бежит по кругу, как на новогодней гирлянде.
+
+\begin{twoview}{Четыре светодиода на выводах GPIO4--GPIO7}{fig:led4}
+\begin{tikzpicture}[bb]
+  \bbBoard{24}
+  \bbDevKit{29}{25}
+  \foreach \k/\pin/\col/\wc in {0/4/red/wyellow,1/5/yellow/wgreen,2/6/green/wblue,3/7/blue/wpurple}{
+    \pgfmathtruncatemacro{\c}{1+6*\k}
+    \bbR{\c}{13}{\c+4}{13}{rr}{rr}{rn}
+    \bbLED{\col}{\c+4}{11}{-1.8}
+    \draw[wire=wblack] (\c+5,14) -- (\c+5,16);
+    \draw[wire=\wc] (dk-\pin) -- (\c,22-\k) -- (\c,14);
+  }
+  \draw[wire=wblack] (dk-GND) -- (26.5,4) -- (26.5,16) -- (24,16);
+\end{tikzpicture}
+\nextview
+\begin{circuitikz}[scale=0.9,transform shape]
+  \foreach \k/\p in {0/4,1/5,2/6,3/7}{
+    \draw (0,-\k*1.3) node[left]{\pin{\p}} to[short,o-] (0.5,-\k*1.3)
+          to[R, l=\SI{220}{\ohm}] (3,-\k*1.3) to[led] (5.2,-\k*1.3) -- (6,-\k*1.3);
+  }
+  \draw (6,0) -- (6,-4.6) node[ground]{};
+\end{circuitikz}
+\end{twoview}
+
+Обрати внимание: на принципиальной схеме земли всех светодиодов соединены одной линией. На
+макетной плате это сделано с помощью шины «−»: все катоды подключены к ней, а она --- к GND платы.
+
+\subsection{Учимся программировать: массивы и цикл \texttt{for}}
+
+В бегущем огне четыре светодиода, и для каждого нужно вызвать \code{pinMode()}. Можно написать четыре
+одинаковые строчки, но что, если светодиодов будет двадцать? На помощь приходят два инструмента.
+
+\textbf{Массив} --- это ряд пронумерованных коробок под одним именем. Номер коробки называется \textbf{индексом},
+и счёт начинается \textbf{с нуля}!
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[cell/.style={draw,thick,fill=blkmem,minimum width=13mm,minimum height=11mm,font=\ttfamily\Large}]
+  \node[font=\ttfamily\large,anchor=east] at (-0.9,0) {LEDS};
+  \foreach \v [count=\i from 0] in {4,5,6,7}{
+    \node[cell] (m\i) at (\i*1.4,0) {\v};
+    \node[font=\ttfamily\small,text=esp,below=1mm of m\i] {[\i]};
+  }
+  \draw[arr,accent] (2.8,1.3) node[above,font=\ttfamily\small]{LEDS[2] → 6} -- (m2.north);
+\end{tikzpicture}
+\caption{Массив \code{const int LEDS[] = \{4, 5, 6, 7\};} --- четыре ячейки с индексами от 0 до 3}
+\end{figure}
+
+\textbf{Цикл} \code{for} повторяет команды нужное число раз. У него четыре части:
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[tok/.style={font=\ttfamily\large,inner sep=1pt},ann/.style={font=\sffamily\scriptsize,align=center,text=black}]
+  \node[tok] (k) at (0,0) {for (};
+  \node[tok,text=esp,base right=0pt of k] (a) {int i = 0};
+  \node[tok,base right=0pt of a] (s1) {;};
+  \node[tok,text=accent,base right=0.5em of s1] (b) {i < COUNT};
+  \node[tok,base right=0pt of b] (s2) {;};
+  \node[tok,text=okgreen!60!black,base right=0.5em of s2] (c) {i++};
+  \node[tok,base right=0pt of c] (s3) {) \{};
+  \node[tok,base right=0.5em of s3] (d) {pinMode(LEDS[i], OUTPUT);};
+  \node[tok,base right=0.5em of d] (s4) {\}};
+  \draw[esp,thick] (a.north) -- ++(0,0.35) node[ann,above] {1) начало:\\ счётчик i = 0};
+  \draw[accent,thick] (b.north) -- ++(0,1.1) node[ann,above] {2) условие: продолжать,\\ пока i < 4};
+  \draw[okgreen!60!black,thick] (c.north) -- ++(0,0.35) node[ann,above] {3) шаг: после\\ каждого круга i++};
+  \draw[black,thick] (d.south) -- ++(0,-0.35) node[ann,below] {4) тело цикла --- что повторять};
+\end{tikzpicture}
+\caption{Четыре части цикла \code{for}}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=7mm]
+  \node[fcproc] (init) {i = 0};
+  \node[fcdec,below=of init] (q) {i < 4 ?};
+  \node[fcproc,below=9mm of q] (body) {pinMode(LEDS[i], OUTPUT)};
+  \node[fcproc,below=of body] (inc) {i = i + 1};
+  \node[fcterm,right=16mm of q] (e) {дальше};
+  \draw[arr] (init) -- (q);
+  \draw[arr] (q) -- node[left,font=\sffamily\scriptsize]{да} (body);
+  \draw[arr] (body) -- (inc);
+  \draw[arr] (inc.west) -- (inc.west -| body.west) -- ++(-6mm,0) |- (q.west);
+  \draw[arr] (q) -- node[above,font=\sffamily\scriptsize]{нет} (e);
+\end{tikzpicture}
+\hspace{10mm}
+\begin{tabular}[b]{@{}cccl@{}}
+\toprule
+Круг & \code{i} & \code{LEDS[i]} & Что выполнилось\\
+\midrule
+1 & 0 & 4 & \code{pinMode(4, OUTPUT)}\\
+2 & 1 & 5 & \code{pinMode(5, OUTPUT)}\\
+3 & 2 & 6 & \code{pinMode(6, OUTPUT)}\\
+4 & 3 & 7 & \code{pinMode(7, OUTPUT)}\\
+--- & 4 & --- & $4 < 4$ неверно --- выход\\
+\bottomrule
+\end{tabular}
+\caption{Блок-схема цикла и «трассировка» --- как меняется счётчик на каждом круге}
+\end{figure}
+
+\codecap{Бегущий огонь}
+\codeinput{l05_running}
+
+Цикл \code{for} в \code{setup()} настраивает все четыре вывода. В \code{loop()} переменная \code{current}
+хранит индекс горящего светодиода. Выражение \code{(current + 1) \% COUNT}
+даёт по очереди 1, 2, 3, 0, 1, 2\ldots: знак \code{\%} означает остаток от деления, и после
+последнего светодиода счёт начинается снова с нулевого.
+
 
 \subsection{Встроенный RGB-светодиод}
 
@@ -113,22 +486,18 @@
 \codecap{Смена цветов встроенного RGB-светодиода}
 \codeinput{l1_rgb}
 
-\subsection{Шаг проекта 1: светодиод лампы и «пульс»}
+\subsection{Самостоятельный опыт: внешний и встроенный светодиоды}
 
-\progress{1}
+Подключите LED к \pin{4} через резистор. Затем запустите пример RGB-светодиода и измените цвета.
+Это два отдельных опыта: внешний LED показывает обычный GPIO, а встроенный RGB показывает адресный LED.
 
-Подключаем светодиод лампы к \pin{4} по схеме «вариант A». Встроенный RGB-светодиод будет
-«пульсом»: мигает зелёным, пока программа работает. Если он замер --- программа зависла.
-Обратите внимание: мигание сделано через \code{millis()}, поэтому \code{loop()} свободен для
-следующих шагов.
-
-\codecap{Умная лампа, шаг 1}
-\codeinput{lamp_step1}
-
-\begin{tip}
-Переменные с \code{static} внутри функции сохраняют значение между вызовами. Так состояние
-«пульса» не засоряет глобальную область --- этот приём пригодится и дальше.
-\end{tip}
+\begin{trouble}
+\begin{itemize}[leftmargin=*]
+  \item \textbf{LED не горит} --- проверьте полярность: длинная ножка (анод) --- к резистору и GPIO, короткая --- к GND.
+  \item \textbf{LED горит постоянно} --- номер вывода в программе не совпадает с проводом; сверьте \code{LED\_PIN} и pinout.
+  \item \textbf{Плата не видна в IDE} --- кабель только для зарядки или выбран не тот порт; попробуйте другой кабель и разъём.
+\end{itemize}
+\end{trouble}
 
 \begin{summary}
 \begin{itemize}[leftmargin=*]
@@ -138,10 +507,21 @@
 \end{itemize}
 \end{summary}
 
+\begin{selfcheck}
+\begin{enumerate}
+  \item Зачем светодиоду резистор и как рассчитать его номинал?
+  \item Почему \code{delay()} мешает делать несколько дел одновременно?
+  \item Почему проверка \code{now - last >= INTERVAL} работает и после переполнения \code{millis()}?
+\end{enumerate}
+\end{selfcheck}
+
 \begin{tasks}
 \begin{enumerate}
-  \item Соберите «светофор» из трёх светодиодов с правильной последовательностью и длительностями.
-  \item Сделайте два светодиода, мигающих с разной частотой (\SI{1}{Hz} и \SI{3}{Hz}) без \code{delay()}.
-  \item Сделайте «пульс» лампы двойным ударом, как сердцебиение: две короткие вспышки и пауза.
+\item \lv{1} Соберите схему из урока и запустите Blink. Измените паузу так, чтобы светодиод мигал в два раза быстрее.
+\item \lv{1} Измените программу так, чтобы светодиод горел 100 мс, а гас 900 мс. Как называется отношение этих времён?
+\item \lv{2} Замените \code{delay()} на проверку \code{millis()} по образцу урока и убедитесь, что светодиод мигает так же.
+\item \lv{2} Включайте встроенный RGB-светодиод по очереди красным, зелёным и синим цветом, по секунде на каждый.
+\item \lv{3} Соберите «светофор» из трёх светодиодов с правильной последовательностью и длительностями, без \code{delay()}.
+\item \lv{4} Сделайте мигание «сердцебиением»: две короткие вспышки и пауза, а второй светодиод одновременно мигает с частотой \SI{3}{Hz} --- оба без \code{delay()}.
 \end{enumerate}
 \end{tasks}

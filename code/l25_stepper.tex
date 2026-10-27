@@ -1,0 +1,47 @@
+\begin{CodeVerbatim}
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{int}\PY{+w}{ }\PY{n}{PINS}\PY{p}{[}\PY{l+m+mi}{4}\PY{p}{]}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{l+m+mi}{15}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{16}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{17}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{18}\PY{p}{\PYZcb{}}\PY{p}{;}\PY{+w}{     }\PY{c+c1}{// входы IN1..IN4 платы ULN2003}
+
+\PY{c+c1}{// Полушаговый режим: 8 фаз. Бит 0 \PYZhy{}\PYZgt{} IN1, бит 1 \PYZhy{}\PYZgt{} IN2, бит 2 \PYZhy{}\PYZgt{} IN3, бит 3 \PYZhy{}\PYZgt{} IN4}
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{uint8\PYZus{}t}\PY{+w}{ }\PY{n}{PHASES}\PY{p}{[}\PY{l+m+mi}{8}\PY{p}{]}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{l+m+mb}{0b0001}\PY{p}{,}\PY{+w}{ }\PY{l+m+mb}{0b0011}\PY{p}{,}\PY{+w}{ }\PY{l+m+mb}{0b0010}\PY{p}{,}\PY{+w}{ }\PY{l+m+mb}{0b0110}\PY{p}{,}\PY{+w}{ }\PY{l+m+mb}{0b0100}\PY{p}{,}\PY{+w}{ }\PY{l+m+mb}{0b1100}\PY{p}{,}\PY{+w}{ }\PY{l+m+mb}{0b1000}\PY{p}{,}\PY{+w}{ }\PY{l+m+mb}{0b1001}\PY{p}{\PYZcb{}}\PY{p}{;}
+
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{long}\PY{+w}{ }\PY{n}{STEPS\PYZus{}PER\PYZus{}REV}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{4096}\PY{p}{;}\PY{+w}{          }\PY{c+c1}{// полушагов на оборот вала 28BYJ\PYZhy{}48 (примерно)}
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{uint32\PYZus{}t}\PY{+w}{ }\PY{n}{STEP\PYZus{}US}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{1200}\PY{p}{;}\PY{+w}{            }\PY{c+c1}{// пауза между шагами: меньше \PYZhy{}\PYZhy{} быстрее, но слабее}
+
+\PY{k+kt}{long}\PY{+w}{ }\PY{n}{current}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}\PY{+w}{                         }\PY{c+c1}{// где находимся, в шагах}
+\PY{k+kt}{long}\PY{+w}{ }\PY{n}{target}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}\PY{+w}{                          }\PY{c+c1}{// куда нужно прийти}
+\PY{k+kt}{uint32\PYZus{}t}\PY{+w}{ }\PY{n}{lastStep}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{applyPhase}\PY{p}{(}\PY{k+kt}{int}\PY{+w}{ }\PY{n}{phase}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{k}{for}\PY{+w}{ }\PY{p}{(}\PY{k+kt}{int}\PY{+w}{ }\PY{n}{i}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}\PY{+w}{ }\PY{n}{i}\PY{+w}{ }\PY{o}{\PYZlt{}}\PY{+w}{ }\PY{l+m+mi}{4}\PY{p}{;}\PY{+w}{ }\PY{n}{i}\PY{o}{+}\PY{o}{+}\PY{p}{)}\PY{+w}{ }\PY{n}{digitalWrite}\PY{p}{(}\PY{n}{PINS}\PY{p}{[}\PY{n}{i}\PY{p}{]}\PY{p}{,}\PY{+w}{ }\PY{p}{(}\PY{n}{PHASES}\PY{p}{[}\PY{n}{phase}\PY{p}{]}\PY{+w}{ }\PY{o}{\PYZgt{}}\PY{o}{\PYZgt{}}\PY{+w}{ }\PY{n}{i}\PY{p}{)}\PY{+w}{ }\PY{o}{\PYZam{}}\PY{+w}{ }\PY{l+m+mi}{1}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{release}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{                          }\PY{c+c1}{// снять ток с обмоток: мотор не греется}
+\PY{+w}{  }\PY{k}{for}\PY{+w}{ }\PY{p}{(}\PY{k+kt}{int}\PY{+w}{ }\PY{n}{i}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}\PY{+w}{ }\PY{n}{i}\PY{+w}{ }\PY{o}{\PYZlt{}}\PY{+w}{ }\PY{l+m+mi}{4}\PY{p}{;}\PY{+w}{ }\PY{n}{i}\PY{o}{+}\PY{o}{+}\PY{p}{)}\PY{+w}{ }\PY{n}{digitalWrite}\PY{p}{(}\PY{n}{PINS}\PY{p}{[}\PY{n}{i}\PY{p}{]}\PY{p}{,}\PY{+w}{ }\PY{n}{LOW}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{stepperRun}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{                       }\PY{c+c1}{// один шаг за вызов, без delay()}
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{current}\PY{+w}{ }\PY{o}{=}\PY{o}{=}\PY{+w}{ }\PY{n}{target}\PY{p}{)}\PY{+w}{ }\PY{k}{return}\PY{p}{;}
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{micros}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{o}{\PYZhy{}}\PY{+w}{ }\PY{n}{lastStep}\PY{+w}{ }\PY{o}{\PYZlt{}}\PY{+w}{ }\PY{n}{STEP\PYZus{}US}\PY{p}{)}\PY{+w}{ }\PY{k}{return}\PY{p}{;}
+\PY{+w}{  }\PY{n}{lastStep}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{micros}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{current}\PY{+w}{ }\PY{o}{+}\PY{o}{=}\PY{+w}{ }\PY{p}{(}\PY{n}{target}\PY{+w}{ }\PY{o}{\PYZgt{}}\PY{+w}{ }\PY{n}{current}\PY{p}{)}\PY{+w}{ }\PY{o}{?}\PY{+w}{ }\PY{l+m+mi}{1}\PY{+w}{ }\PY{o}{:}\PY{+w}{ }\PY{l+m+mi}{\PYZhy{}1}\PY{p}{;}
+\PY{+w}{  }\PY{n}{applyPhase}\PY{p}{(}\PY{p}{(}\PY{p}{(}\PY{n}{current}\PY{+w}{ }\PY{o}{\PYZpc{}}\PY{+w}{ }\PY{l+m+mi}{8}\PY{p}{)}\PY{+w}{ }\PY{o}{+}\PY{+w}{ }\PY{l+m+mi}{8}\PY{p}{)}\PY{+w}{ }\PY{o}{\PYZpc{}}\PY{+w}{ }\PY{l+m+mi}{8}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{current}\PY{+w}{ }\PY{o}{=}\PY{o}{=}\PY{+w}{ }\PY{n}{target}\PY{p}{)}\PY{+w}{ }\PY{n}{release}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{setup}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{n}{Serial}\PY{p}{.}\PY{n}{begin}\PY{p}{(}\PY{l+m+mi}{115200}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{Serial}\PY{p}{.}\PY{n}{setTimeout}\PY{p}{(}\PY{l+m+mi}{50}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{k}{for}\PY{+w}{ }\PY{p}{(}\PY{k+kt}{int}\PY{+w}{ }\PY{n}{i}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}\PY{+w}{ }\PY{n}{i}\PY{+w}{ }\PY{o}{\PYZlt{}}\PY{+w}{ }\PY{l+m+mi}{4}\PY{p}{;}\PY{+w}{ }\PY{n}{i}\PY{o}{+}\PY{o}{+}\PY{p}{)}\PY{+w}{ }\PY{n}{pinMode}\PY{p}{(}\PY{n}{PINS}\PY{p}{[}\PY{n}{i}\PY{p}{]}\PY{p}{,}\PY{+w}{ }\PY{n}{OUTPUT}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{Serial}\PY{p}{.}\PY{n}{println}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{Введите угол в градусах, например 90 или \PYZhy{}180}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{loop}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{n}{stepperRun}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{Serial}\PY{p}{.}\PY{n}{available}\PY{p}{(}\PY{p}{)}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{    }\PY{k+kt}{long}\PY{+w}{ }\PY{n}{degrees}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{Serial}\PY{p}{.}\PY{n}{parseInt}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+\PY{+w}{    }\PY{k}{while}\PY{+w}{ }\PY{p}{(}\PY{n}{Serial}\PY{p}{.}\PY{n}{available}\PY{p}{(}\PY{p}{)}\PY{p}{)}\PY{+w}{ }\PY{n}{Serial}\PY{p}{.}\PY{n}{read}\PY{p}{(}\PY{p}{)}\PY{p}{;}\PY{+w}{          }\PY{c+c1}{// убрать остаток строки}
+\PY{+w}{    }\PY{n}{target}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{current}\PY{+w}{ }\PY{o}{+}\PY{+w}{ }\PY{n}{degrees}\PY{+w}{ }\PY{o}{*}\PY{+w}{ }\PY{n}{STEPS\PYZus{}PER\PYZus{}REV}\PY{+w}{ }\PY{o}{/}\PY{+w}{ }\PY{l+m+mi}{360}\PY{p}{;}
+\PY{+w}{    }\PY{n}{Serial}\PY{p}{.}\PY{n}{printf}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{Поворот на \PYZpc{}ld градусов}\PY{l+s+se}{\PYZbs{}n}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{n}{degrees}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{p}{\PYZcb{}}
+\PY{p}{\PYZcb{}}
+\end{CodeVerbatim}

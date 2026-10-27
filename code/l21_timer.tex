@@ -1,0 +1,28 @@
+\begin{CodeVerbatim}
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{int}\PY{+w}{ }\PY{n}{LED\PYZus{}PIN}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{4}\PY{p}{;}
+
+\PY{n}{hw\PYZus{}timer\PYZus{}t}\PY{o}{*}\PY{+w}{ }\PY{n}{timer}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{k}{nullptr}\PY{p}{;}
+\PY{k}{volatile}\PY{+w}{ }\PY{k+kt}{uint32\PYZus{}t}\PY{+w}{ }\PY{n}{ticks}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}\PY{+w}{                 }\PY{c+c1}{// меняется в обработчике}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n}{ARDUINO\PYZus{}ISR\PYZus{}ATTR}\PY{+w}{ }\PY{n+nf}{onTimer}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{            }\PY{c+c1}{// вызывается ровно раз в 0,5 с}
+\PY{+w}{  }\PY{n}{ticks}\PY{o}{+}\PY{o}{+}\PY{p}{;}
+\PY{+w}{  }\PY{n}{digitalWrite}\PY{p}{(}\PY{n}{LED\PYZus{}PIN}\PY{p}{,}\PY{+w}{ }\PY{o}{!}\PY{n}{digitalRead}\PY{p}{(}\PY{n}{LED\PYZus{}PIN}\PY{p}{)}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{setup}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{n}{Serial}\PY{p}{.}\PY{n}{begin}\PY{p}{(}\PY{l+m+mi}{115200}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{pinMode}\PY{p}{(}\PY{n}{LED\PYZus{}PIN}\PY{p}{,}\PY{+w}{ }\PY{n}{OUTPUT}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{timer}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{timerBegin}\PY{p}{(}\PY{l+m+mi}{1000000}\PY{p}{)}\PY{p}{;}\PY{+w}{               }\PY{c+c1}{// счётчик: 1 000 000 тиков в секунду}
+\PY{+w}{  }\PY{n}{timerAttachInterrupt}\PY{p}{(}\PY{n}{timer}\PY{p}{,}\PY{+w}{ }\PY{o}{\PYZam{}}\PY{n}{onTimer}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{timerAlarm}\PY{p}{(}\PY{n}{timer}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{500000}\PY{p}{,}\PY{+w}{ }\PY{n+nb}{true}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{;}\PY{+w}{        }\PY{c+c1}{// сигнал каждые 500 000 тиков, без конца}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{loop}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{k}{static}\PY{+w}{ }\PY{k+kt}{uint32\PYZus{}t}\PY{+w}{ }\PY{n}{shown}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}
+\PY{+w}{  }\PY{k+kt}{uint32\PYZus{}t}\PY{+w}{ }\PY{n}{now}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{ticks}\PY{p}{;}
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{now}\PY{+w}{ }\PY{o}{!}\PY{o}{=}\PY{+w}{ }\PY{n}{shown}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{                        }\PY{c+c1}{// печатаем здесь, а не в обработчике}
+\PY{+w}{    }\PY{n}{shown}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{now}\PY{p}{;}
+\PY{+w}{    }\PY{n}{Serial}\PY{p}{.}\PY{n}{printf}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{Срабатываний: \PYZpc{}lu}\PY{l+s+se}{\PYZbs{}n}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{n}{now}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{p}{\PYZcb{}}
+\PY{p}{\PYZcb{}}
+\end{CodeVerbatim}

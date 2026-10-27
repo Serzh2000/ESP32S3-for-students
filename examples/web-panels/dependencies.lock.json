@@ -1,0 +1,41 @@
+{
+  "core": "esp32:esp32@3.2.0",
+  "fqbn": "esp32:esp32:esp32s3",
+  "libraries": [
+    {
+      "directory": "ESPUI",
+      "name": "ESPUI",
+      "version": "2.2.4",
+      "url": "https://github.com/s00500/ESPUI.git",
+      "commit": "1eb5e2ffc4eebf3a854247fd5208a5b88edc051e"
+    },
+    {
+      "directory": "ESPAsyncWebServer",
+      "name": "ESP Async WebServer",
+      "version": "3.12.1",
+      "url": "https://github.com/ESP32Async/ESPAsyncWebServer.git",
+      "commit": "4d4eaca1833c3c11940a988fc8a6c0bdf734bbd2"
+    },
+    {
+      "directory": "AsyncTCP",
+      "name": "Async TCP",
+      "version": "3.5.0",
+      "url": "https://github.com/ESP32Async/AsyncTCP.git",
+      "commit": "9f03d11a3e7e0a2205c4d302446310f74f9e6380"
+    },
+    {
+      "directory": "ArduinoJson",
+      "name": "ArduinoJson",
+      "version": "7.4.2",
+      "url": "https://github.com/bblanchon/ArduinoJson.git",
+      "commit": "1cd478f48e7c4cd142a0bd26ee17d63d70d04e3f"
+    },
+    {
+      "directory": "WiFiManager",
+      "name": "WiFiManager",
+      "version": "2.0.17",
+      "url": "https://github.com/tzapu/WiFiManager.git",
+      "commit": "4131fe617d01d746677e8b909379597162c2ca58"
+    }
+  ]
+}

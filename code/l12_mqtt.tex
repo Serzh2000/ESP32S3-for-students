@@ -1,0 +1,42 @@
+\begin{CodeVerbatim}
+\PY{c+cp}{\PYZsh{}}\PY{c+cp}{include}\PY{+w}{ }\PY{c+cpf}{\PYZlt{}WiFi.h\PYZgt{}}
+\PY{c+cp}{\PYZsh{}}\PY{c+cp}{include}\PY{+w}{ }\PY{c+cpf}{\PYZlt{}PubSubClient.h\PYZgt{}}
+
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{char}\PY{o}{*}\PY{+w}{ }\PY{n}{SSID}\PY{+w}{   }\PY{o}{=}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{MyNetwork}\PY{l+s}{\PYZdq{}}\PY{p}{;}
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{char}\PY{o}{*}\PY{+w}{ }\PY{n}{PASS}\PY{+w}{   }\PY{o}{=}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{MyPassword}\PY{l+s}{\PYZdq{}}\PY{p}{;}
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{char}\PY{o}{*}\PY{+w}{ }\PY{n}{BROKER}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{192.168.1.10}\PY{l+s}{\PYZdq{}}\PY{p}{;}\PY{+w}{            }\PY{c+c1}{// адрес вашего брокера}
+
+\PY{n}{WiFiClient}\PY{+w}{ }\PY{n}{net}\PY{p}{;}
+\PY{n}{PubSubClient}\PY{+w}{ }\PY{n+nf}{mqtt}\PY{p}{(}\PY{n}{net}\PY{p}{)}\PY{p}{;}
+\PY{k+kt}{uint32\PYZus{}t}\PY{+w}{ }\PY{n}{lastTry}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{,}\PY{+w}{ }\PY{n}{lastPub}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{onMessage}\PY{p}{(}\PY{k+kt}{char}\PY{o}{*}\PY{+w}{ }\PY{n}{topic}\PY{p}{,}\PY{+w}{ }\PY{n}{byte}\PY{o}{*}\PY{+w}{ }\PY{n}{payload}\PY{p}{,}\PY{+w}{ }\PY{k+kt}{unsigned}\PY{+w}{ }\PY{k+kt}{int}\PY{+w}{ }\PY{n}{len}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{n}{String}\PY{+w}{ }\PY{n}{msg}\PY{p}{;}
+\PY{+w}{  }\PY{k}{for}\PY{+w}{ }\PY{p}{(}\PY{k+kt}{unsigned}\PY{+w}{ }\PY{k+kt}{int}\PY{+w}{ }\PY{n}{i}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}\PY{+w}{ }\PY{n}{i}\PY{+w}{ }\PY{o}{\PYZlt{}}\PY{+w}{ }\PY{n}{len}\PY{p}{;}\PY{+w}{ }\PY{n}{i}\PY{o}{+}\PY{o}{+}\PY{p}{)}\PY{+w}{ }\PY{n}{msg}\PY{+w}{ }\PY{o}{+}\PY{o}{=}\PY{+w}{ }\PY{p}{(}\PY{k+kt}{char}\PY{p}{)}\PY{n}{payload}\PY{p}{[}\PY{n}{i}\PY{p}{]}\PY{p}{;}
+\PY{+w}{  }\PY{n}{Serial}\PY{p}{.}\PY{n}{printf}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{\PYZpc{}s \PYZhy{}\PYZgt{} \PYZpc{}s}\PY{l+s+se}{\PYZbs{}n}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{n}{topic}\PY{p}{,}\PY{+w}{ }\PY{n}{msg}\PY{p}{.}\PY{n}{c\PYZus{}str}\PY{p}{(}\PY{p}{)}\PY{p}{)}\PY{p}{;}\PY{+w}{  }\PY{c+c1}{// здесь проверяем и применяем команду}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{setup}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{n}{Serial}\PY{p}{.}\PY{n}{begin}\PY{p}{(}\PY{l+m+mi}{115200}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{WiFi}\PY{p}{.}\PY{n}{begin}\PY{p}{(}\PY{n}{SSID}\PY{p}{,}\PY{+w}{ }\PY{n}{PASS}\PY{p}{)}\PY{p}{;}\PY{+w}{                       }\PY{c+c1}{// подключение идёт в фоне}
+\PY{+w}{  }\PY{n}{mqtt}\PY{p}{.}\PY{n}{setServer}\PY{p}{(}\PY{n}{BROKER}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{1883}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{mqtt}\PY{p}{.}\PY{n}{setCallback}\PY{p}{(}\PY{n}{onMessage}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{loop}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{o}{!}\PY{n}{mqtt}\PY{p}{.}\PY{n}{connected}\PY{p}{(}\PY{p}{)}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{    }\PY{c+c1}{// одна попытка раз в 5 секунд, а не бесконечный цикл ожидания}
+\PY{+w}{    }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{WiFi}\PY{p}{.}\PY{n}{status}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{o}{=}\PY{o}{=}\PY{+w}{ }\PY{n}{WL\PYZus{}CONNECTED}\PY{+w}{ }\PY{o}{\PYZam{}}\PY{o}{\PYZam{}}\PY{+w}{ }\PY{n}{millis}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{o}{\PYZhy{}}\PY{+w}{ }\PY{n}{lastTry}\PY{+w}{ }\PY{o}{\PYZgt{}}\PY{+w}{ }\PY{l+m+mi}{5000}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{      }\PY{n}{lastTry}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{millis}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+\PY{+w}{      }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{mqtt}\PY{p}{.}\PY{n}{connect}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{esp\PYZhy{}01}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{)}\PY{+w}{ }\PY{n}{mqtt}\PY{p}{.}\PY{n}{subscribe}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{home/esp\PYZhy{}01/set}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{;}
+\PY{+w}{    }\PY{p}{\PYZcb{}}
+\PY{+w}{    }\PY{k}{return}\PY{p}{;}
+\PY{+w}{  }\PY{p}{\PYZcb{}}
+\PY{+w}{  }\PY{n}{mqtt}\PY{p}{.}\PY{n}{loop}\PY{p}{(}\PY{p}{)}\PY{p}{;}\PY{+w}{                                  }\PY{c+c1}{// приём сообщений и keep\PYZhy{}alive}
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{millis}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{o}{\PYZhy{}}\PY{+w}{ }\PY{n}{lastPub}\PY{+w}{ }\PY{o}{\PYZgt{}}\PY{+w}{ }\PY{l+m+mi}{10000}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{    }\PY{n}{lastPub}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{millis}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+\PY{+w}{    }\PY{n}{String}\PY{+w}{ }\PY{n}{state}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{String}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{\PYZob{}}\PY{l+s+se}{\PYZbs{}\PYZdq{}}\PY{l+s}{uptime}\PY{l+s+se}{\PYZbs{}\PYZdq{}}\PY{l+s}{:}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{+w}{ }\PY{o}{+}\PY{+w}{ }\PY{n}{millis}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{o}{/}\PY{+w}{ }\PY{l+m+mi}{1000}\PY{+w}{ }\PY{o}{+}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{\PYZcb{}}\PY{l+s}{\PYZdq{}}\PY{p}{;}
+\PY{+w}{    }\PY{n}{mqtt}\PY{p}{.}\PY{n}{publish}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{home/esp\PYZhy{}01/state}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{n}{state}\PY{p}{.}\PY{n}{c\PYZus{}str}\PY{p}{(}\PY{p}{)}\PY{p}{,}\PY{+w}{ }\PY{n+nb}{true}\PY{p}{)}\PY{p}{;}\PY{+w}{  }\PY{c+c1}{// true = retained}
+\PY{+w}{  }\PY{p}{\PYZcb{}}
+\PY{p}{\PYZcb{}}
+\end{CodeVerbatim}

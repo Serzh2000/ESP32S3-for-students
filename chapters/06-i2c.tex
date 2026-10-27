@@ -1,10 +1,10 @@
 % =====================================================================
-\section{Шина I\texorpdfstring{\textsuperscript{2}}{2}C: дисплей}
+\section{Шина I\texorpdfstring{\textsuperscript{2}}{2}C: дисплей}\label{les:i2c}
 % =====================================================================
 \lessonintro
   {разобраться в устройстве шины I\textsuperscript{2}C, найти устройства сканером, выводить информацию на OLED}
-  {урок 2 (Serial для сканера), уроки 4--5 (состояние лампы, которое будем показывать)}
-  {экран показывает, включена ли лампа и её яркость}
+  {урок 2 (Serial для сканера), урок 5 (значение потенциометра, которое будем показывать)}
+  {экран показывает текст и значение датчика}
   {OLED-дисплей SSD1306 128×64 с интерфейсом I\textsuperscript{2}C}
 
 \subsection{Топология шины}
@@ -18,7 +18,8 @@ I\textsuperscript{2}C использует всего два провода: \te
 \begin{circuitikz}[scale=0.95,transform shape]
   \draw (0,4.4) node[vcc]{3,3 В} -- (0,4.2) -- (3,4.2);
   \draw (1.5,4.2) to[R,l_=\SI{4.7}{k\ohm}] (1.5,2.8) coordinate(sdaR);
-  \draw (3,4.2) to[R,l=\SI{4.7}{k\ohm}] (3,1.8) coordinate(sclR);
+  \draw (3,4.2) to[R] (3,1.8) coordinate(sclR);
+  \node[anchor=west,font=\small] at (3.2,3.75) {\SI{4.7}{k\ohm}};
   \draw[thick,accent] (-1,2.8) node[left,text=accent]{SDA} -- (13,2.8);
   \draw[thick,esp] (-1,1.8) node[left,text=esp]{SCL} -- (13,1.8);
   \fill (sdaR) circle (1.5pt); \fill (sclR) circle (1.5pt);
@@ -45,7 +46,7 @@ I\textsuperscript{2}C использует всего два провода: \te
 
 \begin{figure}[H]
 \centering
-\begin{tikzpicture}[x=0.72cm,y=0.8cm]
+\begin{tikzpicture}[x=0.66cm,y=0.8cm]
   \node[left,text=esp,font=\sffamily\small] at (0,3) {SCL};
   \draw[very thick,esp] (0,3.8) -- (2,3.8) -- (2.5,3.8) -- (2.5,2.6)
     \foreach \k in {0,...,8}{ -- ({3+\k*2},2.6) -- ({3+\k*2},3.8) -- ({4+\k*2},3.8) -- ({4+\k*2},2.6) }
@@ -86,34 +87,92 @@ I\textsuperscript{2}C использует всего два провода: \te
 
 \begin{tip}
 Стандартные шрифты Adafruit GFX не содержат кириллицы --- для русского текста нужны сторонние шрифты
-или библиотека U8g2 с кириллическими наборами. В проекте обойдёмся латиницей.
+или библиотека U8g2 с кириллическими наборами. В примерах обойдёмся латиницей.
 \end{tip}
 
-\subsection{Шаг проекта 6: экран состояния}
-
-\progress{6}
+\subsection{Самостоятельный опыт: экран состояния}
 
 \begin{figure}[H]
 \centering
 \begin{tikzpicture}[x=0.5mm,y=-0.5mm]
   \fill[black] (-4,-4) rectangle (132,68);
-  \node[anchor=north west,font=\sffamily\scriptsize,text=cyan!30,inner sep=0] at (0,0) {Smart lamp};
+  \node[anchor=north west,font=\sffamily\scriptsize,text=cyan!30,inner sep=0] at (0,0) {Potentiometer};
   \node[anchor=north west,font=\sffamily\bfseries\huge,text=cyan!30,inner sep=0] at (0,18) {~75\%};
   \draw[cyan!30,thick] (0,54) rectangle (128,64);
   \fill[cyan!30] (2,56) rectangle (95,62);
 \end{tikzpicture}
-\caption{Экран лампы: заголовок, яркость крупно и полоска-индикатор}
+\caption{Пример экрана: заголовок, значение крупно и полоска-индикатор}
 \end{figure}
 
 Рисовать экран в каждом проходе \code{loop()} не нужно: отправка буфера занимает десятки
-миллисекунд. Обновляем его 10 раз в секунду --- тем же приёмом с \code{millis()}, что и «пульс».
+миллисекунд. Обновляем его 10 раз в секунду --- тем же приёмом с \code{millis()}, что и неблокирующее мигание в уроке~1.
 
-\codecap{Умная лампа, шаг 6 (изменения относительно шага 5)}
-\codeinput{lamp_step6}
-
-Лампа готова как автономное устройство. Но посмотрите на \code{loop()}: в нём уже пять разных дел,
+Сделайте отдельный скетч, который выводит на OLED значение потенциометра или датчика раз в секунду.
+Затем добавьте в него кнопку (урок 3) и команды Serial (урок 2). Посмотрите на \code{loop()}:
+в нём уже несколько разных дел,
 и каждое вынуждено «уступать» остальным. Пока отправляется буфер экрана, кнопка не опрашивается;
-добавь сюда ещё и сеть --- и разобраться, кто кому мешает, станет трудно. Эту проблему решает следующий урок.
+добавьте сюда ещё и сеть --- и разобраться, кто кому мешает, станет трудно. Эту проблему решает следующий урок.
+
+\subsection{Практика: вольтметр с экраном}
+
+Соединим экран с потенциометром из урока~\ref{les:adc}: на экране будет напряжение на движке крупными
+цифрами и полоска-шкала, как у настоящего прибора.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[x=0.5mm,y=-0.5mm]
+  \fill[black] (-4,-4) rectangle (132,68);
+  \node[anchor=north west,font=\sffamily\scriptsize,text=cyan!30,inner sep=0] at (0,0) {Voltmeter};
+  \node[anchor=north west,font=\sffamily\bfseries\huge,text=cyan!30,inner sep=0] at (0,18) {1.87V};
+  \draw[cyan!30,thick] (0,54) rectangle (128,64);
+  \fill[cyan!30] (2,56) rectangle (72,62);
+\end{tikzpicture}
+\caption{Экран вольтметра: заголовок, напряжение крупно и полоска}
+\end{figure}
+
+\begin{twoview}{Вольтметр: потенциометр на GPIO1 и экран на I\textsuperscript{2}C}{fig:voltmeter}
+\begin{tikzpicture}[bb]
+  \bbBoard{24}
+  \bbDevKit{29}{25}
+  \bbOLED{3}{21}
+  \bbPotD{12}{12}{10k}
+  \draw[wire=wblack] (12,14) -- (12,16);
+  \draw[wire=wred] (14,14) -- (14,17);
+  \draw[wire=wgreen] (dk-1) -- (39.5,22) -- (39.5,32.2) -- (13,32.2) -- (13,14);
+  \draw[wire=wblack] (3,21) -- (3,16);
+  \draw[wire=wred] (4,21) -- (4,17);
+  \draw[wire=wyellow] (5,21) -- (5,19.5) -- (27.8,19.5) -- (27.8,11) -- (dk-9);
+  \draw[wire=wblue] (6,21) -- (6,20.2) -- (28.4,20.2) -- (28.4,14) -- (dk-8);
+  \draw[wire=wblack] (dk-GND) -- (26.5,4) -- (26.5,16) -- (24,16);
+  \draw[wire=wred] (dk-3V3) -- (28.8,25) -- (28.8,33) -- (-2,33) -- (-2,17) -- (1,17);
+\end{tikzpicture}
+\nextview
+\begin{circuitikz}
+  \node[draw,thick,fill=blkcpu,minimum width=2.6cm,minimum height=3.6cm,label={[font=\sffamily\bfseries]above:ESP32-S3}] (a) at (0,0) {};
+  \node[draw,thick,fill=blkper,minimum width=2.4cm,minimum height=1.6cm,font=\sffamily] (b) at (7,1) {OLED};
+  \draw[accent] (1.3,1.3) node[left,font=\scriptsize,text=black]{\pin{8}} -- node[above,font=\scriptsize]{SDA} (5.8,1.3);
+  \draw[esp] (1.3,0.7) node[left,font=\scriptsize,text=black]{\pin{9}} -- node[below,font=\scriptsize]{SCL} (5.8,0.7);
+  \draw (7,1.8) -- (7,2.2) node[vcc]{3,3 В};
+  \draw (7,0.2) -- (7,-0.1) node[ground]{};
+  \draw (5,-4.4) node[ground]{} to[pR,n=pot,l_=\SI{10}{k\ohm}] (5,-1.7) -- (5,-1.5) node[vcc]{3,3 В};
+  \draw (1.3,-1.4) node[left,font=\scriptsize]{\pin{1}} -- (3.8,-1.4) |- (pot.wiper);
+\end{circuitikz}
+\end{twoview}
+
+\codecap{Вольтметр с экраном}
+\codeinput{l12_voltmeter_oled}
+
+Экран обновляется 10 раз в секунду --- чаще не нужно: глаз всё равно не заметит разницы
+(вспомни инерцию зрения из урока~\ref{les:pwm}), а отправка картинки по шине занимает время.
+
+
+\begin{trouble}
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Сканер ничего не находит} --- перепутаны SDA и SCL, нет питания 3V3 или в \code{Wire.begin()} другие выводы.
+  \item \textbf{Дисплей найден по адресу 0x3D} --- укажите этот адрес в \code{display.begin()}.
+  \item \textbf{Экран пустой, ошибок нет} --- после рисования не вызван \code{display.display()}.
+\end{itemize}
+\end{trouble}
 
 \begin{summary}
 \begin{itemize}[leftmargin=*]
@@ -123,10 +182,21 @@ I\textsuperscript{2}C использует всего два провода: \te
 \end{itemize}
 \end{summary}
 
+\begin{selfcheck}
+\begin{enumerate}
+  \item Зачем шине I\textsuperscript{2}C подтягивающие резисторы?
+  \item Что показывает сканер шины и о чём говорит отсутствие ответа?
+  \item Почему экран не перерисовывают на каждом проходе \code{loop()}?
+\end{enumerate}
+\end{selfcheck}
+
 \begin{tasks}
 \begin{enumerate}
-  \item Добавьте датчик BME280/AHT20 на ту же шину и показывайте температуру в заголовке экрана.
-  \item Нарисуйте график изменения яркости за последние 128 обновлений экрана.
-  \item Сделайте «заставку»: через 10 с без действий экран тускнеет (\code{display.dim(true)}).
+\item \lv{1} Запустите сканер шины и запишите адрес вашего экрана. Что покажет сканер, если отключить SCL?
+\item \lv{1} Выведите на экран своё имя крупным шрифтом.
+\item \lv{2} Показывайте на экране время работы платы в секундах, обновляя его раз в секунду.
+\item \lv{2} Покажите на экране значение потенциометра и шкалу-полоску под ним.
+\item \lv{3} Добавьте датчик BME280/AHT20 на ту же шину и показывайте температуру в заголовке экрана.
+\item \lv{4} Нарисуйте график изменения яркости за последние 128 обновлений экрана, а через 10 секунд бездействия приглушайте экран (\code{display.dim(true)}).
 \end{enumerate}
 \end{tasks}

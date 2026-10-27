@@ -1,0 +1,29 @@
+\begin{CodeVerbatim}
+\PY{c+cp}{\PYZsh{}}\PY{c+cp}{include}\PY{+w}{ }\PY{c+cpf}{\PYZlt{}stdio.h\PYZgt{}}
+\PY{c+cp}{\PYZsh{}}\PY{c+cp}{include}\PY{+w}{ }\PY{c+cpf}{\PYZdq{}esp\PYZus{}sleep.h\PYZdq{}}
+\PY{c+cp}{\PYZsh{}}\PY{c+cp}{include}\PY{+w}{ }\PY{c+cpf}{\PYZdq{}driver/rtc\PYZus{}io.h\PYZdq{}}
+\PY{c+cp}{\PYZsh{}}\PY{c+cp}{include}\PY{+w}{ }\PY{c+cpf}{\PYZdq{}ulp\PYZus{}riscv.h\PYZdq{}}
+\PY{c+cp}{\PYZsh{}}\PY{c+cp}{include}\PY{+w}{ }\PY{c+cpf}{\PYZdq{}ulp\PYZus{}main.h\PYZdq{}}
+\PY{c+cp}{\PYZsh{}}\PY{c+cp}{include}\PY{+w}{ }\PY{c+cpf}{\PYZdq{}freertos/FreeRTOS.h\PYZdq{}}
+\PY{c+cp}{\PYZsh{}}\PY{c+cp}{include}\PY{+w}{ }\PY{c+cpf}{\PYZdq{}freertos/task.h\PYZdq{}}
+\PY{k}{extern}\PY{+w}{ }\PY{k}{const}\PY{+w}{ }\PY{k+kt}{uint8\PYZus{}t}\PY{+w}{ }\PY{n}{ulp\PYZus{}main\PYZus{}bin\PYZus{}start}\PY{p}{[}\PY{p}{]}\PY{+w}{ }\PY{k}{asm}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{\PYZus{}binary\PYZus{}ulp\PYZus{}main\PYZus{}bin\PYZus{}start}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{;}
+\PY{k}{extern}\PY{+w}{ }\PY{k}{const}\PY{+w}{ }\PY{k+kt}{uint8\PYZus{}t}\PY{+w}{ }\PY{n}{ulp\PYZus{}main\PYZus{}bin\PYZus{}end}\PY{p}{[}\PY{p}{]}\PY{+w}{ }\PY{k}{asm}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{\PYZus{}binary\PYZus{}ulp\PYZus{}main\PYZus{}bin\PYZus{}end}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{;}
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{app\PYZus{}main}\PY{p}{(}\PY{k+kt}{void}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{    }\PY{n}{vTaskDelay}\PY{p}{(}\PY{n}{pdMS\PYZus{}TO\PYZus{}TICKS}\PY{p}{(}\PY{l+m+mi}{1000}\PY{p}{)}\PY{p}{)}\PY{p}{;}
+\PY{+w}{    }\PY{n}{printf}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{wake=\PYZpc{}d}\PY{l+s+se}{\PYZbs{}n}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{p}{(}\PY{k+kt}{int}\PY{p}{)}\PY{n}{esp\PYZus{}sleep\PYZus{}get\PYZus{}wakeup\PYZus{}cause}\PY{p}{(}\PY{p}{)}\PY{p}{)}\PY{p}{;}
+\PY{+w}{    }\PY{n}{ESP\PYZus{}ERROR\PYZus{}CHECK}\PY{p}{(}\PY{n}{rtc\PYZus{}gpio\PYZus{}init}\PY{p}{(}\PY{n}{GPIO\PYZus{}NUM\PYZus{}4}\PY{p}{)}\PY{p}{)}\PY{p}{;}
+\PY{+w}{    }\PY{n}{ESP\PYZus{}ERROR\PYZus{}CHECK}\PY{p}{(}\PY{n}{rtc\PYZus{}gpio\PYZus{}set\PYZus{}direction}\PY{p}{(}\PY{n}{GPIO\PYZus{}NUM\PYZus{}4}\PY{p}{,}\PY{+w}{ }\PY{n}{RTC\PYZus{}GPIO\PYZus{}MODE\PYZus{}INPUT\PYZus{}ONLY}\PY{p}{)}\PY{p}{)}\PY{p}{;}
+\PY{+w}{    }\PY{n}{ESP\PYZus{}ERROR\PYZus{}CHECK}\PY{p}{(}\PY{n}{rtc\PYZus{}gpio\PYZus{}pullup\PYZus{}dis}\PY{p}{(}\PY{n}{GPIO\PYZus{}NUM\PYZus{}4}\PY{p}{)}\PY{p}{)}\PY{p}{;}
+\PY{+w}{    }\PY{n}{ESP\PYZus{}ERROR\PYZus{}CHECK}\PY{p}{(}\PY{n}{rtc\PYZus{}gpio\PYZus{}pulldown\PYZus{}dis}\PY{p}{(}\PY{n}{GPIO\PYZus{}NUM\PYZus{}4}\PY{p}{)}\PY{p}{)}\PY{p}{;}
+\PY{+w}{    }\PY{c+c1}{// External 10k pull\PYZhy{}up: GPIO4 \PYZhy{}\PYZgt{} resistor \PYZhy{}\PYZgt{} 3V3; button GPIO4 \PYZhy{}\PYZgt{} GND.}
+\PY{+w}{    }\PY{n}{ESP\PYZus{}ERROR\PYZus{}CHECK}\PY{p}{(}\PY{n}{ulp\PYZus{}riscv\PYZus{}load\PYZus{}binary}\PY{p}{(}\PY{n}{ulp\PYZus{}main\PYZus{}bin\PYZus{}start}\PY{p}{,}
+\PY{+w}{                          }\PY{n}{ulp\PYZus{}main\PYZus{}bin\PYZus{}end}\PY{+w}{ }\PY{o}{\PYZhy{}}\PY{+w}{ }\PY{n}{ulp\PYZus{}main\PYZus{}bin\PYZus{}start}\PY{p}{)}\PY{p}{)}\PY{p}{;}
+\PY{+w}{    }\PY{n}{ESP\PYZus{}ERROR\PYZus{}CHECK}\PY{p}{(}\PY{n}{ulp\PYZus{}set\PYZus{}wakeup\PYZus{}period}\PY{p}{(}\PY{l+m+mi}{0}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{100000}\PY{p}{)}\PY{p}{)}\PY{p}{;}
+\PY{+w}{    }\PY{n}{ESP\PYZus{}ERROR\PYZus{}CHECK}\PY{p}{(}\PY{n}{esp\PYZus{}sleep\PYZus{}enable\PYZus{}ulp\PYZus{}wakeup}\PY{p}{(}\PY{p}{)}\PY{p}{)}\PY{p}{;}
+\PY{+w}{    }\PY{n}{ESP\PYZus{}ERROR\PYZus{}CHECK}\PY{p}{(}\PY{n}{ulp\PYZus{}riscv\PYZus{}run}\PY{p}{(}\PY{p}{)}\PY{p}{)}\PY{p}{;}
+\PY{+w}{    }\PY{n}{printf}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{Hold button about one second to wake}\PY{l+s+se}{\PYZbs{}n}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{;}
+\PY{+w}{    }\PY{n}{fflush}\PY{p}{(}\PY{n}{stdout}\PY{p}{)}\PY{p}{;}
+\PY{+w}{    }\PY{n}{vTaskDelay}\PY{p}{(}\PY{n}{pdMS\PYZus{}TO\PYZus{}TICKS}\PY{p}{(}\PY{l+m+mi}{100}\PY{p}{)}\PY{p}{)}\PY{p}{;}
+\PY{+w}{    }\PY{n}{esp\PYZus{}deep\PYZus{}sleep\PYZus{}start}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+\end{CodeVerbatim}

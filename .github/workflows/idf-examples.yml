@@ -1,0 +1,23 @@
+name: ESP-IDF examples
+
+on:
+  push:
+    paths: ['examples/**', '.github/workflows/idf-examples.yml']
+  pull_request:
+    paths: ['examples/**', '.github/workflows/idf-examples.yml']
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container: espressif/idf:v5.4.1
+    strategy:
+      matrix:
+        example: [debug_mean, ulp_button]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build for ESP32-S3
+        shell: bash
+        run: |
+          source /opt/esp/idf/export.sh
+          idf.py -C examples/${{ matrix.example }} set-target esp32s3
+          idf.py -C examples/${{ matrix.example }} build

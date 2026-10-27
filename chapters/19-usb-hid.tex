@@ -1,0 +1,187 @@
+% =====================================================================
+\section{Нативный USB: плата как клавиатура и мышь}
+% =====================================================================
+\lessonintro
+  {превратить плату в USB-устройство ввода: клавиатуру, мышь и регулятор громкости}
+  {урок 2 (последовательный порт), урок 3 (кнопка и дребезг), урок 5 (потенциометр)}
+  {нажатие кнопки печатает текст на компьютере, а ручка потенциометра меняет громкость}
+  {плата с двумя разъёмами USB (на DevKitC-1 это «UART» и «USB»), кнопка на \pin{5}, потенциометр на \pin{1}}
+
+\subsection{Сначала: компьютер не знает, что вы ему подключили}
+
+Когда вы вставляете в компьютер клавиатуру, она представляется: «я клавиатура». После этого компьютер
+принимает от неё нажатия, не разбираясь, какой микросхемой они формируются. ESP32-S3 умеет представляться
+по USB сама --- как клавиатура, мышь или регулятор громкости. Это называется HID (Human Interface
+Device, «устройство взаимодействия с человеком»). Нужно только правильно подключить плату и выбрать
+в Arduino IDE особый режим работы USB.
+
+\subsection{Два разъёма --- два разных пути}
+
+Плата ESP32-S3-DevKitC-1 имеет два разъёма Type-C. Они ведут к разным частям платы.
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{«UART»} подключён к микросхеме-мосту USB--UART. Она переводит USB в обычный последовательный порт
+        (UART0, выводы \pin{43}/\pin{44}). Именно этим путём мы прошивали плату и печатали в Serial Monitor
+        в уроках 0--2.
+  \item \textbf{«USB»} идёт напрямую к самому ESP32-S3 (выводы \pin{19} --- D$-$ и \pin{20} --- D$+$). Чип
+        сам реализует USB, поэтому может быть чем угодно: виртуальным портом, клавиатурой, накопителем.
+\end{itemize}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[font=\sffamily\scriptsize]
+  \node[blk,fill=blkper,minimum width=3cm,minimum height=1.1cm] (pc) at (6,3.2) {Компьютер};
+  \node[blk,fill=blkcpu,minimum width=3.4cm,minimum height=2.6cm] (esp) at (9.8,0) {};
+  \node[font=\sffamily\small\bfseries] at (9.8,0.75) {ESP32-S3};
+  \node[font=\sffamily\scriptsize,align=center] at (9.8,-0.3) {USB-контроллер\\ (\pin{19}, \pin{20})\\ UART0 (\pin{43}, \pin{44})};
+  \node[blk,fill=blkmem,minimum width=2.4cm,minimum height=1.4cm,align=center] (br) at (3.8,0) {Мост\\ USB--UART};
+  \node[blk,fill=blkrtc,minimum width=1.7cm,minimum height=0.7cm] (c1) at (0.4,0) {«UART»};
+  \node[blk,fill=blkrtc,minimum width=1.7cm,minimum height=0.7cm] (c2) at (13.8,0) {«USB»};
+  \draw[arr,accent,thick] (pc.south west) ++(0.3,0) -- ++(0,-0.8) -| node[pos=0.25,above]{кабель 1} (c1.north);
+  \draw[arr,esp,thick] (pc.south east) ++(-0.3,0) -- ++(0,-0.8) -| node[pos=0.25,above]{кабель 2} (c2.north);
+  \draw[thick,accent] (c1.east) -- (br.west);
+  \draw[thick,accent] (br.east) -- node[above]{UART0} (esp.west |- br.east);
+  \draw[thick,esp] (c2.west) -- node[above]{D$-$, D$+$} (esp.east);
+  \node[align=center,text=accent] at (2.2,-1.3) {порт Serial,\\ прошивка};
+  \node[align=center,text=esp] at (13.0,-1.4) {клавиатура, мышь,\\ накопитель};
+\end{tikzpicture}
+\caption{Два пути USB. Левый проходит через мост и даёт обычный последовательный порт,
+правый ведёт напрямую к чипу и позволяет ему быть HID-устройством}
+\end{figure}
+
+\subsection{Настройка Arduino IDE}
+
+По умолчанию нативный USB работает в режиме «Hardware CDC and JTAG»: чип выглядит как порт и больше ничем.
+Чтобы он стал клавиатурой, режим нужно изменить:
+\begin{enumerate}
+  \item \textsf{Tools $\to$ USB Mode $\to$ USB-OTG (TinyUSB)} --- включает полноценный USB-стек.
+  \item \textsf{Tools $\to$ USB CDC On Boot} оставьте \textsf{Disabled}, если хотите смотреть Serial через порт «UART».
+  \item Прошивайте плату через порт «UART», а HID-устройство появится на порту «USB». Проверьте это, подключив оба кабеля.
+\end{enumerate}
+
+\begin{tip}
+В режиме TinyUSB \code{Serial.println()} выводится в порт «UART» (UART0), а не в «USB». Если Serial Monitor
+молчит, проверьте, что выбран COM-порт от моста.
+\end{tip}
+
+\subsection{Клавиатура по кнопке}
+
+Библиотеки \code{USB.h} и \code{USBHIDKeyboard.h} входят в ядро Arduino-ESP32. Порядок работы такой:
+создать объект \code{USBHIDKeyboard}, вызвать \code{Keyboard.begin()} и затем \code{USB.begin()}, которая
+запускает USB. Дальше работают привычные \code{print()} и \code{write()}: они «нажимают» нужные клавиши.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[font=\sffamily\scriptsize]
+  \node[blk,fill=blkper,minimum width=2.2cm] (b) at (0,0) {Кнопка\\ \pin{5}};
+  \node[blk,fill=blkcpu,minimum width=2.8cm] (e) at (3.6,0) {ESP32-S3\\ \code{Keyboard}};
+  \node[blk,fill=blkrf,minimum width=2.8cm] (u) at (7.6,0) {USB HID\\ отчёт: клавиша};
+  \node[blk,fill=blkper,minimum width=2.8cm] (p) at (11.6,0) {Компьютер\\ печатает текст};
+  \draw[arr] (b) -- node[above]{LOW} (e);
+  \draw[arr] (e) -- (u);
+  \draw[arr] (u) -- (p);
+  \node[font=\sffamily\scriptsize,text=gray,align=center] at (6,-1.2)
+    {у компьютера действует своя раскладка: если включена русская,\\ латинский текст напечатается кириллицей};
+\end{tikzpicture}
+\caption{Цепочка передачи: нажатие кнопки превращается в HID-отчёт, который компьютер считает нажатием клавиши}
+\end{figure}
+
+\codecap{Кнопка печатает текст}
+\codeinput{l19_keyboard}
+
+Печатайте только латиницу и цифры: компьютер сам переводит коды клавиш в буквы по своей раскладке. Для
+сочетаний используйте \code{Keyboard.press(KEY\_LEFT\_CTRL); Keyboard.press('c'); Keyboard.releaseAll();} ---
+так выглядит Ctrl+C. Клавиши-стрелки и Enter называются \code{KEY\_RIGHT\_ARROW}, \code{KEY\_RETURN} и так далее.
+
+\begin{caution}
+Клавиатура, которая «печатает без остановки», может превратить компьютер в хаос: удалять файлы, закрывать
+окна, переполнять поля ввода. Поэтому:
+\begin{itemize}[leftmargin=*]
+  \item всегда оставляйте в коде условие по кнопке или паузу, а не бесконечную печать в \code{loop()};
+  \item знайте, как войти в загрузчик: нажмите и держите BOOT, коротко нажмите RST, затем отпустите BOOT. Плата
+        перестанет выполнять прошивку и будет готова к перепрошивке через «UART»;
+  \item проверяйте опыты только на своём компьютере и никогда не имитируйте ввод без ведома владельца.
+\end{itemize}
+\end{caution}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[x=0.9cm,y=0.8cm,font=\sffamily\scriptsize]
+  \node[left,text=esp] at (-0.2,2.5) {BOOT};
+  \draw[very thick,esp] (0,3) -- (1,3) -- (1,2) -- (9,2) -- (9,3) -- (11,3);
+  \node[left,text=accent] at (-0.2,0.5) {RST};
+  \draw[very thick,accent] (0,1) -- (4,1) -- (4,0) -- (5,0) -- (5,1) -- (11,1);
+  \draw[dashed,gray] (1,-0.7) -- (1,3.6);
+  \draw[dashed,gray] (4.5,-0.7) -- (4.5,3.6);
+  \draw[dashed,gray] (9,-0.7) -- (9,3.6);
+  \node[below,align=center] at (1,-0.7) {1. нажать\\ BOOT};
+  \node[below,align=center] at (4.5,-0.7) {2. нажать и\\ отпустить RST};
+  \node[below,align=center] at (9,-0.7) {3. отпустить\\ BOOT};
+\end{tikzpicture}
+\caption{Вход в загрузчик: BOOT удерживается, пока вы нажимаете и отпускаете RST. После этого
+плата ждёт прошивку, а выполнение вашего кода остановлено}
+\end{figure}
+
+\subsection{Громкость потенциометром}
+
+Кроме клавиатуры, есть класс «потребительское управление» (Consumer Control): мультимедийные клавиши,
+громкость, пауза. Класс \code{USBHIDConsumerControl} умеет нажимать такие клавиши. Ручку потенциометра
+(урок 5) мы превращаем в нажатия «громче» и «тише»: при повороте вправо отправляем столько нажатий
+\code{CONSUMER\_CONTROL\_VOLUME\_INCREMENT}, на сколько делений сдвинулась ручка. Абсолютного уровня HID не передаёт,
+только шаги.
+
+\codecap{Потенциометр как регулятор громкости}
+\codeinput{l19_volume}
+
+Деление на \code{STEP} создаёт «зону нечувствительности»: шум АЦП не вызывает ложных нажатий. Если громкость
+сдвигается сама, увеличьте \code{STEP}.
+
+\subsection{Мышь}
+
+Класс \code{USBHIDMouse} двигает курсор и нажимает кнопки: \code{Mouse.move(dx, dy)} --- относительный сдвиг,
+\code{Mouse.click()} --- щелчок. Пример ниже обводит курсор по квадрату, пока удерживается кнопка. Условие по кнопке
+стоит и на внешнем уровне, и внутри цикла, чтобы остановка была мгновенной.
+
+\codecap{Мышь рисует квадрат, пока нажата кнопка}
+\codeinput{l19_mouse}
+
+\subsection{Самостоятельный опыт: пульт для презентаций}
+
+Сделайте отдельный скетч с двумя кнопками: \pin{5} посылает \code{KEY\_RIGHT\_ARROW} (следующий слайд),
+\pin{6} --- \code{KEY\_LEFT\_ARROW} (предыдущий). Каждый вызов должен происходить один раз на нажатие, а не
+непрерывно, пока кнопка удерживается. Проверьте пульт в слайд-шоу на своём компьютере.
+
+\begin{trouble}
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Компьютер не видит клавиатуру} --- кабель вставлен в порт «UART», а не «USB», либо не выбран \textsf{USB Mode: USB-OTG (TinyUSB)}.
+  \item \textbf{Не прошивается после включения TinyUSB} --- прошивайте через порт «UART»; если не получается, войдите в загрузчик (BOOT + RST) и повторите.
+  \item \textbf{Вместо английских букв печатаются русские} --- на компьютере включена русская раскладка; переключите её на английскую.
+\end{itemize}
+\end{trouble}
+
+\begin{summary}
+\begin{itemize}[leftmargin=*]
+  \item Порт «UART» работает через мост и даёт последовательный порт, а порт «USB» (\pin{19}/\pin{20}) подключён прямо к чипу.
+  \item Для HID выберите \textsf{USB Mode: USB-OTG (TinyUSB)}; клавиатуру, мышь и громкость дают классы \code{USBHIDKeyboard}, \code{USBHIDMouse}, \code{USBHIDConsumerControl}.
+  \item Всегда ограничивайте ввод условием по кнопке и помните вход в загрузчик (BOOT + RST).
+\end{itemize}
+\end{summary}
+
+\begin{selfcheck}
+\begin{enumerate}
+  \item Чем нативный USB отличается от порта «UART»?
+  \item Какую настройку в Arduino IDE нужно изменить, чтобы плата стала клавиатурой?
+  \item Как выйти из ситуации, если плата «печатает» без остановки?
+\end{enumerate}
+\end{selfcheck}
+
+\begin{tasks}
+\begin{enumerate}
+\item \lv{1} Настройте режим USB-устройства и убедитесь, что компьютер видит плату как клавиатуру.
+\item \lv{1} По нажатию кнопки вводите ваше имя в текстовом редакторе.
+\item \lv{2} Сделайте кнопку, вводящую сочетание Ctrl+C, а по долгому нажатию --- Ctrl+V.
+\item \lv{2} Регулируйте громкость потенциометром, как в примере, и добавьте кнопку выключения звука.
+\item \lv{3} Добавьте кнопки «пауза/плей» и «следующий трек» (медиаклавиши).
+\item \lv{4} Сделайте «защитный» режим: HID работает только после удержания кнопки 2 секунды, а светодиод показывает состояние.
+\end{enumerate}
+\end{tasks}

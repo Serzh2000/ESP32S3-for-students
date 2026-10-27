@@ -1,0 +1,36 @@
+\begin{CodeVerbatim}
+\PY{c+c1}{// 3.3V RS\PYZhy{}485 module: DI=16, RO=17, DE and /RE joined on GPIO4.}
+\PY{c+cp}{\PYZsh{}}\PY{c+cp}{include}\PY{+w}{ }\PY{c+cpf}{\PYZlt{}Arduino.h\PYZgt{}}
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{bool}\PY{+w}{ }\PY{n}{MASTER}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n+nb}{true}\PY{p}{;}\PY{+w}{ }\PY{c+c1}{// second board: false}
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{int}\PY{+w}{ }\PY{k+kt}{DIR}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{4}\PY{p}{;}
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{sendFrame}\PY{p}{(}\PY{k}{const}\PY{+w}{ }\PY{k+kt}{char}\PY{o}{*}\PY{+w}{ }\PY{n}{frame}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{n}{digitalWrite}\PY{p}{(}\PY{k+kt}{DIR}\PY{p}{,}\PY{+w}{ }\PY{n}{HIGH}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{delayMicroseconds}\PY{p}{(}\PY{l+m+mi}{10}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{Serial1}\PY{p}{.}\PY{n}{print}\PY{p}{(}\PY{n}{frame}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{Serial1}\PY{p}{.}\PY{n}{flush}\PY{p}{(}\PY{p}{)}\PY{p}{;}\PY{+w}{ }\PY{c+c1}{// wait for the final stop bit before releasing the bus}
+\PY{+w}{  }\PY{n}{digitalWrite}\PY{p}{(}\PY{k+kt}{DIR}\PY{p}{,}\PY{+w}{ }\PY{n}{LOW}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{setup}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{n}{Serial}\PY{p}{.}\PY{n}{begin}\PY{p}{(}\PY{l+m+mi}{115200}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{pinMode}\PY{p}{(}\PY{k+kt}{DIR}\PY{p}{,}\PY{+w}{ }\PY{n}{OUTPUT}\PY{p}{)}\PY{p}{;}\PY{+w}{ }\PY{n}{digitalWrite}\PY{p}{(}\PY{k+kt}{DIR}\PY{p}{,}\PY{+w}{ }\PY{n}{LOW}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{Serial1}\PY{p}{.}\PY{n}{begin}\PY{p}{(}\PY{l+m+mi}{9600}\PY{p}{,}\PY{+w}{ }\PY{n}{SERIAL\PYZus{}8N1}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{17}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{16}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{loop}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{k}{static}\PY{+w}{ }\PY{k+kt}{uint32\PYZus{}t}\PY{+w}{ }\PY{n}{last}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{MASTER}\PY{+w}{ }\PY{o}{\PYZam{}}\PY{o}{\PYZam{}}\PY{+w}{ }\PY{n}{millis}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{o}{\PYZhy{}}\PY{+w}{ }\PY{n}{last}\PY{+w}{ }\PY{o}{\PYZgt{}}\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{1000}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{    }\PY{n}{last}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{millis}\PY{p}{(}\PY{p}{)}\PY{p}{;}\PY{+w}{ }\PY{n}{sendFrame}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{1,PING}\PY{l+s+se}{\PYZbs{}n}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{p}{\PYZcb{}}
+\PY{+w}{  }\PY{k}{static}\PY{+w}{ }\PY{k+kt}{char}\PY{+w}{ }\PY{n}{line}\PY{p}{[}\PY{l+m+mi}{48}\PY{p}{]}\PY{p}{;}\PY{+w}{ }\PY{k}{static}\PY{+w}{ }\PY{k+kt}{size\PYZus{}t}\PY{+w}{ }\PY{n}{used}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}
+\PY{+w}{  }\PY{k}{while}\PY{+w}{ }\PY{p}{(}\PY{n}{Serial1}\PY{p}{.}\PY{n}{available}\PY{p}{(}\PY{p}{)}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{    }\PY{k+kt}{char}\PY{+w}{ }\PY{n}{c}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{Serial1}\PY{p}{.}\PY{n}{read}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+\PY{+w}{    }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{c}\PY{+w}{ }\PY{o}{=}\PY{o}{=}\PY{+w}{ }\PY{l+s+sc}{\PYZsq{}}\PY{l+s+sc}{\PYZbs{}n}\PY{l+s+sc}{\PYZsq{}}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{      }\PY{n}{line}\PY{p}{[}\PY{n}{used}\PY{p}{]}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}\PY{+w}{ }\PY{n}{Serial}\PY{p}{.}\PY{n}{println}\PY{p}{(}\PY{n}{line}\PY{p}{)}\PY{p}{;}
+\PY{+w}{      }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{o}{!}\PY{n}{MASTER}\PY{+w}{ }\PY{o}{\PYZam{}}\PY{o}{\PYZam{}}\PY{+w}{ }\PY{n}{strcmp}\PY{p}{(}\PY{n}{line}\PY{p}{,}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{1,PING}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{+w}{ }\PY{o}{=}\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{        }\PY{n}{delay}\PY{p}{(}\PY{l+m+mi}{2}\PY{p}{)}\PY{p}{;}\PY{+w}{ }\PY{n}{sendFrame}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{0,PONG}\PY{l+s+se}{\PYZbs{}n}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{;}
+\PY{+w}{      }\PY{p}{\PYZcb{}}
+\PY{+w}{      }\PY{n}{used}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}
+\PY{+w}{    }\PY{p}{\PYZcb{}}\PY{+w}{ }\PY{k}{else}\PY{+w}{ }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{used}\PY{+w}{ }\PY{o}{\PYZlt{}}\PY{+w}{ }\PY{k}{sizeof}\PY{p}{(}\PY{n}{line}\PY{p}{)}\PY{+w}{ }\PY{o}{\PYZhy{}}\PY{+w}{ }\PY{l+m+mi}{1}\PY{p}{)}\PY{+w}{ }\PY{n}{line}\PY{p}{[}\PY{n}{used}\PY{o}{+}\PY{o}{+}\PY{p}{]}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{c}\PY{p}{;}
+\PY{+w}{    }\PY{k}{else}\PY{+w}{ }\PY{n}{used}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}
+\PY{+w}{  }\PY{p}{\PYZcb{}}
+\PY{p}{\PYZcb{}}
+\end{CodeVerbatim}
