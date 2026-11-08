@@ -2,7 +2,7 @@
 #include <WiFi.h>
 #include <ESPUI.h>
 
-uint16_t numberId, textId, selectId, gaugeId, graphId, padId, echoId;
+uint16_t gaugeId, graphId, echoId;
 
 void numberCallback(Control* sender, int event) {
   if (event != N_VALUE) return;
@@ -18,12 +18,12 @@ void selectCallback(Control* sender, int event) {
 }
 void padCallback(Control*, int event) {
   switch (event) {                                  // пары «нажали / отпустили»
-    case P_FOR_DOWN:   Serial.println("вперёд: нажата");  break;
-    case P_FOR_UP:     Serial.println("вперёд: отпущена"); break;
-    case P_BACK_DOWN:  Serial.println("назад: нажата");   break;
-    case P_LEFT_DOWN:  Serial.println("влево: нажата");   break;
-    case P_RIGHT_DOWN: Serial.println("вправо: нажата");  break;
-    case P_CENTER_DOWN: Serial.println("центр: нажата");  break;
+    case P_FOR_DOWN:    Serial.println("вперёд: нажата");   break;
+    case P_FOR_UP:      Serial.println("вперёд: отпущена"); break;
+    case P_BACK_DOWN:   Serial.println("назад: нажата");    break;
+    case P_LEFT_DOWN:   Serial.println("влево: нажата");    break;
+    case P_RIGHT_DOWN:  Serial.println("вправо: нажата");   break;
+    case P_CENTER_DOWN: Serial.println("центр: нажата");    break;
   }
 }
 
@@ -36,16 +36,15 @@ void setup() {
   auto inputs  = ESPUI.addControl(ControlType::Tab, "", "Input");
   auto outputs = ESPUI.addControl(ControlType::Tab, "", "Output");
 
-  ESPUI.addControl(ControlType::Separator, "Ввод", "", ControlColor::None, inputs);
-  numberId = ESPUI.addControl(ControlType::Number, "Number 0..50", "10", ControlColor::Peterriver, inputs, numberCallback);
+  auto numberId = ESPUI.addControl(ControlType::Number, "Number 0..50", "10", ControlColor::Peterriver, inputs, numberCallback);
   ESPUI.addControl(ControlType::Min, "", "0", ControlColor::None, numberId);
   ESPUI.addControl(ControlType::Max, "", "50", ControlColor::None, numberId);
-  textId = ESPUI.addControl(ControlType::Text, "Text", "hello", ControlColor::Emerald, inputs, textCallback);
-  selectId = ESPUI.addControl(ControlType::Select, "Select", "do", ControlColor::Sunflower, inputs, selectCallback);
+  ESPUI.addControl(ControlType::Text, "Text", "hello", ControlColor::Emerald, inputs, textCallback);
+  auto selectId = ESPUI.addControl(ControlType::Select, "Select", "do", ControlColor::Sunflower, inputs, selectCallback);
   ESPUI.addControl(ControlType::Option, "do (C4)", "do", ControlColor::None, selectId);
   ESPUI.addControl(ControlType::Option, "re (D4)", "re", ControlColor::None, selectId);
   ESPUI.addControl(ControlType::Option, "mi (E4)", "mi", ControlColor::None, selectId);
-  padId = ESPUI.addControl(ControlType::PadWithCenter, "Pad", "", ControlColor::Carrot, inputs, padCallback);
+  ESPUI.addControl(ControlType::PadWithCenter, "Pad", "", ControlColor::Carrot, inputs, padCallback);
 
   gaugeId = ESPUI.addControl(ControlType::Gauge, "Gauge, %", "0", ControlColor::Wetasphalt, outputs);
   ESPUI.addControl(ControlType::Min, "", "0", ControlColor::None, gaugeId);

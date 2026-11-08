@@ -1,0 +1,30 @@
+\begin{CodeVerbatim}
+\PY{c+c1}{// Шаг 1. Вкладка и переключатель LED. GPIO4 \PYZhy{}\PYZgt{} резистор 220 Ом \PYZhy{}\PYZgt{} LED \PYZhy{}\PYZgt{} GND.}
+\PY{c+cp}{\PYZsh{}}\PY{c+cp}{include}\PY{+w}{ }\PY{c+cpf}{\PYZlt{}WiFi.h\PYZgt{}}
+\PY{c+cp}{\PYZsh{}}\PY{c+cp}{include}\PY{+w}{ }\PY{c+cpf}{\PYZlt{}ESPUI.h\PYZgt{}}
+\PY{c+cp}{\PYZsh{}}\PY{c+cp}{include}\PY{+w}{ }\PY{c+cpf}{\PYZlt{}atomic\PYZgt{}}
+
+\PY{n}{std}\PY{o}{:}\PY{o}{:}\PY{n}{atomic}\PY{o}{\PYZlt{}}\PY{k+kt}{bool}\PY{o}{\PYZgt{}}\PY{+w}{ }\PY{n}{wantOn}\PY{p}{\PYZob{}}\PY{n+nb}{false}\PY{p}{\PYZcb{}}\PY{p}{;}\PY{+w}{          }\PY{c+c1}{// желание пользователя; железом управляет loop()}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{powerCallback}\PY{p}{(}\PY{n}{Control}\PY{o}{*}\PY{p}{,}\PY{+w}{ }\PY{k+kt}{int}\PY{+w}{ }\PY{n}{event}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{event}\PY{+w}{ }\PY{o}{=}\PY{o}{=}\PY{+w}{ }\PY{n}{S\PYZus{}ACTIVE}\PY{p}{)}\PY{+w}{   }\PY{n}{wantOn}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n+nb}{true}\PY{p}{;}
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{event}\PY{+w}{ }\PY{o}{=}\PY{o}{=}\PY{+w}{ }\PY{n}{S\PYZus{}INACTIVE}\PY{p}{)}\PY{+w}{ }\PY{n}{wantOn}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n+nb}{false}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{setup}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{n}{Serial}\PY{p}{.}\PY{n}{begin}\PY{p}{(}\PY{l+m+mi}{115200}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{ledcAttach}\PY{p}{(}\PY{l+m+mi}{4}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{5000}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{8}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{WiFi}\PY{p}{.}\PY{n}{mode}\PY{p}{(}\PY{n}{WIFI\PYZus{}AP}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{WiFi}\PY{p}{.}\PY{n}{softAP}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{S3\PYZhy{}Panel}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{lesson\PYZhy{}39\PYZhy{}demo}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{k}{auto}\PY{+w}{ }\PY{n}{mainTab}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{ESPUI}\PY{p}{.}\PY{n}{addControl}\PY{p}{(}\PY{n}{ControlType}\PY{o}{:}\PY{o}{:}\PY{n}{Tab}\PY{p}{,}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{Control}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{ESPUI}\PY{p}{.}\PY{n}{addControl}\PY{p}{(}\PY{n}{ControlType}\PY{o}{:}\PY{o}{:}\PY{n}{Switcher}\PY{p}{,}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{LED enabled}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{0}\PY{l+s}{\PYZdq{}}\PY{p}{,}
+\PY{+w}{      }\PY{n}{ControlColor}\PY{o}{:}\PY{o}{:}\PY{n}{Emerald}\PY{p}{,}\PY{+w}{ }\PY{n}{mainTab}\PY{p}{,}\PY{+w}{ }\PY{n}{powerCallback}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{ESPUI}\PY{p}{.}\PY{n}{begin}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{ESP32\PYZhy{}S3 control panel}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{Serial}\PY{p}{.}\PY{n}{println}\PY{p}{(}\PY{n}{WiFi}\PY{p}{.}\PY{n}{softAPIP}\PY{p}{(}\PY{p}{)}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{loop}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{n}{ledcWrite}\PY{p}{(}\PY{l+m+mi}{4}\PY{p}{,}\PY{+w}{ }\PY{n}{wantOn}\PY{+w}{ }\PY{o}{?}\PY{+w}{ }\PY{l+m+mi}{255}\PY{+w}{ }\PY{o}{:}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{delay}\PY{p}{(}\PY{l+m+mi}{10}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+\end{CodeVerbatim}

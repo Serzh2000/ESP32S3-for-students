@@ -1,0 +1,37 @@
+name: PlatformIO и TinyML
+
+on:
+  push:
+    paths: ['examples/platformio-lamp/**', 'examples/tinyml/**', '.github/workflows/pio-tinyml.yml']
+  pull_request:
+    paths: ['examples/platformio-lamp/**', 'examples/tinyml/**', '.github/workflows/pio-tinyml.yml']
+
+jobs:
+  platformio:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install platformio
+      - name: Тесты логики на компьютере
+        working-directory: examples/platformio-lamp
+        run: pio test -e native
+      - name: Сборка для ESP32-S3
+        working-directory: examples/platformio-lamp
+        run: pio run -e esp32s3
+
+  tinyml:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install numpy
+      - name: Обучение демонстрационных моделей
+        working-directory: examples/tinyml
+        run: |
+          python train_sine.py > /dev/null
+          python train_gesture.py --demo > /dev/null

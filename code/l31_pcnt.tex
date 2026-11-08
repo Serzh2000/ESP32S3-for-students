@@ -2,7 +2,7 @@
 \PY{c+c1}{// GPIO4 (LEDC generator) \PYZhy{}\PYZgt{} jumper \PYZhy{}\PYZgt{} GPIO5 (PCNT input).}
 \PY{c+cp}{\PYZsh{}}\PY{c+cp}{include}\PY{+w}{ }\PY{c+cpf}{\PYZlt{}Arduino.h\PYZgt{}}
 \PY{c+cp}{\PYZsh{}}\PY{c+cp}{include}\PY{+w}{ }\PY{c+cpf}{\PYZdq{}driver/pulse\PYZus{}cnt.h\PYZdq{}}
-\PY{n}{pcnt\PYZus{}unit\PYZus{}handle\PYZus{}t}\PY{+w}{ }\PY{n}{counter}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{k}{nullptr}\PY{p}{;}
+\PY{n}{pcnt\PYZus{}unit\PYZus{}handle\PYZus{}t}\PY{+w}{ }\PY{n}{counter}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n+nb}{nullptr}\PY{p}{;}
 \PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{setup}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
 \PY{+w}{  }\PY{n}{Serial}\PY{p}{.}\PY{n}{begin}\PY{p}{(}\PY{l+m+mi}{115200}\PY{p}{)}\PY{p}{;}
 \PY{+w}{  }\PY{n}{pcnt\PYZus{}unit\PYZus{}config\PYZus{}t}\PY{+w}{ }\PY{n}{unit}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{p}{\PYZcb{}}\PY{p}{;}
@@ -13,7 +13,7 @@
 \PY{+w}{  }\PY{n}{ESP\PYZus{}ERROR\PYZus{}CHECK}\PY{p}{(}\PY{n}{pcnt\PYZus{}unit\PYZus{}set\PYZus{}glitch\PYZus{}filter}\PY{p}{(}\PY{n}{counter}\PY{p}{,}\PY{+w}{ }\PY{o}{\PYZam{}}\PY{n}{filter}\PY{p}{)}\PY{p}{)}\PY{p}{;}
 \PY{+w}{  }\PY{n}{pcnt\PYZus{}chan\PYZus{}config\PYZus{}t}\PY{+w}{ }\PY{n}{input}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{p}{\PYZcb{}}\PY{p}{;}
 \PY{+w}{  }\PY{n}{input}\PY{p}{.}\PY{n}{edge\PYZus{}gpio\PYZus{}num}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{5}\PY{p}{;}\PY{+w}{ }\PY{n}{input}\PY{p}{.}\PY{n}{level\PYZus{}gpio\PYZus{}num}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{\PYZhy{}1}\PY{p}{;}
-\PY{+w}{  }\PY{n}{pcnt\PYZus{}channel\PYZus{}handle\PYZus{}t}\PY{+w}{ }\PY{n}{channel}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{k}{nullptr}\PY{p}{;}
+\PY{+w}{  }\PY{n}{pcnt\PYZus{}channel\PYZus{}handle\PYZus{}t}\PY{+w}{ }\PY{n}{channel}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n+nb}{nullptr}\PY{p}{;}
 \PY{+w}{  }\PY{n}{ESP\PYZus{}ERROR\PYZus{}CHECK}\PY{p}{(}\PY{n}{pcnt\PYZus{}new\PYZus{}channel}\PY{p}{(}\PY{n}{counter}\PY{p}{,}\PY{+w}{ }\PY{o}{\PYZam{}}\PY{n}{input}\PY{p}{,}\PY{+w}{ }\PY{o}{\PYZam{}}\PY{n}{channel}\PY{p}{)}\PY{p}{)}\PY{p}{;}
 \PY{+w}{  }\PY{n}{ESP\PYZus{}ERROR\PYZus{}CHECK}\PY{p}{(}\PY{n}{pcnt\PYZus{}channel\PYZus{}set\PYZus{}edge\PYZus{}action}\PY{p}{(}\PY{n}{channel}\PY{p}{,}
 \PY{+w}{      }\PY{n}{PCNT\PYZus{}CHANNEL\PYZus{}EDGE\PYZus{}ACTION\PYZus{}INCREASE}\PY{p}{,}\PY{+w}{ }\PY{n}{PCNT\PYZus{}CHANNEL\PYZus{}EDGE\PYZus{}ACTION\PYZus{}HOLD}\PY{p}{)}\PY{p}{)}\PY{p}{;}

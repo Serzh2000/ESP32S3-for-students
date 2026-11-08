@@ -1,12 +1,8 @@
 // Красивая панель управления светодиодом: HTML + CSS + немного JavaScript
 #include <WiFi.h>
 #include <WebServer.h>
-#include <ESPmDNS.h>
 
-const char* SSID = "MyNetwork";
-const char* PASS = "MyPassword";
 const int LED_PIN = 4;
-
 WebServer server(80);
 bool ledOn = false;
 int level = 50;                              // яркость, %
@@ -26,7 +22,7 @@ const char PAGE[] = R"rawliteral(
   .card { background: white; border-radius: 20px; padding: 24px 32px; width: 260px;
           box-shadow: 0 6px 20px rgba(0,0,0,.12); text-align: center; }
   h1    { color: #7b241c; font-size: 24px; }
-  .led { width: 90px; height: 90px; border-radius: 50%; margin: 10px auto 20px;
+  .led  { width: 90px; height: 90px; border-radius: 50%; margin: 10px auto 20px;
           background: #ccc; transition: .3s; }
   .led.on { background: #ff5a4f; box-shadow: 0 0 30px #ff5a4f; }
   button { background: #1f618d; color: white; border: none; border-radius: 12px;
@@ -58,11 +54,7 @@ fetch('/api').then(r => r.json()).then(show);   // GET: узнать состо�
 </html>
 )rawliteral";
 
-uint32_t gammaDuty(int percent) {
-  return (uint32_t)(255 * pow(percent / 100.0, 2.2) + 0.5);
-}
-
-void applyLed() { ledcWrite(LED_PIN, ledOn ? gammaDuty(level) : 0); }
+void applyLed() { ledcWrite(LED_PIN, ledOn ? level * 255 / 100 : 0); }
 
 void handleApi() {
   if (server.method() == HTTP_POST) {        // POST -- команда изменить состояние
@@ -80,23 +72,8 @@ void handleApi() {
 }
 
 void setup() {
-  Serial.begin(115200);
   ledcAttach(LED_PIN, 5000, 8);
-  applyLed();
-  WiFi.mode(WIFI_STA);
-  WiFi.begin(SSID, PASS);
-  const uint32_t started = millis();
-  while (WiFi.status() != WL_CONNECTED && millis() - started < 15000) {
-    delay(300); Serial.print(".");
-  }
-  if (WiFi.status() != WL_CONNECTED) {
-    Serial.println("\nWi-Fi: проверьте сеть и перезапустите плату");
-    return;
-  }
-  Serial.printf("\nОткрой http://%s или http://esp32-led.local\n",
-                WiFi.localIP().toString().c_str());
-  MDNS.begin("esp32-led");
-
+  WiFi.softAP("S3-Web", "lesson-44-demo");
   server.on("/", []() { server.send(200, "text/html; charset=utf-8", PAGE); });
   server.on("/api", handleApi);
   server.begin();

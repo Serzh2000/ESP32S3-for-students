@@ -2,12 +2,65 @@ name: Проверка примеров
 
 on:
   push:
-    paths: ['code/**', 'examples/web-panels/**', 'tools/install_web_libraries.py', 'export_sketches.py', '.github/workflows/sketches.yml']
+    paths: ['code/**', 'sketches/**', 'examples/web-panels/**', 'tools/install_web_libraries.py', 'export_sketches.py', '.github/workflows/sketches.yml']
   pull_request:
-    paths: ['code/**', 'examples/web-panels/**', 'tools/install_web_libraries.py', 'export_sketches.py', '.github/workflows/sketches.yml']
+    paths: ['code/**', 'sketches/**', 'examples/web-panels/**', 'tools/install_web_libraries.py', 'export_sketches.py', '.github/workflows/sketches.yml']
+  workflow_dispatch:
 
 jobs:
-  compile:
+  # 1. Папка sketches/ должна совпадать с тем, что выдаёт export_sketches.py из code/*.cpp
+  in-sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Пересоздать sketches/
+        run: python export_sketches.py
+      - name: Проверить, что ничего не изменилось
+        run: |
+          git add -N sketches
+          git diff --exit-code --stat -- sketches \
+            || (echo "::error::sketches/ устарела. Запустите python export_sketches.py и закоммитьте результат"; exit 1)
+
+  # 2. PlatformIO: все окружения собираются для ESP32-S3 (8 параллельных частей)
+  platformio:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5, 6, 7]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/cache@v4
+        with:
+          path: ~/.platformio
+          key: pio-${{ runner.os }}-${{ hashFiles('sketches/platformio/platformio.ini') }}
+          restore-keys: pio-${{ runner.os }}-
+      - run: pip install platformio
+      - name: Собрать свою часть окружений
+        working-directory: sketches/platformio
+        run: |
+          python - <<'PY' > envs.txt
+          import re
+          envs = re.findall(r'^\[env:([^\]]+)\]', open('platformio.ini', encoding='utf-8').read(), re.M)
+          print(*envs[${{ matrix.shard }}::8], sep='\n')
+          PY
+          echo "Окружений в части ${{ matrix.shard }}: $(wc -l < envs.txt)"
+          failed=0
+          while read -r env; do
+            echo "::group::$env"
+            pio run -e "$env" || { echo "::error::не собралось: $env"; failed=1; }
+            echo "::endgroup::"
+          done < envs.txt
+          exit $failed
+
+  # 3. Arduino CLI: то же самое для тех, кто работает в Arduino IDE
+  arduino:
     runs-on: ubuntu-latest
     env:
       ESP32_INDEX: https://espressif.github.io/arduino-esp32/package_esp32_index.json
@@ -29,19 +82,18 @@ jobs:
       - name: Установить проверенные зависимости веб-панелей
         run: python tools/install_web_libraries.py --output "$RUNNER_TEMP/web-libraries"
 
-      - name: Разложить примеры по скетчам
-        run: python export_sketches.py
-
-      - name: Скомпилировать для ESP32-S3
+      - name: Скомпилировать все скетчи для ESP32-S3
         run: |
-          set -e
-          for dir in sketches/*/; do
+          failed=0
+          for dir in sketches/arduino/*/*/; do
             echo "::group::$dir"
             fqbn=esp32:esp32:esp32s3
             case "$dir" in
-              *l19_*|*l34_*) fqbn="$fqbn:USBMode=default" ;;                          # нативный USB (HID)
-              *l20_*) fqbn="$fqbn:PSRAM=opi,PartitionScheme=huge_app" ;;       # камера
+              *l19_*|*l34_*) fqbn="$fqbn:USBMode=default,CDCOnBoot=default" ;;   # нативный USB (HID)
+              *l20_*) fqbn="$fqbn:PSRAM=opi,PartitionScheme=huge_app" ;;         # камера
             esac
-            arduino-cli compile --fqbn "$fqbn" --libraries "$RUNNER_TEMP/web-libraries" "$dir"
+            arduino-cli compile --fqbn "$fqbn" --libraries "$RUNNER_TEMP/web-libraries" "$dir" \
+              || { echo "::error::не собралось: $dir"; failed=1; }
             echo "::endgroup::"
           done
+          exit $failed

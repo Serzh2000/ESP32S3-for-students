@@ -1,0 +1,32 @@
+\begin{CodeVerbatim}
+\PY{c+c1}{// Шаг 4. ФРАГМЕНТ: порог уверенности и подтверждение. Заменяет loop() из шага 3.}
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{float}\PY{+w}{ }\PY{n}{MIN\PYZus{}CONFIDENCE}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mf}{0.80f}\PY{p}{;}\PY{+w}{         }\PY{c+c1}{// ниже \PYZhy{}\PYZhy{} \PYZdq{}не уверен\PYZdq{}, класс не объявляем}
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{int}\PY{+w}{ }\PY{n}{CONFIRM}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{3}\PY{p}{;}\PY{+w}{                      }\PY{c+c1}{// сколько окон подряд должны согласиться}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{loop}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{millis}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{o}{\PYZlt{}}\PY{+w}{ }\PY{n}{nextMs}\PY{p}{)}\PY{+w}{ }\PY{k}{return}\PY{p}{;}
+\PY{+w}{  }\PY{n}{nextMs}\PY{+w}{ }\PY{o}{+}\PY{o}{=}\PY{+w}{ }\PY{n}{PERIOD\PYZus{}MS}\PY{p}{;}
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{nextMs}\PY{+w}{ }\PY{o}{\PYZlt{}}\PY{+w}{ }\PY{n}{millis}\PY{p}{(}\PY{p}{)}\PY{p}{)}\PY{+w}{ }\PY{n}{nextMs}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{millis}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{o}{+}\PY{+w}{ }\PY{n}{PERIOD\PYZus{}MS}\PY{p}{;}
+
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{o}{!}\PY{n}{readAccel}\PY{p}{(}\PY{n}{samples}\PY{p}{[}\PY{n}{count}\PY{p}{]}\PY{p}{)}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{ }\PY{n}{Serial}\PY{p}{.}\PY{n}{println}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{sensor error}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{;}\PY{+w}{ }\PY{k}{return}\PY{p}{;}\PY{+w}{ }\PY{p}{\PYZcb{}}
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{o}{+}\PY{o}{+}\PY{n}{count}\PY{+w}{ }\PY{o}{\PYZlt{}}\PY{+w}{ }\PY{n}{WINDOW}\PY{p}{)}\PY{+w}{ }\PY{k}{return}\PY{p}{;}
+\PY{+w}{  }\PY{n}{count}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}
+
+\PY{+w}{  }\PY{k+kt}{float}\PY{+w}{ }\PY{n}{feat}\PY{p}{[}\PY{l+m+mi}{6}\PY{p}{]}\PY{p}{;}
+\PY{+w}{  }\PY{n}{windowFeatures}\PY{p}{(}\PY{n}{feat}\PY{p}{)}\PY{p}{;}
+
+\PY{+w}{  }\PY{k+kt}{uint32\PYZus{}t}\PY{+w}{ }\PY{n}{t0}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{micros}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{k+kt}{float}\PY{+w}{ }\PY{n}{conf}\PY{p}{;}
+\PY{+w}{  }\PY{k+kt}{int}\PY{+w}{ }\PY{n}{cls}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{classify}\PY{p}{(}\PY{n}{feat}\PY{p}{,}\PY{+w}{ }\PY{o}{\PYZam{}}\PY{n}{conf}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{k+kt}{uint32\PYZus{}t}\PY{+w}{ }\PY{n}{us}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{micros}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{o}{\PYZhy{}}\PY{+w}{ }\PY{n}{t0}\PY{p}{;}
+
+\PY{+w}{  }\PY{k}{static}\PY{+w}{ }\PY{k+kt}{int}\PY{+w}{ }\PY{n}{lastCls}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{\PYZhy{}1}\PY{p}{,}\PY{+w}{ }\PY{n}{streak}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}
+\PY{+w}{  }\PY{k+kt}{int}\PY{+w}{ }\PY{n}{shown}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{p}{(}\PY{n}{conf}\PY{+w}{ }\PY{o}{\PYZgt{}}\PY{o}{=}\PY{+w}{ }\PY{n}{MIN\PYZus{}CONFIDENCE}\PY{p}{)}\PY{+w}{ }\PY{o}{?}\PY{+w}{ }\PY{n}{cls}\PY{+w}{ }\PY{o}{:}\PY{+w}{ }\PY{l+m+mi}{\PYZhy{}1}\PY{p}{;}\PY{+w}{      }\PY{c+c1}{// \PYZhy{}1 \PYZhy{}\PYZhy{} «неизвестно»}
+\PY{+w}{  }\PY{n}{streak}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{p}{(}\PY{n}{shown}\PY{+w}{ }\PY{o}{=}\PY{o}{=}\PY{+w}{ }\PY{n}{lastCls}\PY{p}{)}\PY{+w}{ }\PY{o}{?}\PY{+w}{ }\PY{n}{streak}\PY{+w}{ }\PY{o}{+}\PY{+w}{ }\PY{l+m+mi}{1}\PY{+w}{ }\PY{o}{:}\PY{+w}{ }\PY{l+m+mi}{1}\PY{p}{;}
+\PY{+w}{  }\PY{n}{lastCls}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{shown}\PY{p}{;}
+
+\PY{+w}{  }\PY{n}{Serial}\PY{p}{.}\PY{n}{printf}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{class:\PYZpc{}s conf:\PYZpc{}.2f time:\PYZpc{}u us\PYZpc{}s}\PY{l+s+se}{\PYZbs{}n}\PY{l+s}{\PYZdq{}}\PY{p}{,}
+\PY{+w}{                }\PY{n}{shown}\PY{+w}{ }\PY{o}{\PYZlt{}}\PY{+w}{ }\PY{l+m+mi}{0}\PY{+w}{ }\PY{o}{?}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{?}\PY{l+s}{\PYZdq{}}\PY{+w}{ }\PY{o}{:}\PY{+w}{ }\PY{n}{NAMES}\PY{p}{[}\PY{n}{shown}\PY{p}{]}\PY{p}{,}\PY{+w}{ }\PY{n}{conf}\PY{p}{,}\PY{+w}{ }\PY{p}{(}\PY{k+kt}{unsigned}\PY{p}{)}\PY{n}{us}\PY{p}{,}
+\PY{+w}{                }\PY{p}{(}\PY{n}{shown}\PY{+w}{ }\PY{o}{\PYZgt{}}\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{+w}{ }\PY{o}{\PYZam{}}\PY{o}{\PYZam{}}\PY{+w}{ }\PY{n}{streak}\PY{+w}{ }\PY{o}{\PYZgt{}}\PY{o}{=}\PY{+w}{ }\PY{n}{CONFIRM}\PY{p}{)}\PY{+w}{ }\PY{o}{?}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{  \PYZlt{}\PYZhy{}\PYZhy{} ПОДТВЕРЖДЕНО}\PY{l+s}{\PYZdq{}}\PY{+w}{ }\PY{o}{:}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+\end{CodeVerbatim}

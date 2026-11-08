@@ -27,6 +27,58 @@ TWAI ESP32-S3 поддерживает Classical CAN, а не CAN FD. RS-485 ---
 На двух физических концах ставят по 120 Ом между CANH и CANL, а не на каждом узле.
 У модулей резисторы могут быть уже установлены. Проверьте питание модели и допустимые уровни RXD.
 
+\begin{figure}[H]
+\centering
+\begin{circuitikz}[scale=0.95,transform shape]
+  % узел A
+  \node[blk,fill=blkcpu,minimum width=2cm,minimum height=3.6cm] at (0,0) {};
+  \node[blk,fill=blkper,minimum width=2cm,minimum height=3.6cm] at (3.4,0) {};
+  % узел B
+  \node[blk,fill=blkper,minimum width=2cm,minimum height=3.6cm] at (8.4,0) {};
+  \node[blk,fill=blkcpu,minimum width=2cm,minimum height=3.6cm] at (11.8,0) {};
+  \node[font=\sffamily\small\bfseries] at (0,2.15) {ESP32-S3 A};
+  \node[font=\sffamily\small\bfseries] at (11.8,2.15) {ESP32-S3 B};
+  \node[font=\sffamily\scriptsize\bfseries,align=center] at (3.4,2.15) {CAN-трансивер};
+  \node[font=\sffamily\scriptsize\bfseries,align=center] at (8.4,2.15) {CAN-трансивер};
+  \foreach \y/\n in {1.2/{\pin{16}},0.4/{\pin{17}},-0.4/3V3,-1.2/GND} {
+    \node[font=\sffamily\scriptsize,anchor=east] at (1,\y) {\n};
+    \node[font=\sffamily\scriptsize,anchor=west] at (10.8,\y) {\n};
+  }
+  \foreach \y/\n in {1.2/TXD,0.4/RXD,-0.4/VCC,-1.2/GND} {
+    \node[font=\sffamily\scriptsize,anchor=west] at (2.4,\y) {\n};
+    \node[font=\sffamily\scriptsize,anchor=east] at (9.4,\y) {\n};
+  }
+  \foreach \y/\n in {0.8/CANH,-0.4/CANL} {
+    \node[font=\sffamily\scriptsize,anchor=east] at (4.4,\y) {\n};
+    \node[font=\sffamily\scriptsize,anchor=west] at (7.4,\y) {\n};
+  }
+  % провода плата -- трансивер
+  \draw[thick,worange] (1,1.2)  -- (2.4,1.2);
+  \draw[thick,wblue]   (1,0.4)  -- (2.4,0.4);
+  \draw[thick,wred]    (1,-0.4) -- (2.4,-0.4);
+  \draw[thick,wblack]  (1,-1.2) -- (2.4,-1.2);
+  \draw[thick,worange] (9.4,1.2)  -- (10.8,1.2);
+  \draw[thick,wblue]   (9.4,0.4)  -- (10.8,0.4);
+  \draw[thick,wred]    (9.4,-0.4) -- (10.8,-0.4);
+  \draw[thick,wblack]  (9.4,-1.2) -- (10.8,-1.2);
+  % шина
+  \draw[thick,wyellow] (4.4,0.8)  -- (7.4,0.8);
+  \draw[thick,wgreen]  (4.4,-0.4) -- (7.4,-0.4);
+  \draw[thick] (5.0,0.8) to[R] (5.0,-0.4);
+  \draw[thick] (6.8,0.8) to[R] (6.8,-0.4);
+  \fill[wyellow] (5.0,0.8) circle (1.6pt); \fill[wyellow] (6.8,0.8) circle (1.6pt);
+  \fill[wgreen] (5.0,-0.4) circle (1.6pt); \fill[wgreen] (6.8,-0.4) circle (1.6pt);
+  \node[font=\sffamily\scriptsize] at (5.0,-0.95) {\SI{120}{\ohm}};
+  \node[font=\sffamily\scriptsize] at (6.8,-0.95) {\SI{120}{\ohm}};
+  % общая земля
+  \draw[thick,wblack] (1.7,-1.2) -- (1.7,-2.5) -- (10.1,-2.5) -- (10.1,-1.2);
+  \fill[wblack] (1.7,-1.2) circle (1.6pt); \fill[wblack] (10.1,-1.2) circle (1.6pt);
+  \node[font=\sffamily\scriptsize,fill=white,inner sep=1pt] at (5.9,-2.5) {общий GND};
+\end{circuitikz}
+\caption{Две платы по CAN: TXD трансивера на \pin{16}, RXD на \pin{17}, CANH с CANH, CANL с CANL;
+резисторы \SI{120}{\ohm} стоят только на двух концах шины. Трансиверы питаются от 3V3 (модель с логикой 3,3~В)}
+\end{figure}
+
 \codecap{Кадры Classical CAN со счётчиком}
 \codeinput{l32_twai}
 
@@ -41,6 +93,64 @@ TWAI ESP32-S3 поддерживает Classical CAN, а не CAN FD. RS-485 ---
 RO к GPIO17. HIGH включает передатчик, LOW --- приёмник. Линии соединяйте по документации:
 обозначения A/B у производителей могут различаться. Согласование ставят на концах;
 смещение задают в одном рассчитанном месте либо используют трансивер с нужным failsafe.
+
+\begin{figure}[H]
+\centering
+\begin{circuitikz}[scale=0.95,transform shape]
+  \node[blk,fill=blkcpu,minimum width=2cm,minimum height=4.8cm] at (0,0) {};
+  \node[blk,fill=blkper,minimum width=2cm,minimum height=4.8cm] at (3.4,0) {};
+  \node[blk,fill=blkper,minimum width=2cm,minimum height=4.8cm] at (8.4,0) {};
+  \node[blk,fill=blkcpu,minimum width=2cm,minimum height=4.8cm] at (11.8,0) {};
+  \node[font=\sffamily\small\bfseries] at (0,2.75) {ESP32-S3 A};
+  \node[font=\sffamily\small\bfseries] at (11.8,2.75) {ESP32-S3 B};
+  \node[font=\sffamily\scriptsize\bfseries] at (3.4,2.75) {RS-485};
+  \node[font=\sffamily\scriptsize\bfseries] at (8.4,2.75) {RS-485};
+  \foreach \y/\n in {2.0/{\pin{16}},1.2/{\pin{17}},0.2/{\pin{4}},-0.8/3V3,-1.6/GND} {
+    \node[font=\sffamily\scriptsize,anchor=east] at (1,\y) {\n};
+    \node[font=\sffamily\scriptsize,anchor=west] at (10.8,\y) {\n};
+  }
+  \foreach \y/\n in {2.0/DI,1.2/RO,0.5/DE,-0.1/{/RE},-0.8/VCC,-1.6/GND} {
+    \node[font=\sffamily\scriptsize,anchor=west] at (2.4,\y) {\n};
+    \node[font=\sffamily\scriptsize,anchor=east] at (9.4,\y) {\n};
+  }
+  \foreach \y/\n in {0.9/A,-0.5/B} {
+    \node[font=\sffamily\scriptsize,anchor=east] at (4.4,\y) {\n};
+    \node[font=\sffamily\scriptsize,anchor=west] at (7.4,\y) {\n};
+  }
+  % узел A: провода
+  \draw[thick,worange] (1,2.0)  -- (2.4,2.0);
+  \draw[thick,wblue]   (1,1.2)  -- (2.4,1.2);
+  \draw[thick,wpurple] (1,0.2)  -- (1.7,0.2) (1.7,0.5) -- (1.7,-0.1);
+  \draw[thick,wpurple] (1.7,0.5) -- (2.4,0.5) (1.7,-0.1) -- (2.4,-0.1);
+  \fill[wpurple] (1.7,0.2) circle (1.6pt);
+  \draw[thick,wred]    (1,-0.8) -- (2.4,-0.8);
+  \draw[thick,wblack]  (1,-1.6) -- (2.4,-1.6);
+  % узел B: провода
+  \draw[thick,worange] (9.4,2.0)  -- (10.8,2.0);
+  \draw[thick,wblue]   (9.4,1.2)  -- (10.8,1.2);
+  \draw[thick,wpurple] (10.8,0.2) -- (10.1,0.2) (10.1,0.5) -- (10.1,-0.1);
+  \draw[thick,wpurple] (10.1,0.5) -- (9.4,0.5) (10.1,-0.1) -- (9.4,-0.1);
+  \fill[wpurple] (10.1,0.2) circle (1.6pt);
+  \draw[thick,wred]    (9.4,-0.8) -- (10.8,-0.8);
+  \draw[thick,wblack]  (9.4,-1.6) -- (10.8,-1.6);
+  % шина
+  \draw[thick,wyellow] (4.4,0.9)  -- (7.4,0.9);
+  \draw[thick,wgreen]  (4.4,-0.5) -- (7.4,-0.5);
+  \draw[thick] (5.0,0.9) to[R] (5.0,-0.5);
+  \draw[thick] (6.8,0.9) to[R] (6.8,-0.5);
+  \fill[wyellow] (5.0,0.9) circle (1.6pt); \fill[wyellow] (6.8,0.9) circle (1.6pt);
+  \fill[wgreen] (5.0,-0.5) circle (1.6pt); \fill[wgreen] (6.8,-0.5) circle (1.6pt);
+  \node[font=\sffamily\scriptsize] at (5.0,-1.1) {\SI{120}{\ohm}};
+  \node[font=\sffamily\scriptsize] at (6.8,-1.1) {\SI{120}{\ohm}};
+  % общая земля
+  \draw[thick,wblack] (1.7,-1.6) -- (1.7,-3.0) -- (10.1,-3.0) -- (10.1,-1.6);
+  \fill[wblack] (1.7,-1.6) circle (1.6pt); \fill[wblack] (10.1,-1.6) circle (1.6pt);
+  \node[font=\sffamily\scriptsize,fill=white,inner sep=1pt] at (5.9,-3.0) {общий GND};
+\end{circuitikz}
+\caption{Две платы по RS-485 (модули с логикой 3,3~В): DI на \pin{16}, RO на \pin{17}, выводы DE и /RE
+соединены между собой и идут на \pin{4}; A с A, B с B (обозначения у модулей могут отличаться).
+Согласующие \SI{120}{\ohm} стоят на двух концах линии}
+\end{figure}
 
 \codecap{Учебные запрос PING и ответ PONG}
 \codeinput{l32_rs485}

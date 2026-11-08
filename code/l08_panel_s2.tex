@@ -1,0 +1,64 @@
+\begin{CodeVerbatim}
+\PY{c+c1}{// Панель, шаг 2: страница на HTML и JavaScript (без оформления) говорит с платой через /api.}
+\PY{c+cp}{\PYZsh{}}\PY{c+cp}{include}\PY{+w}{ }\PY{c+cpf}{\PYZlt{}WiFi.h\PYZgt{}}
+\PY{c+cp}{\PYZsh{}}\PY{c+cp}{include}\PY{+w}{ }\PY{c+cpf}{\PYZlt{}WebServer.h\PYZgt{}}
+
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{int}\PY{+w}{ }\PY{n}{LED\PYZus{}PIN}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{4}\PY{p}{;}
+\PY{n}{WebServer}\PY{+w}{ }\PY{n+nf}{server}\PY{p}{(}\PY{l+m+mi}{80}\PY{p}{)}\PY{p}{;}
+\PY{k+kt}{bool}\PY{+w}{ }\PY{n}{ledOn}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n+nb}{false}\PY{p}{;}
+\PY{k+kt}{int}\PY{+w}{ }\PY{n}{level}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{50}\PY{p}{;}
+
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{char}\PY{+w}{ }\PY{n}{PAGE}\PY{p}{[}\PY{p}{]}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+s+sa}{R}\PY{l+s}{\PYZdq{}}\PY{l+s+dl}{rawliteral}\PY{l+s+dl}{(}
+\PY{l+s}{\PYZlt{}!DOCTYPE html\PYZgt{}}
+\PY{l+s}{\PYZlt{}html lang=\PYZdq{}ru\PYZdq{}\PYZgt{}}
+\PY{l+s}{\PYZlt{}head\PYZgt{}}
+\PY{l+s}{\PYZlt{}meta charset=\PYZdq{}utf\PYZhy{}8\PYZdq{}\PYZgt{}}
+\PY{l+s}{\PYZlt{}meta name=\PYZdq{}viewport\PYZdq{} content=\PYZdq{}width=device\PYZhy{}width, initial\PYZhy{}scale=1\PYZdq{}\PYZgt{}}
+\PY{l+s}{\PYZlt{}title\PYZgt{}Светодиод\PYZlt{}/title\PYZgt{}}
+\PY{l+s}{\PYZlt{}/head\PYZgt{}}
+\PY{l+s}{\PYZlt{}body\PYZgt{}}
+\PY{l+s}{  \PYZlt{}h1\PYZgt{}Мой светодиод\PYZlt{}/h1\PYZgt{}}
+\PY{l+s}{  \PYZlt{}p\PYZgt{}Состояние: \PYZlt{}b id=\PYZdq{}state\PYZdq{}\PYZgt{}?\PYZlt{}/b\PYZgt{}\PYZlt{}/p\PYZgt{}}
+\PY{l+s}{  \PYZlt{}button onclick=\PYZdq{}send(\PYZsq{}toggle\PYZsq{})\PYZdq{}\PYZgt{}Вкл / выкл\PYZlt{}/button\PYZgt{}}
+\PY{l+s}{  \PYZlt{}input id=\PYZdq{}lvl\PYZdq{} type=\PYZdq{}range\PYZdq{} min=\PYZdq{}0\PYZdq{} max=\PYZdq{}100\PYZdq{} onchange=\PYZdq{}send(\PYZsq{}level=\PYZsq{} + this.value)\PYZdq{}\PYZgt{}}
+\PY{l+s}{  \PYZlt{}p\PYZgt{}Яркость: \PYZlt{}b id=\PYZdq{}txt\PYZdq{}\PYZgt{}?\PYZlt{}/b\PYZgt{} \PYZpc{}\PYZlt{}/p\PYZgt{}}
+\PY{l+s}{\PYZlt{}script\PYZgt{}}
+\PY{l+s}{function show(s) \PYZob{}                     // показать состояние на странице}
+\PY{l+s}{  document.getElementById(\PYZsq{}state\PYZsq{}).textContent = s.on ? \PYZsq{}включён\PYZsq{} : \PYZsq{}выключен\PYZsq{};}
+\PY{l+s}{  document.getElementById(\PYZsq{}lvl\PYZsq{}).value = s.level;}
+\PY{l+s}{  document.getElementById(\PYZsq{}txt\PYZsq{}).textContent = s.level;}
+\PY{l+s}{\PYZcb{}}
+\PY{l+s}{function send(cmd) \PYZob{}                   // POST\PYZhy{}запрос без перезагрузки страницы}
+\PY{l+s}{  fetch(\PYZsq{}/api\PYZsq{}, \PYZob{} method: \PYZsq{}POST\PYZsq{}, body: new URLSearchParams(cmd) \PYZcb{})}
+\PY{l+s}{    .then(r =\PYZgt{} r.json()).then(show);}
+\PY{l+s}{\PYZcb{}}
+\PY{l+s}{fetch(\PYZsq{}/api\PYZsq{}).then(r =\PYZgt{} r.json()).then(show);   // GET: узнать состояние при открытии}
+\PY{l+s}{\PYZlt{}/script\PYZgt{}}
+\PY{l+s}{\PYZlt{}/body\PYZgt{}}
+\PY{l+s}{\PYZlt{}/html\PYZgt{}}
+\PY{l+s+dl}{)rawliteral}\PY{l+s}{\PYZdq{}}\PY{p}{;}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{applyLed}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{ }\PY{n}{ledcWrite}\PY{p}{(}\PY{n}{LED\PYZus{}PIN}\PY{p}{,}\PY{+w}{ }\PY{n}{ledOn}\PY{+w}{ }\PY{o}{?}\PY{+w}{ }\PY{n}{level}\PY{+w}{ }\PY{o}{*}\PY{+w}{ }\PY{l+m+mi}{255}\PY{+w}{ }\PY{o}{/}\PY{+w}{ }\PY{l+m+mi}{100}\PY{+w}{ }\PY{o}{:}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{;}\PY{+w}{ }\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{handleApi}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{                           }\PY{c+c1}{// тот же обработчик, что на шаге 1}
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{server}\PY{p}{.}\PY{n}{method}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{o}{=}\PY{o}{=}\PY{+w}{ }\PY{n}{HTTP\PYZus{}POST}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{    }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{server}\PY{p}{.}\PY{n}{hasArg}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{toggle}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{)}\PY{+w}{ }\PY{n}{ledOn}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{o}{!}\PY{n}{ledOn}\PY{p}{;}
+\PY{+w}{    }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{server}\PY{p}{.}\PY{n}{hasArg}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{level}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{ }\PY{n}{level}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{constrain}\PY{p}{(}\PY{n}{server}\PY{p}{.}\PY{n}{arg}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{level}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{.}\PY{n}{toInt}\PY{p}{(}\PY{p}{)}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{100}\PY{p}{)}\PY{p}{;}\PY{+w}{ }\PY{n}{ledOn}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n+nb}{true}\PY{p}{;}\PY{+w}{ }\PY{p}{\PYZcb{}}
+\PY{+w}{    }\PY{n}{applyLed}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{p}{\PYZcb{}}
+\PY{+w}{  }\PY{n}{String}\PY{+w}{ }\PY{n}{json}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{String}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{\PYZob{}}\PY{l+s+se}{\PYZbs{}\PYZdq{}}\PY{l+s}{on}\PY{l+s+se}{\PYZbs{}\PYZdq{}}\PY{l+s}{:}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{+w}{ }\PY{o}{+}\PY{+w}{ }\PY{p}{(}\PY{n}{ledOn}\PY{+w}{ }\PY{o}{?}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{true}\PY{l+s}{\PYZdq{}}\PY{+w}{ }\PY{o}{:}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{false}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{+w}{ }\PY{o}{+}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{,}\PY{l+s+se}{\PYZbs{}\PYZdq{}}\PY{l+s}{level}\PY{l+s+se}{\PYZbs{}\PYZdq{}}\PY{l+s}{:}\PY{l+s}{\PYZdq{}}\PY{+w}{ }\PY{o}{+}\PY{+w}{ }\PY{n}{level}\PY{+w}{ }\PY{o}{+}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{\PYZcb{}}\PY{l+s}{\PYZdq{}}\PY{p}{;}
+\PY{+w}{  }\PY{n}{server}\PY{p}{.}\PY{n}{send}\PY{p}{(}\PY{l+m+mi}{200}\PY{p}{,}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{application/json}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{n}{json}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{setup}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{n}{ledcAttach}\PY{p}{(}\PY{n}{LED\PYZus{}PIN}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{5000}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{8}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{WiFi}\PY{p}{.}\PY{n}{softAP}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{S3\PYZhy{}Web}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{lesson\PYZhy{}44\PYZhy{}demo}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{server}\PY{p}{.}\PY{n}{on}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{/}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{p}{[}\PY{p}{]}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{ }\PY{n}{server}\PY{p}{.}\PY{n}{send}\PY{p}{(}\PY{l+m+mi}{200}\PY{p}{,}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{text/html; charset=utf\PYZhy{}8}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{n}{PAGE}\PY{p}{)}\PY{p}{;}\PY{+w}{ }\PY{p}{\PYZcb{}}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{server}\PY{p}{.}\PY{n}{on}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{/api}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{n}{handleApi}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{server}\PY{p}{.}\PY{n}{begin}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{loop}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{n}{server}\PY{p}{.}\PY{n}{handleClient}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+\end{CodeVerbatim}

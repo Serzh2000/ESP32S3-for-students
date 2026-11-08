@@ -7,7 +7,7 @@
 \PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{setup}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
 \PY{+w}{  }\PY{n}{Serial}\PY{p}{.}\PY{n}{begin}\PY{p}{(}\PY{l+m+mi}{115200}\PY{p}{)}\PY{p}{;}\PY{+w}{ }\PY{n}{delay}\PY{p}{(}\PY{l+m+mi}{1000}\PY{p}{)}\PY{p}{;}
 \PY{+w}{  }\PY{k}{const}\PY{+w}{ }\PY{n}{esp\PYZus{}partition\PYZus{}t}\PY{o}{*}\PY{+w}{ }\PY{n}{running}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{esp\PYZus{}ota\PYZus{}get\PYZus{}running\PYZus{}partition}\PY{p}{(}\PY{p}{)}\PY{p}{;}
-\PY{+w}{  }\PY{k}{const}\PY{+w}{ }\PY{n}{esp\PYZus{}partition\PYZus{}t}\PY{o}{*}\PY{+w}{ }\PY{n}{next}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{esp\PYZus{}ota\PYZus{}get\PYZus{}next\PYZus{}update\PYZus{}partition}\PY{p}{(}\PY{k}{nullptr}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{k}{const}\PY{+w}{ }\PY{n}{esp\PYZus{}partition\PYZus{}t}\PY{o}{*}\PY{+w}{ }\PY{n}{next}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{esp\PYZus{}ota\PYZus{}get\PYZus{}next\PYZus{}update\PYZus{}partition}\PY{p}{(}\PY{n+nb}{nullptr}\PY{p}{)}\PY{p}{;}
 \PY{+w}{  }\PY{n}{Serial}\PY{p}{.}\PY{n}{printf}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{reset=\PYZpc{}d app=\PYZpc{}s size=\PYZpc{}lu next\PYZus{}OTA=\PYZpc{}s}\PY{l+s+se}{\PYZbs{}n}\PY{l+s}{\PYZdq{}}\PY{p}{,}
 \PY{+w}{    }\PY{p}{(}\PY{k+kt}{int}\PY{p}{)}\PY{n}{esp\PYZus{}reset\PYZus{}reason}\PY{p}{(}\PY{p}{)}\PY{p}{,}\PY{+w}{ }\PY{n}{running}\PY{+w}{ }\PY{o}{?}\PY{+w}{ }\PY{n}{running}\PY{o}{\PYZhy{}}\PY{o}{\PYZgt{}}\PY{n}{label}\PY{+w}{ }\PY{o}{:}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{?}\PY{l+s}{\PYZdq{}}\PY{p}{,}
 \PY{+w}{    }\PY{n}{running}\PY{+w}{ }\PY{o}{?}\PY{+w}{ }\PY{p}{(}\PY{k+kt}{unsigned}\PY{+w}{ }\PY{k+kt}{long}\PY{p}{)}\PY{n}{running}\PY{o}{\PYZhy{}}\PY{o}{\PYZgt{}}\PY{n}{size}\PY{+w}{ }\PY{o}{:}\PY{+w}{ }\PY{l+m+mi}{0UL}\PY{p}{,}

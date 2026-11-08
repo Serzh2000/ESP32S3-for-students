@@ -42,7 +42,7 @@
 
 Шестнадцатеричная запись (hex) --- просто короткий способ записать биты: четыре бита превращаются в одну
 цифру от 0 до F (A = 10, B = 11, \ldots, F = 15). В программе двоичное число пишут с приставкой
-\code{0b}, шестнадцатеричное --- с \code{0x}. Адрес дисплея \code{0x3C} из урока 6 --- это \code{0b00111100},
+\code{0b}, шестнадцатеричное --- с \code{0x}. Адрес дисплея \code{0x3C} из урока 7 --- это \code{0b00111100},
 или 60.
 
 \subsection{Битовые операции}
@@ -133,6 +133,45 @@ if (x & (1 << n))    // проверить бит n
 Остальные выводы микросхемы: питание VCC (16) --- к 3V3, GND (8) --- к земле, $\overline{\text{OE}}$ (13) ---
 к земле (выходы включены), $\overline{\text{MR}}$ (10) --- к 3V3 (сброс не активен). Общий катод индикатора ---
 к GND.
+
+\begin{figure}[H]
+\centering
+\begin{circuitikz}[scale=0.95,transform shape]
+  % плата
+  \node[blk,fill=blkcpu,minimum width=2.2cm,minimum height=3.4cm] (m) at (0,0.9) {};
+  \node[font=\sffamily\small\bfseries] at (0,2.75) {ESP32-S3};
+  % микросхема
+  \node[blk,fill=blkper,minimum width=2.6cm,minimum height=5.6cm] (c) at (5,0) {};
+  \node[font=\sffamily\small\bfseries,anchor=east] at (4.85,3.05) {74HC595};
+  \foreach \y/\a/\b/\col in {1.8/{\pin{15}}/{14~DS}/wblue, 0.9/{\pin{16}}/{11~SHCP}/wyellow, 0/{\pin{7}}/{12~STCP}/wgreen}{
+    \node[font=\sffamily\scriptsize,anchor=east] at (1.05,\y) {\a};
+    \node[font=\sffamily\scriptsize,anchor=west] at (3.75,\y) {\b};
+    \draw[thick,\col] (1.05,\y) -- (3.7,\y);
+  }
+  \node[font=\sffamily\scriptsize,anchor=west] at (3.75,-1.2) {13~$\overline{\text{OE}}$};
+  \node[font=\sffamily\scriptsize,anchor=west] at (3.75,-2.0) {10~$\overline{\text{MR}}$};
+  \draw[thick,wblack] (3.7,-1.2) -- (3.4,-1.2) node[ground]{};
+  \draw[thick,wred]   (3.7,-2.0) -- (2.5,-2.0) node[vcc,font=\sffamily\scriptsize]{3V3};
+  \node[font=\sffamily\scriptsize] at (5,2.55) {16~VCC};
+  \draw[thick,wred]   (5,2.8) -- (5,3.5) node[vcc,font=\sffamily\scriptsize]{3V3};
+  \node[font=\sffamily\scriptsize] at (5,-2.55) {8~GND};
+  \draw[thick,wblack] (5,-2.8) -- (5,-3.3) node[ground]{};
+  % выходы, резисторы, индикатор
+  \node[blk,fill=blkrf,minimum width=1.9cm,minimum height=5.6cm] (d) at (11.0,0) {};
+  \node[font=\sffamily\small\bfseries,align=center] at (11.0,3.2) {Индикатор\\[-2pt]\scriptsize общий катод};
+  \foreach \i/\q/\n/\l in {0/15/0/a, 1/1/1/b, 2/2/2/c, 3/3/3/d, 4/4/4/e, 5/5/5/f, 6/6/6/g, 7/7/7/dp}{
+    \pgfmathsetmacro{\yy}{2.1-\i*0.6}
+    \node[font=\sffamily\scriptsize,anchor=east] at (6.25,\yy) {Q\n};
+    \draw[thick,black!70] (6.3,\yy) -- (7.2,\yy) to[R] (8.8,\yy) -- (10.1,\yy);
+    \node[font=\sffamily\scriptsize,anchor=west] at (10.15,\yy) {\l};
+  }
+  \node[font=\sffamily\scriptsize,anchor=south] at (8.0,2.5) {8$\times$\SI{220}{\ohm}};
+  \draw[thick,wblack] (11.0,-2.8) -- (11.0,-3.3) node[ground]{};
+  \node[font=\sffamily\scriptsize] at (11.0,-2.55) {COM};
+\end{circuitikz}
+\caption{Полная схема подключения 74HC595 и индикатора. Три сигнала идут с платы на DS, SHCP и STCP,
+выходы Q0--Q7 через резисторы \SI{220}{\ohm} подключены к сегментам a--g и точке, общий катод --- на GND}
+\end{figure}
 
 \codecap{Счёт от 0 до 9 на семисегментном индикаторе}
 \codeinput{l22_shift}

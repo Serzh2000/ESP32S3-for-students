@@ -1,124 +1,125 @@
-% ================= Титульный лист =================
-\definecolor{pcbA}{HTML}{0E1F2F}
-\definecolor{pcbB}{HTML}{1C3B57}
-\definecolor{trace}{HTML}{E0A64B}
-\definecolor{netcol}{HTML}{3FC1C9}
-\definecolor{syscol}{HTML}{E5736A}
+% ================= Титульный лист (в духе учебника «Клевер в Gazebo») =================
+\definecolor{covInk}{HTML}{18343D}    % тёмный фон
+\definecolor{covGreen}{HTML}{087D70}  % основной акцент
+\definecolor{covAmber}{HTML}{B56719}  % второй акцент
+\definecolor{covMint}{HTML}{7FD6C8}   % подзаголовок
 \begin{titlepage}
-\centering
-% ---------- шапка учреждения ----------
-{\rmfamily\normalsize
-Муниципальное общеобразовательное бюджетное учреждение\\
-«Средняя общеобразовательная школа «Центр образования «Кудрово»\\[2pt]
-Отделение дополнительного образования детей\par}
-\vspace{3mm}
-{\color{espdark}\rule{\textwidth}{0.8pt}}
-
-\vfill
-{\sffamily\small\color{gray}\addfontfeatures{LetterSpace=12}УЧЕБНО-МЕТОДИЧЕСКОЕ ПОСОБИЕ\par}
-\vspace{4mm}
-{\sffamily\bfseries\fontsize{46}{50}\selectfont\color{espdark}ESP32-S3\par}
-\vspace{3mm}
-{\sffamily\LARGE Практический курс программирования микроконтроллеров\par}
-\vspace{2mm}
-{\sffamily\large\color{gray!70!black}от первых сигналов до самостоятельных устройств\par}
-\vspace{8mm}
-
-% ---------- иллюстрация: микроконтроллер на плате ----------
-\begin{tikzpicture}[
-  font=\sffamily,
-  pill/.style={draw=#1,line width=0.9pt,rounded corners=7pt,fill=pcbA,text=white,
-               minimum height=6.4mm,minimum width=19mm,font=\sffamily\small\bfseries},
-  tr/.style={trace,line width=1.1pt,line join=round,line cap=round},
-  via/.style={circle,fill=pcbA,draw=trace,line width=0.9pt,inner sep=1.3pt},
-]
-  % плата
-  \shade[rounded corners=8pt,top color=pcbB,bottom color=pcbA] (-8.3,-4.6) rectangle (8.3,4.6);
-  \foreach \x in {-7.9,-7.4,...,7.9}
-    \foreach \y in {-4.2,-3.7,...,4.3}
-      \fill[white,opacity=0.07] (\x,\y) circle (0.55pt);
-  \draw[white,opacity=0.12,rounded corners=6pt] (-8.1,-4.4) rectangle (8.1,4.4);
-
-  % декоративные дорожки с переходными отверстиями
-  \foreach \s/\e in {{(-1.95,1.2)}/{(-2.7,1.2)},{(-1.95,-1.2)}/{(-2.9,-1.2)},{(1.95,1.2)}/{(2.7,1.2)},
-                     {(1.95,-1.2)}/{(2.9,-1.2)},{(-1.2,1.95)}/{(-1.2,2.6)},{(1.2,1.95)}/{(1.2,2.5)},
-                     {(-1.2,-1.95)}/{(-1.2,-2.5)},{(1.2,-1.95)}/{(1.2,-2.6)}}
-    {\draw[tr,opacity=0.55] \s -- \e node[via,opacity=0.8]{};}
-  \draw[tr,opacity=0.35] (-1.95,0.5) -- (-3.0,0.5) -- (-3.5,1.0) -- (-4.2,1.0) node[via]{};
-  \draw[tr,opacity=0.35] (1.95,-0.5) -- (3.0,-0.5) -- (3.5,-1.0) -- (4.2,-1.0) node[via]{};
-  \draw[tr,opacity=0.35] (0.5,-1.95) -- (0.5,-2.9) -- (1.0,-3.4) -- (2.0,-3.4) node[via]{};
-  \draw[tr,opacity=0.35] (-0.5,1.95) -- (-0.5,2.9) -- (-1.0,3.4) -- (-1.6,3.4) node[via]{};
-
-  % темы курса
-  \node[pill=trace]  (gpio) at (-6.3, 2.3) {GPIO};
-  \node[pill=trace]  (pwm)  at (-6.3, 0.0) {ШИМ};
-  \node[pill=trace]  (adc)  at (-6.3,-2.3) {АЦП};
-  \node[pill=trace]  (uart) at ( 6.3, 2.3) {UART};
-  \node[pill=trace]  (i2c)  at ( 6.3, 0.0) {I\textsuperscript{2}C};
-  \node[pill=trace]  (spi)  at ( 6.3,-2.3) {SPI};
-  \node[pill=netcol] (wifi) at (-3.6, 3.75) {Wi-Fi};
-  \node[pill=netcol] (ble)  at ( 0.0, 3.75) {BLE};
-  \node[pill=netcol] (ota)  at ( 3.6, 3.75) {OTA};
-  \node[pill=syscol] (rtos) at (-3.6,-3.75) {FreeRTOS};
-  \node[pill=syscol] (nvs)  at ( 0.0,-3.75) {NVS};
-  \node[pill=syscol] (slp)  at ( 3.6,-3.75) {Сон};
-
-  % дорожки к темам
-  \draw[tr] (-1.95, 0.9) -- (-3.6, 0.9) -- (-5.0, 2.3) -- (gpio.east);
-  \draw[tr] (-1.95, 0.0) -- (pwm.east);
-  \draw[tr] (-1.95,-0.9) -- (-3.6,-0.9) -- (-5.0,-2.3) -- (adc.east);
-  \draw[tr] ( 1.95, 0.9) -- ( 3.6, 0.9) -- ( 5.0, 2.3) -- (uart.west);
-  \draw[tr] ( 1.95, 0.0) -- (i2c.west);
-  \draw[tr] ( 1.95,-0.9) -- ( 3.6,-0.9) -- ( 5.0,-2.3) -- (spi.west);
-  \draw[tr] (-0.9, 1.95) -- (-0.9, 2.5) -- (-2.15,3.75) -- (wifi.east);
-  \draw[tr] ( 0.0, 1.95) -- (ble.south);
-  \draw[tr] ( 0.9, 1.95) -- ( 0.9, 2.5) -- ( 2.15,3.75) -- (ota.west);
-  \draw[tr] (-0.9,-1.95) -- (-0.9,-2.5) -- (-2.15,-3.75) -- (rtos.east);
-  \draw[tr] ( 0.0,-1.95) -- (nvs.north);
-  \draw[tr] ( 0.9,-1.95) -- ( 0.9,-2.5) -- ( 2.15,-3.75) -- (slp.west);
-
-  % мягкая тень корпуса
-  \foreach \k in {1,...,6}
-    \fill[black,opacity=0.07,rounded corners=4pt] (-1.6-0.05*\k+0.18,-1.6-0.05*\k-0.22) rectangle (1.6+0.05*\k+0.18,1.6+0.05*\k-0.22);
-
-  % выводы корпуса QFN
-  \foreach \i in {0,...,8}{
-    \pgfmathsetmacro{\p}{-1.2+\i*0.3}
-    \shade[top color=gray!15,bottom color=gray!55] (\p-0.08,1.58) rectangle (\p+0.08,1.95);
-    \shade[top color=gray!15,bottom color=gray!55] (\p-0.08,-1.95) rectangle (\p+0.08,-1.58);
-    \shade[left color=gray!15,right color=gray!55] (-1.95,\p-0.08) rectangle (-1.58,\p+0.08);
-    \shade[left color=gray!55,right color=gray!15] (1.58,\p-0.08) rectangle (1.95,\p+0.08);
+\pagecolor{covInk}\color{white}
+\thispagestyle{empty}
+\begin{tikzpicture}[remember picture,overlay]
+ % светлая «студия» с изделием и плавный переход в тёмный фон
+ \fill[white] ([xshift=-3mm,yshift=3mm]current page.north west) rectangle ([xshift=3mm,yshift=-12.6cm]current page.north east);
+ \shade[top color=white,bottom color=covInk] ([xshift=-3mm,yshift=-12.55cm]current page.north west) rectangle ([xshift=3mm,yshift=-16.6cm]current page.north east);
+ % еле заметные дорожки на светлом фоне
+ \begin{scope}
+  \clip ([yshift=3mm]current page.north west) rectangle ([yshift=-12.6cm]current page.north east);
+  \foreach \k in {0,...,7}{
+    \draw[covGreen,opacity=0.07,line width=1pt]
+      ([xshift=0cm,yshift=-1.2cm-\k*1.4cm]current page.north west) -- ++(3.2cm,0) -- ++(0.8cm,-0.8cm) -- ++(2.2cm,0);
+    \draw[covGreen,opacity=0.07,line width=1pt]
+      ([xshift=0cm,yshift=-1.9cm-\k*1.4cm]current page.north east) -- ++(-3.2cm,0) -- ++(-0.8cm,-0.8cm) -- ++(-2.2cm,0);
   }
-
-  % корпус с фаской и бликом
-  \shade[rounded corners=3pt,top color=black!70,bottom color=black!95] (-1.6,-1.6) rectangle (1.6,1.6);
-  \shade[rounded corners=2pt,top color=black!80,bottom color=black!88,middle color=black!72] (-1.42,-1.42) rectangle (1.42,1.42);
-  \draw[white,opacity=0.22,rounded corners=2pt,line width=0.4pt] (-1.42,-1.42) rectangle (1.42,1.42);
-  \fill[white,opacity=0.06] (-1.42,1.42) -- (0.6,1.42) -- (-1.42,-0.6) -- cycle;
-  \fill[black!60] (-1.1,1.1) circle (0.11);
-  \draw[white,opacity=0.25,line width=0.3pt] (-1.1,1.1) circle (0.11);
-
-  % маркировка
-  \node[white,font=\sffamily\bfseries\Large] at (0,0.25) {ESP32-S3};
-  \node[gray!60,font=\sffamily\scriptsize] at (0,-0.3) {Xtensa LX7 · 240 МГц};
-  \node[gray!50,font=\sffamily\tiny] at (0,-0.65) {2 ядра · Wi-Fi · BLE 5 · USB};
+ \end{scope}
+ % схема на светлой части обложки: ESP32-S3 в центре, периферия по сторонам
+ \begin{scope}[shift={(current page.north west)},
+   bus/.style={line width=1.3pt,rounded corners=4pt},
+   blk/.style={draw,line width=0.9pt,fill=white,rounded corners=2.5pt,minimum width=3.7cm,minimum height=1.55cm,inner sep=0pt},
+   bt/.style={font=\sffamily\bfseries\small,text=covInk},
+   bs/.style={font=\sffamily\scriptsize,text=covInk!65}]
+  % --- микросхема
+  \fill[black,opacity=0.06,rounded corners=4pt] (8.25,-9.0) rectangle (12.95,-4.35);
+  \foreach \i in {0,...,5}{
+    \fill[covAmber] (8.0,-4.95-\i*0.62) rectangle (8.35,-5.1-\i*0.62);
+    \fill[covAmber] (12.65,-4.95-\i*0.62) rectangle (13.0,-5.1-\i*0.62);
+    \fill[covAmber] (8.85+\i*0.62,-4.1) rectangle (9.0+\i*0.62,-4.45);
+    \fill[covAmber] (8.85+\i*0.62,-8.85) rectangle (9.0+\i*0.62,-9.2);
+  }
+  \fill[covInk,rounded corners=4pt] (8.3,-4.4) rectangle (12.7,-8.8);
+  \draw[covMint,line width=0.6pt,rounded corners=2pt] (8.55,-4.65) rectangle (12.45,-8.55);
+  \fill[covAmber] (8.8,-4.9) circle (2.4pt);
+  \node[text=white,font=\sffamily\bfseries\fontsize{20}{22}\selectfont] at (10.5,-6.15) {ESP32-S3};
+  \node[text=covMint,font=\sffamily\scriptsize] at (10.5,-6.85) {2 × Xtensa LX7 · 240 МГц};
+  \node[text=white!70,font=\sffamily\tiny] at (10.5,-7.35) {Wi-Fi · Bluetooth LE · USB · 45 GPIO};
+  % --- блоки слева (цифровые и аналоговые сигналы)
+  \foreach \y/\t/\s/\c/\py [count=\n] in {-3.2/Светодиод/GPIO · ШИМ/covGreen/-5.03, -5.6/Кнопка/GPIO · прерывание/covGreen/-5.65,
+                                -8.0/Потенциометр/АЦП · 12 бит/covAmber/-6.89, -10.4/Сервопривод/ШИМ · 50 Гц/covGreen/-8.13}{
+    \node[blk,draw=\c] (L
+) at (3.6,\y) {};
+    \fill[\c] ([xshift=0.0cm]L
+.north west) rectangle ([xshift=0.14cm]L
+.south west);
+    \node[bt,anchor=west] at ([xshift=0.45cm,yshift=0.2cm]L
+.west) {\t};
+    \node[bs,anchor=west] at ([xshift=0.45cm,yshift=-0.25cm]L
+.west) {\s};
+    \draw[bus,\c] (5.45,\y) -- (6.9,\y) -- (6.9,\py) -- (8.0,\py);
+    \fill[\c] (5.45,\y) circle (2.2pt);
+  }
+  % --- блоки справа (шины и связь)
+  \foreach \y/\t/\s/\c/\py [count=\n] in {-3.2/Дисплей OLED/шина I\textsuperscript{2}C/covGreen/-5.03, -5.6/Карта памяти/шина SPI/covGreen/-5.65,
+                                -8.0/Wi-Fi и BLE/MQTT · ESPUI · ESP-NOW/covInk!70/-6.89, -10.4/Клавиатура и мышь/USB HID/covGreen/-8.13}{
+    \node[blk,draw=\c] (R
+) at (17.4,\y) {};
+    \fill[\c] ([xshift=-0.14cm]R
+.north east) rectangle (R
+.south east);
+    \node[bt,anchor=west] at ([xshift=0.3cm,yshift=0.2cm]R
+.west) {\t};
+    \node[bs,anchor=west] at ([xshift=0.3cm,yshift=-0.25cm]R
+.west) {\s};
+    \draw[bus,\c] (15.55,\y) -- (14.1,\y) -- (14.1,\py) -- (13.0,\py);
+    \fill[\c] (15.55,\y) circle (2.2pt);
+  }
+  % --- сигналы: ШИМ и синус над микросхемой
+  \draw[covGreen,line width=1.2pt] (8.4,-2.9) -- ++(0.35,0) -- ++(0,0.55) -- ++(0.55,0) -- ++(0,-0.55) -- ++(0.85,0) -- ++(0,0.55)
+       -- ++(0.85,0) -- ++(0,-0.55) -- ++(0.35,0) -- ++(0,0.55) -- ++(0.35,0) -- ++(0,-0.55) -- ++(0.7,0);
+  \draw[covAmber,line width=1.2pt,domain=0:4.2,samples=60,smooth] plot ({8.4+\x},{-2.62+0.28*sin(\x*190)});
+  \node[bs,anchor=east] at (8.2,-2.75) {ШИМ и синус};
+  % --- поток битов под микросхемой: символ «H» по UART (0x48 = 01001000)
+  \foreach \b/\f/\tc [count=\i from 0] in {0/white/covInk,1/covGreen/white,0/white/covInk,0/white/covInk,1/covGreen/white,0/white/covInk,0/white/covInk,0/white/covInk}{
+    \node[draw=covInk!60,fill=\f,minimum size=0.46cm,inner sep=0pt,text=\tc,font=\ttfamily\small] at (8.55+\i*0.5,-10.85) {\b};
+  }
+  \node[bs,anchor=east] at (8.15,-10.85) {Serial: «H» =};
+  \node[bs,anchor=west] at (12.75,-10.85) {= 0x48};
+  \draw[covInk!40,line width=0.7pt,dashed] (10.5,-9.25) -- (10.5,-10.5);
+  \node[bs,fill=white,inner sep=1pt] at (10.5,-9.9) {TX · GPIO43};
+  % --- подпись схемы
+  \node[bs,anchor=south] at (10.5,-12.15) {Тот же набор «вход — обработка — выход» от светодиода до нейросети};
+ \end{scope}
+ % координатная сетка на тёмной части
+ \begin{scope}
+  \clip ([yshift=-16.6cm]current page.north west) rectangle (current page.south east);
+  \draw[white,opacity=0.045,step=1cm] (current page.south west) grid (current page.north east);
+ \end{scope}
+ % верхняя строка
+ \node[anchor=north west,font=\sffamily\bfseries\footnotesize] at ([xshift=2.2cm,yshift=-1.6cm]current page.north west)
+   {\textcolor{covGreen}{УЧЕБНОЕ ПОСОБИЕ}\hspace{4mm}\textcolor{covInk!70}{ARDUINO\ \ •\ \ FREERTOS\ \ •\ \ ESPUI\ \ •\ \ TINYML}};
+ % заголовок
+ \node[anchor=north west,align=left,text width=16.6cm,text=white] at ([xshift=2.2cm,yshift=-16.8cm]current page.north west)
+   {\sffamily\bfseries\fontsize{58}{62}\selectfont ESP32-S3};
+ \draw[line width=2.2pt,covGreen!85!white] ([xshift=2.2cm,yshift=-19.9cm]current page.north west) -- ++(2.4cm,0);
+ \draw[line width=2.2pt,covAmber] ([xshift=4.8cm,yshift=-19.9cm]current page.north west) -- ++(0.8cm,0);
+ \node[anchor=north west,align=left,text width=16.6cm,text=covMint] at ([xshift=2.2cm,yshift=-20.4cm]current page.north west)
+   {\sffamily\fontsize{18}{23}\selectfont Практический курс программирования\\микроконтроллеров};
+ \node[anchor=north west,align=left,text width=16.6cm,text=white!75] at ([xshift=2.2cm,yshift=-23.0cm]current page.north west)
+   {\sffamily\small От первого светодиода до самостоятельных устройств:\\датчики, Wi-Fi, веб-панели, нейросети и итоговый проект};
+ % авторы и редакция
+ \node[anchor=south west,text=white] at ([xshift=2.2cm,yshift=4.5cm]current page.south west)
+   {\sffamily\bfseries\fontsize{19}{23}\selectfont Сергей Андреевич Корягин};
+ \node[anchor=south west,text=white] at ([xshift=2.2cm,yshift=3.5cm]current page.south west)
+   {\sffamily\bfseries\fontsize{19}{23}\selectfont Полина Алексеевна Полякова};
+ \node[anchor=south west,align=left,text=white!75] at ([xshift=2.2cm,yshift=1.9cm]current page.south west)
+   {\sffamily\small Кудрово\ \ •\ \ 2026};
+ \node[anchor=south east,align=right,text=white!60,font=\sffamily\footnotesize] at ([xshift=-2.2cm,yshift=1.9cm]current page.south east)
+   {Arduino-ESP32 3.x\ \ •\ \ ESP-IDF 5.x\\плата ESP32-S3-DevKitC-1};
+ \node[anchor=south west,text=white!45,font=\sffamily\tiny] at ([xshift=2.2cm,yshift=1.0cm]current page.south west)
+   {МОБУ «СОШ «Центр образования «Кудрово», отделение дополнительного образования детей.};
 \end{tikzpicture}
-
-\vfill
-% ---------- автор ----------
-\begin{flushright}
-\begin{minipage}{0.62\textwidth}\raggedright\rmfamily\normalsize
-Авторы-составители:\\
-\textbf{Корягин Сергей Андреевич},\\
-\textbf{Полякова Полина Алексеевна},\\
-педагоги отделения дополнительного образования детей
-\end{minipage}
-\end{flushright}
-
-\vfill
-{\rmfamily\normalsize Кудрово\\ 2026\par}
+\end{titlepage}
+\nopagecolor\color{black}
 
 % ---------- оборот титула ----------
+\begin{titlepage}
 \newpage
 \thispagestyle{empty}
 \vspace*{\fill}
@@ -128,10 +129,10 @@
 \pageref{LastPage}~с.
 
 \vspace{4mm}
-Пособие содержит вводные главы и сорок два урока (с нулевого по сорок первый) по программированию
+Пособие содержит вводные главы и сорок пять уроков (с нулевого по сорок четвёртый) по программированию
 микроконтроллера ESP32-S3 в среде Arduino: от техники безопасности, цифровых выводов и
 последовательного порта до FreeRTOS, беспроводных сетей, защищённых обновлений, диагностики сбоев,
-основ HTML и CSS, датчиков, моторов, звука, USB, камеры, автономного питания, I²S, RMT, PCNT/MCPWM, TWAI, графики, USB Host, JTAG, ULP, распознавания, ESPUI, настройки Wi-Fi через портал и итогового проекта. Каждый урок включает
+ESPUI с первых уроков, датчиков, моторов, звука, USB, камеры, автономного питания, I²S, RMT, PCNT/MCPWM, TWAI, графики, USB Host, JTAG, ULP, распознавания, ESPUI, настройки Wi-Fi через портал, сборки в PlatformIO, TinyML, итогового проекта и страницы управления на HTML, CSS и JavaScript. Каждый урок включает
 объяснение идеи, готовые примеры, самостоятельный опыт, разбор типичных ошибок, вопросы для
 самопроверки и шесть заданий четырёх уровней сложности. В приложениях --- справочник, словарь, ответы на вопросы
 и примерное тематическое планирование для педагога.

@@ -21,6 +21,29 @@
 с GPIO5 опыта PCNT из урока 31. Счётчик увидит два положительных фронта на пакет,
 но не проверит их длительность. На выход подаётся логика 3,3 В.
 
+\begin{figure}[H]
+\centering
+\begin{circuitikz}[scale=0.95,transform shape]
+  \node[blk,fill=blkcpu,minimum width=2.8cm,minimum height=4.2cm] (m) at (0,0) {};
+  \node[blk,fill=blkper,minimum width=2.8cm,minimum height=2.6cm] (d) at (8,0.5) {};
+  \node[font=\sffamily\small\bfseries] at (0,2.6) {ESP32-S3};
+  \node[font=\sffamily\small\bfseries,align=center] at (8,2.2) {Логический\\[-2pt]анализатор};
+  \foreach \y/\n in {1/{\pin{4}},0/{\pin{5}},-1.5/GND}
+    \node[font=\sffamily\scriptsize,anchor=east] at (1.4,\y) {\n};
+  \foreach \y/\n in {1/CH0,-0.4/GND}
+    \node[font=\sffamily\scriptsize,anchor=west] at (6.6,\y) {\n};
+  \draw[thick,accent] (1.4,1) -- (6.6,1);
+  \node[font=\sffamily\scriptsize,text=accent,fill=white,inner sep=1pt] at (4.9,1) {выход RMT};
+  \draw[thick,black!70] (1.4,-1.5) -- (5.8,-1.5) -- (5.8,-0.4) -- (6.6,-0.4);
+  % вариант без анализатора
+  \draw[thick,dashed,warn] (1.4,0) -- (2.6,0) -- (2.6,1);
+  \fill[accent] (2.6,1) circle (1.5pt);
+  \node[font=\sffamily\scriptsize,text=warn,anchor=west,align=left] at (2.9,0.3) {без анализатора:\\[-2pt] перемычка на \pin{5}};
+\end{circuitikz}
+\caption{Проверка выхода RMT: \pin{4} подключается к входу логического анализатора, земли
+объединяются. Пунктиром показана замена анализатору --- перемычка на вход PCNT из урока 31}
+\end{figure}
+
 \codecap{Две пары уровней: 100/200 и 300/400 мкс}
 \codeinput{l30_rmt_pulses}
 

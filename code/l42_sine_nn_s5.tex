@@ -1,0 +1,12 @@
+\begin{CodeVerbatim}
+\PY{c+c1}{// Шаг 5. ФРАГМЕНТ: loop() \PYZhy{}\PYZhy{} ответ сети управляет яркостью светодиода.}
+\PY{c+c1}{// В setup() добавьте: ledcAttach(LED\PYZus{}PIN, 5000, 8);  и вызов selfTest();}
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{loop}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{k+kt}{float}\PY{+w}{ }\PY{n}{x}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{2}\PY{+w}{ }\PY{o}{*}\PY{+w}{ }\PY{n}{PI}\PY{+w}{ }\PY{o}{*}\PY{+w}{ }\PY{p}{(}\PY{n}{millis}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{o}{\PYZpc{}}\PY{+w}{ }\PY{l+m+mi}{4000}\PY{p}{)}\PY{+w}{ }\PY{o}{/}\PY{+w}{ }\PY{l+m+mf}{4000.0f}\PY{p}{;}\PY{+w}{   }\PY{c+c1}{// один оборот за 4 секунды}
+\PY{+w}{  }\PY{k+kt}{float}\PY{+w}{ }\PY{n}{y}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{predictSin}\PY{p}{(}\PY{n}{x}\PY{p}{)}\PY{p}{;}\PY{+w}{                          }\PY{c+c1}{// от \PYZhy{}1 до +1}
+\PY{+w}{  }\PY{k+kt}{int}\PY{+w}{ }\PY{n}{duty}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{constrain}\PY{p}{(}\PY{p}{(}\PY{k+kt}{int}\PY{p}{)}\PY{p}{(}\PY{p}{(}\PY{n}{y}\PY{+w}{ }\PY{o}{+}\PY{+w}{ }\PY{l+m+mi}{1}\PY{p}{)}\PY{+w}{ }\PY{o}{*}\PY{+w}{ }\PY{l+m+mf}{127.5f}\PY{p}{)}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{255}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{ledcWrite}\PY{p}{(}\PY{n}{LED\PYZus{}PIN}\PY{p}{,}\PY{+w}{ }\PY{n}{duty}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{Serial}\PY{p}{.}\PY{n}{printf}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{x:\PYZpc{}.2f y:\PYZpc{}.3f}\PY{l+s+se}{\PYZbs{}n}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{n}{x}\PY{p}{,}\PY{+w}{ }\PY{n}{y}\PY{p}{)}\PY{p}{;}\PY{+w}{           }\PY{c+c1}{// формат Serial Plotter}
+\PY{+w}{  }\PY{n}{delay}\PY{p}{(}\PY{l+m+mi}{20}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+\end{CodeVerbatim}

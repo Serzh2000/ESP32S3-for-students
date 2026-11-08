@@ -1,0 +1,48 @@
+\begin{CodeVerbatim}
+\PY{c+c1}{// Шаг 1. Pad «вперёд/назад»: мотор едет, пока кнопка нажата. Скорость пока фиксированная, 40 \PYZpc{}.}
+\PY{c+cp}{\PYZsh{}}\PY{c+cp}{include}\PY{+w}{ }\PY{c+cpf}{\PYZlt{}WiFi.h\PYZgt{}}
+\PY{c+cp}{\PYZsh{}}\PY{c+cp}{include}\PY{+w}{ }\PY{c+cpf}{\PYZlt{}ESPUI.h\PYZgt{}}
+\PY{c+cp}{\PYZsh{}}\PY{c+cp}{include}\PY{+w}{ }\PY{c+cpf}{\PYZlt{}atomic\PYZgt{}}
+
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{int}\PY{+w}{ }\PY{n}{IN1\PYZus{}PIN}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{15}\PY{p}{;}
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{int}\PY{+w}{ }\PY{n}{IN2\PYZus{}PIN}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{16}\PY{p}{;}
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{int}\PY{+w}{ }\PY{n}{PWM\PYZus{}PIN}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{7}\PY{p}{;}
+
+\PY{n}{std}\PY{o}{:}\PY{o}{:}\PY{n}{atomic}\PY{o}{\PYZlt{}}\PY{k+kt}{int}\PY{o}{\PYZgt{}}\PY{+w}{ }\PY{n}{direction}\PY{p}{\PYZob{}}\PY{l+m+mi}{0}\PY{p}{\PYZcb{}}\PY{p}{;}\PY{+w}{            }\PY{c+c1}{// \PYZhy{}1 назад, 0 стоп, +1 вперёд}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{motor}\PY{p}{(}\PY{k+kt}{int}\PY{+w}{ }\PY{n}{speed}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{                   }\PY{c+c1}{// \PYZhy{}255..255, как в листинге урока}
+\PY{+w}{  }\PY{n}{speed}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{constrain}\PY{p}{(}\PY{n}{speed}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{\PYZhy{}255}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{255}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{digitalWrite}\PY{p}{(}\PY{n}{IN1\PYZus{}PIN}\PY{p}{,}\PY{+w}{ }\PY{n}{speed}\PY{+w}{ }\PY{o}{\PYZgt{}}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{digitalWrite}\PY{p}{(}\PY{n}{IN2\PYZus{}PIN}\PY{p}{,}\PY{+w}{ }\PY{n}{speed}\PY{+w}{ }\PY{o}{\PYZlt{}}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{ledcWrite}\PY{p}{(}\PY{n}{PWM\PYZus{}PIN}\PY{p}{,}\PY{+w}{ }\PY{n}{abs}\PY{p}{(}\PY{n}{speed}\PY{p}{)}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{padCallback}\PY{p}{(}\PY{n}{Control}\PY{o}{*}\PY{p}{,}\PY{+w}{ }\PY{k+kt}{int}\PY{+w}{ }\PY{n}{event}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{   }\PY{c+c1}{// обработчик только запоминает желание}
+\PY{+w}{  }\PY{k}{switch}\PY{+w}{ }\PY{p}{(}\PY{n}{event}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{    }\PY{k}{case}\PY{+w}{ }\PY{n+no}{P\PYZus{}FOR\PYZus{}DOWN}\PY{p}{:}\PY{+w}{  }\PY{n}{direction}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{1}\PY{p}{;}\PY{+w}{  }\PY{k}{break}\PY{p}{;}
+\PY{+w}{    }\PY{k}{case}\PY{+w}{ }\PY{n+no}{P\PYZus{}BACK\PYZus{}DOWN}\PY{p}{:}\PY{+w}{ }\PY{n}{direction}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{\PYZhy{}1}\PY{p}{;}\PY{+w}{ }\PY{k}{break}\PY{p}{;}
+\PY{+w}{    }\PY{k}{case}\PY{+w}{ }\PY{n+no}{P\PYZus{}FOR\PYZus{}UP}\PY{p}{:}\PY{+w}{                        }\PY{c+c1}{// отпускание кнопки = остановка}
+\PY{+w}{    }\PY{k}{case}\PY{+w}{ }\PY{n+no}{P\PYZus{}BACK\PYZus{}UP}\PY{p}{:}
+\PY{+w}{    }\PY{k}{case}\PY{+w}{ }\PY{n+no}{P\PYZus{}CENTER\PYZus{}DOWN}\PY{p}{:}\PY{+w}{ }\PY{n}{direction}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}\PY{+w}{ }\PY{k}{break}\PY{p}{;}
+\PY{+w}{  }\PY{p}{\PYZcb{}}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{setup}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{n}{Serial}\PY{p}{.}\PY{n}{begin}\PY{p}{(}\PY{l+m+mi}{115200}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{pinMode}\PY{p}{(}\PY{n}{IN1\PYZus{}PIN}\PY{p}{,}\PY{+w}{ }\PY{n}{OUTPUT}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{pinMode}\PY{p}{(}\PY{n}{IN2\PYZus{}PIN}\PY{p}{,}\PY{+w}{ }\PY{n}{OUTPUT}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{o}{!}\PY{n}{ledcAttach}\PY{p}{(}\PY{n}{PWM\PYZus{}PIN}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{20000}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{8}\PY{p}{)}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{ }\PY{n}{Serial}\PY{p}{.}\PY{n}{println}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{PWM init failed}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{;}\PY{+w}{ }\PY{k}{return}\PY{p}{;}\PY{+w}{ }\PY{p}{\PYZcb{}}
+\PY{+w}{  }\PY{n}{motor}\PY{p}{(}\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{WiFi}\PY{p}{.}\PY{n}{mode}\PY{p}{(}\PY{n}{WIFI\PYZus{}AP}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{o}{!}\PY{n}{WiFi}\PY{p}{.}\PY{n}{softAP}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{S3\PYZhy{}Motor}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{lesson\PYZhy{}39\PYZhy{}demo}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{ }\PY{n}{Serial}\PY{p}{.}\PY{n}{println}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{AP failed}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{;}\PY{+w}{ }\PY{k}{return}\PY{p}{;}\PY{+w}{ }\PY{p}{\PYZcb{}}
+
+\PY{+w}{  }\PY{n}{ESPUI}\PY{p}{.}\PY{n}{pad}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{Вперёд / назад (держите)}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{n}{padCallback}\PY{p}{,}\PY{+w}{ }\PY{n}{ControlColor}\PY{o}{:}\PY{o}{:}\PY{n}{Carrot}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{ESPUI}\PY{p}{.}\PY{n}{begin}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{ESP32\PYZhy{}S3 motor}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{Serial}\PY{p}{.}\PY{n}{println}\PY{p}{(}\PY{n}{WiFi}\PY{p}{.}\PY{n}{softAPIP}\PY{p}{(}\PY{p}{)}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{loop}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{n}{motor}\PY{p}{(}\PY{n}{direction}\PY{+w}{ }\PY{o}{*}\PY{+w}{ }\PY{l+m+mi}{40}\PY{+w}{ }\PY{o}{*}\PY{+w}{ }\PY{l+m+mi}{255}\PY{+w}{ }\PY{o}{/}\PY{+w}{ }\PY{l+m+mi}{100}\PY{p}{)}\PY{p}{;}\PY{+w}{      }\PY{c+c1}{// мотором управляет только loop()}
+\PY{+w}{  }\PY{n}{delay}\PY{p}{(}\PY{l+m+mi}{5}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+\end{CodeVerbatim}

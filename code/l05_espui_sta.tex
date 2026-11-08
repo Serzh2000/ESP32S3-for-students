@@ -1,0 +1,55 @@
+\begin{CodeVerbatim}
+\PY{c+c1}{// Шаг 4. Та же лампа, но плата входит в вашу Wi\PYZhy{}Fi\PYZhy{}сеть; не получилось — раздаёт свою.}
+\PY{c+cp}{\PYZsh{}}\PY{c+cp}{include}\PY{+w}{ }\PY{c+cpf}{\PYZlt{}WiFi.h\PYZgt{}}
+\PY{c+cp}{\PYZsh{}}\PY{c+cp}{include}\PY{+w}{ }\PY{c+cpf}{\PYZlt{}ESPUI.h\PYZgt{}}
+\PY{c+cp}{\PYZsh{}}\PY{c+cp}{include}\PY{+w}{ }\PY{c+cpf}{\PYZlt{}atomic\PYZgt{}}
+
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{char}\PY{o}{*}\PY{+w}{ }\PY{n}{SSID}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{ИМЯ\PYZus{}СЕТИ}\PY{l+s}{\PYZdq{}}\PY{p}{;}\PY{+w}{            }\PY{c+c1}{// впишите свою сеть 2.4 ГГц}
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{char}\PY{o}{*}\PY{+w}{ }\PY{n}{PASS}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{ПАРОЛЬ}\PY{l+s}{\PYZdq{}}\PY{p}{;}
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{int}\PY{+w}{ }\PY{n}{LED\PYZus{}PIN}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{4}\PY{p}{;}
+
+\PY{n}{std}\PY{o}{:}\PY{o}{:}\PY{n}{atomic}\PY{o}{\PYZlt{}}\PY{k+kt}{bool}\PY{o}{\PYZgt{}}\PY{+w}{ }\PY{n}{ledOn}\PY{p}{\PYZob{}}\PY{n+nb}{false}\PY{p}{\PYZcb{}}\PY{p}{;}
+\PY{n}{std}\PY{o}{:}\PY{o}{:}\PY{n}{atomic}\PY{o}{\PYZlt{}}\PY{k+kt}{int}\PY{o}{\PYZgt{}}\PY{+w}{ }\PY{n}{level}\PY{p}{\PYZob{}}\PY{l+m+mi}{50}\PY{p}{\PYZcb{}}\PY{p}{;}
+\PY{k+kt}{uint16\PYZus{}t}\PY{+w}{ }\PY{n}{signalLabel}\PY{p}{;}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{switchCallback}\PY{p}{(}\PY{n}{Control}\PY{o}{*}\PY{+w}{ }\PY{n}{sender}\PY{p}{,}\PY{+w}{ }\PY{k+kt}{int}\PY{+w}{ }\PY{n}{event}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{n}{ledOn}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{p}{(}\PY{n}{event}\PY{+w}{ }\PY{o}{=}\PY{o}{=}\PY{+w}{ }\PY{n}{S\PYZus{}ACTIVE}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{sliderCallback}\PY{p}{(}\PY{n}{Control}\PY{o}{*}\PY{+w}{ }\PY{n}{sender}\PY{p}{,}\PY{+w}{ }\PY{k+kt}{int}\PY{+w}{ }\PY{n}{event}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{n}{level}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{constrain}\PY{p}{(}\PY{n}{sender}\PY{o}{\PYZhy{}}\PY{o}{\PYZgt{}}\PY{n}{value}\PY{p}{.}\PY{n}{toInt}\PY{p}{(}\PY{p}{)}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{100}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{bool}\PY{+w}{ }\PY{n+nf}{connectToRouter}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{n}{WiFi}\PY{p}{.}\PY{n}{mode}\PY{p}{(}\PY{n}{WIFI\PYZus{}STA}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{WiFi}\PY{p}{.}\PY{n}{begin}\PY{p}{(}\PY{n}{SSID}\PY{p}{,}\PY{+w}{ }\PY{n}{PASS}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{k+kt}{uint32\PYZus{}t}\PY{+w}{ }\PY{n}{start}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{millis}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{k}{while}\PY{+w}{ }\PY{p}{(}\PY{n}{WiFi}\PY{p}{.}\PY{n}{status}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{o}{!}\PY{o}{=}\PY{+w}{ }\PY{n}{WL\PYZus{}CONNECTED}\PY{+w}{ }\PY{o}{\PYZam{}}\PY{o}{\PYZam{}}\PY{+w}{ }\PY{n}{millis}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{o}{\PYZhy{}}\PY{+w}{ }\PY{n}{start}\PY{+w}{ }\PY{o}{\PYZlt{}}\PY{+w}{ }\PY{l+m+mi}{15000}\PY{p}{)}\PY{+w}{ }\PY{n}{delay}\PY{p}{(}\PY{l+m+mi}{250}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{k}{return}\PY{+w}{ }\PY{n}{WiFi}\PY{p}{.}\PY{n}{status}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{o}{=}\PY{o}{=}\PY{+w}{ }\PY{n}{WL\PYZus{}CONNECTED}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{setup}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{n}{Serial}\PY{p}{.}\PY{n}{begin}\PY{p}{(}\PY{l+m+mi}{115200}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{ledcAttach}\PY{p}{(}\PY{n}{LED\PYZus{}PIN}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{5000}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{8}\PY{p}{)}\PY{p}{;}
+
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{connectToRouter}\PY{p}{(}\PY{p}{)}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{    }\PY{n}{Serial}\PY{p}{.}\PY{n}{println}\PY{p}{(}\PY{n}{WiFi}\PY{p}{.}\PY{n}{localIP}\PY{p}{(}\PY{p}{)}\PY{p}{)}\PY{p}{;}\PY{+w}{       }\PY{c+c1}{// адрес для браузера в той же сети}
+\PY{+w}{  }\PY{p}{\PYZcb{}}\PY{+w}{ }\PY{k}{else}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{    }\PY{n}{WiFi}\PY{p}{.}\PY{n}{mode}\PY{p}{(}\PY{n}{WIFI\PYZus{}AP}\PY{p}{)}\PY{p}{;}\PY{+w}{                   }\PY{c+c1}{// запасной вариант: своя сеть}
+\PY{+w}{    }\PY{n}{WiFi}\PY{p}{.}\PY{n}{softAP}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{S3\PYZhy{}Panel}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{lesson\PYZhy{}05\PYZhy{}demo}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{;}
+\PY{+w}{    }\PY{n}{Serial}\PY{p}{.}\PY{n}{println}\PY{p}{(}\PY{n}{WiFi}\PY{p}{.}\PY{n}{softAPIP}\PY{p}{(}\PY{p}{)}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{p}{\PYZcb{}}
+
+\PY{+w}{  }\PY{n}{ESPUI}\PY{p}{.}\PY{n}{sliderContinuous}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n+nb}{false}\PY{p}{;}
+\PY{+w}{  }\PY{n}{ESPUI}\PY{p}{.}\PY{n}{switcher}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{Светодиод}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{n}{switchCallback}\PY{p}{,}\PY{+w}{ }\PY{n}{ControlColor}\PY{o}{:}\PY{o}{:}\PY{n}{Emerald}\PY{p}{,}\PY{+w}{ }\PY{n+nb}{false}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{ESPUI}\PY{p}{.}\PY{n}{slider}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{Яркость, \PYZpc{}}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{n}{sliderCallback}\PY{p}{,}\PY{+w}{ }\PY{n}{ControlColor}\PY{o}{:}\PY{o}{:}\PY{n}{Peterriver}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{50}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{100}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{signalLabel}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{ESPUI}\PY{p}{.}\PY{n}{label}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{Уровень сигнала, дБм}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{n}{ControlColor}\PY{o}{:}\PY{o}{:}\PY{n}{Turquoise}\PY{p}{,}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{—}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{ESPUI}\PY{p}{.}\PY{n}{begin}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{Лампа}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{loop}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{n}{ledcWrite}\PY{p}{(}\PY{n}{LED\PYZus{}PIN}\PY{p}{,}\PY{+w}{ }\PY{n}{ledOn}\PY{+w}{ }\PY{o}{?}\PY{+w}{ }\PY{n}{level}\PY{+w}{ }\PY{o}{*}\PY{+w}{ }\PY{l+m+mi}{255}\PY{+w}{ }\PY{o}{/}\PY{+w}{ }\PY{l+m+mi}{100}\PY{+w}{ }\PY{o}{:}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{WiFi}\PY{p}{.}\PY{n}{getMode}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{o}{=}\PY{o}{=}\PY{+w}{ }\PY{n}{WIFI\PYZus{}STA}\PY{p}{)}\PY{+w}{ }\PY{n}{ESPUI}\PY{p}{.}\PY{n}{updateLabel}\PY{p}{(}\PY{n}{signalLabel}\PY{p}{,}\PY{+w}{ }\PY{n}{String}\PY{p}{(}\PY{n}{WiFi}\PY{p}{.}\PY{n}{RSSI}\PY{p}{(}\PY{p}{)}\PY{p}{)}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{delay}\PY{p}{(}\PY{l+m+mi}{200}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+\end{CodeVerbatim}

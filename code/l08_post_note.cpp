@@ -1,10 +1,6 @@
 // Записка для платы: форма отправляет текст методом POST
 #include <WiFi.h>
 #include <WebServer.h>
-#include <ESPmDNS.h>
-
-const char* SSID = "MyNetwork";
-const char* PASS = "MyPassword";
 
 WebServer server(80);
 String note = "(записок пока нет)";          // последняя полученная записка
@@ -28,20 +24,7 @@ void handleNote() {                          // POST /note -- принять з�
 
 void setup() {
   Serial.begin(115200);
-  WiFi.mode(WIFI_STA);
-  WiFi.begin(SSID, PASS);
-  const uint32_t started = millis();
-  while (WiFi.status() != WL_CONNECTED && millis() - started < 15000) {
-    delay(300); Serial.print(".");
-  }
-  if (WiFi.status() != WL_CONNECTED) {
-    Serial.println("\nWi-Fi: проверьте сеть и перезапустите плату");
-    return;
-  }
-  Serial.printf("\nОткрой http://%s или http://esp32.local\n",
-                WiFi.localIP().toString().c_str());
-  MDNS.begin("esp32");
-
+  WiFi.softAP("S3-Web", "lesson-44-demo");
   server.on("/", HTTP_GET, handleRoot);
   server.on("/note", HTTP_POST, handleNote); // этот адрес принимает только POST
   server.begin();

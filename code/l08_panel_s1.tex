@@ -1,0 +1,38 @@
+\begin{CodeVerbatim}
+\PY{c+c1}{// Панель, шаг 1: только «серверная» часть. Откройте /api в браузере \PYZhy{}\PYZhy{} увидите состояние в формате JSON.}
+\PY{c+cp}{\PYZsh{}}\PY{c+cp}{include}\PY{+w}{ }\PY{c+cpf}{\PYZlt{}WiFi.h\PYZgt{}}
+\PY{c+cp}{\PYZsh{}}\PY{c+cp}{include}\PY{+w}{ }\PY{c+cpf}{\PYZlt{}WebServer.h\PYZgt{}}
+
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{int}\PY{+w}{ }\PY{n}{LED\PYZus{}PIN}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{4}\PY{p}{;}
+\PY{n}{WebServer}\PY{+w}{ }\PY{n+nf}{server}\PY{p}{(}\PY{l+m+mi}{80}\PY{p}{)}\PY{p}{;}
+\PY{k+kt}{bool}\PY{+w}{ }\PY{n}{ledOn}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n+nb}{false}\PY{p}{;}
+\PY{k+kt}{int}\PY{+w}{ }\PY{n}{level}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{50}\PY{p}{;}\PY{+w}{                              }\PY{c+c1}{// яркость, \PYZpc{}}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{applyLed}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{ }\PY{n}{ledcWrite}\PY{p}{(}\PY{n}{LED\PYZus{}PIN}\PY{p}{,}\PY{+w}{ }\PY{n}{ledOn}\PY{+w}{ }\PY{o}{?}\PY{+w}{ }\PY{n}{level}\PY{+w}{ }\PY{o}{*}\PY{+w}{ }\PY{l+m+mi}{255}\PY{+w}{ }\PY{o}{/}\PY{+w}{ }\PY{l+m+mi}{100}\PY{+w}{ }\PY{o}{:}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{;}\PY{+w}{ }\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{handleApi}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{server}\PY{p}{.}\PY{n}{method}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{o}{=}\PY{o}{=}\PY{+w}{ }\PY{n}{HTTP\PYZus{}POST}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{        }\PY{c+c1}{// POST \PYZhy{}\PYZhy{} команда изменить состояние}
+\PY{+w}{    }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{server}\PY{p}{.}\PY{n}{hasArg}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{toggle}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{)}\PY{+w}{ }\PY{n}{ledOn}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{o}{!}\PY{n}{ledOn}\PY{p}{;}
+\PY{+w}{    }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{server}\PY{p}{.}\PY{n}{hasArg}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{level}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{      }\PY{n}{level}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{constrain}\PY{p}{(}\PY{n}{server}\PY{p}{.}\PY{n}{arg}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{level}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{.}\PY{n}{toInt}\PY{p}{(}\PY{p}{)}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{100}\PY{p}{)}\PY{p}{;}
+\PY{+w}{      }\PY{n}{ledOn}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n+nb}{true}\PY{p}{;}
+\PY{+w}{    }\PY{p}{\PYZcb{}}
+\PY{+w}{    }\PY{n}{applyLed}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{p}{\PYZcb{}}
+\PY{+w}{  }\PY{c+c1}{// и на GET, и на POST отвечаем текущим состоянием в формате JSON}
+\PY{+w}{  }\PY{n}{String}\PY{+w}{ }\PY{n}{json}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{String}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{\PYZob{}}\PY{l+s+se}{\PYZbs{}\PYZdq{}}\PY{l+s}{on}\PY{l+s+se}{\PYZbs{}\PYZdq{}}\PY{l+s}{:}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{+w}{ }\PY{o}{+}\PY{+w}{ }\PY{p}{(}\PY{n}{ledOn}\PY{+w}{ }\PY{o}{?}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{true}\PY{l+s}{\PYZdq{}}\PY{+w}{ }\PY{o}{:}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{false}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{+w}{ }\PY{o}{+}
+\PY{+w}{                }\PY{l+s}{\PYZdq{}}\PY{l+s}{,}\PY{l+s+se}{\PYZbs{}\PYZdq{}}\PY{l+s}{level}\PY{l+s+se}{\PYZbs{}\PYZdq{}}\PY{l+s}{:}\PY{l+s}{\PYZdq{}}\PY{+w}{ }\PY{o}{+}\PY{+w}{ }\PY{n}{level}\PY{+w}{ }\PY{o}{+}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{\PYZcb{}}\PY{l+s}{\PYZdq{}}\PY{p}{;}
+\PY{+w}{  }\PY{n}{server}\PY{p}{.}\PY{n}{send}\PY{p}{(}\PY{l+m+mi}{200}\PY{p}{,}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{application/json}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{n}{json}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{setup}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{n}{ledcAttach}\PY{p}{(}\PY{n}{LED\PYZus{}PIN}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{5000}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{8}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{WiFi}\PY{p}{.}\PY{n}{softAP}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{S3\PYZhy{}Web}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{lesson\PYZhy{}44\PYZhy{}demo}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{server}\PY{p}{.}\PY{n}{on}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{/api}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{n}{handleApi}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{server}\PY{p}{.}\PY{n}{begin}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{loop}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{n}{server}\PY{p}{.}\PY{n}{handleClient}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+\end{CodeVerbatim}

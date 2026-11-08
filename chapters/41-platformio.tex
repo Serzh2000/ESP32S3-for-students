@@ -1,0 +1,410 @@
+% =====================================================================
+\section{PlatformIO: профессиональная сборка проекта}\label{les:pio}
+% =====================================================================
+\lessonintro
+  {собрать, прошить и проверить проект из нескольких файлов в PlatformIO и понимать, что записано в \code{platformio.ini}}
+  {урок 0 (прошивка), урок 14 (диагностика), урок 28 (классы и файлы, Git), урок 35 (отладка)}
+  {проект «кнопка и светодиод» с библиотекой, тестами на компьютере и отдельной сборкой для отладки}
+  {компьютер с VS Code и доступом в интернет; плата, кнопка и светодиод из урока 28; ESP-IDF не нужна}
+
+\subsection{Сначала: чего не хватает Arduino IDE}
+
+Arduino IDE создана для первых шагов: открыл скетч, нажал «Загрузить». Пока в проекте один файл
+и две библиотеки, этого достаточно. Когда проект вырастает до десятка файлов, а над ним работают
+несколько человек, начинают мешать мелочи: нет записи, \emph{какие именно} версии библиотек и ядра
+использовались; чтобы собрать проект на другом компьютере, нужно вручную повторить десяток
+действий в менеджере плат; нельзя одним файлом описать две сборки (рабочую и отладочную);
+нельзя автоматически прогнать проверки перед отправкой в Git.
+
+PlatformIO решает эти задачи так: \emph{весь проект описан одним текстовым файлом}
+\code{platformio.ini}. Достаточно скопировать папку проекта на новый компьютер и выполнить сборку:
+PlatformIO сам скачает нужные платформу, компилятор, ядро Arduino и библиотеки нужных версий.
+
+\begin{center}\small
+\begin{tabularx}{\textwidth}{@{}l X X@{}}
+\toprule
+ & Arduino IDE & PlatformIO \\
+\midrule
+Описание проекта & выбор в меню, хранится в настройках программы & текстовый файл \code{platformio.ini} внутри проекта \\
+Версии библиотек & «последняя установленная» & записаны в проекте, можно закрепить \\
+Несколько сборок & переключать платы и параметры вручную & несколько разделов \code{[env:\dots]} \\
+Структура & папка скетча с вкладками & \code{src/}, \code{include/}, \code{lib/}, \code{test/} \\
+Тесты и проверка кода & нет & \code{pio test}, \code{pio check} \\
+Отладка & ограниченно & пошагово, через встроенный USB-JTAG \\
+Автоматическая проверка в Git & сложно & одна команда \code{pio run} в CI \\
+Порог входа & очень низкий & выше: нужно понимать структуру проекта \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+Это не «лучшая» и «худшая» программа, а два инструмента для разных задач. Для уроков 0--27
+Arduino IDE удобнее; для итогового проекта и командной работы PlatformIO выгоднее.
+
+\subsection{Установка}
+
+Есть два способа, и они ставят один и тот же PlatformIO Core:
+\begin{enumerate}
+  \item \textbf{Расширение для VS Code.} Установите редактор Visual Studio Code, откройте
+        вкладку расширений и найдите \textsf{PlatformIO IDE}. Первый запуск скачивает ядро
+        PlatformIO и занимает несколько минут: не закрывайте окно, пока внизу не появится
+        панель с кнопками.
+  \item \textbf{Командная строка.} Установите Python и выполните \code{pip install platformio}.
+        Появится команда \code{pio}. Так PlatformIO запускают на сервере и в автоматических проверках.
+\end{enumerate}
+Платы и компиляторы скачиваются по мере надобности при первой сборке и занимают
+порядка гигабайта. Подготовьте их заранее на всех компьютерах класса: скачивание во время занятия
+отнимает много времени.
+
+\begin{caution}
+\textbf{Версия ядра Arduino.} Эта книга написана для Arduino-ESP32 3.x. Официальная платформа
+\code{espressif32} в PlatformIO долго оставалась на ядре 2.x, а в нём иначе устроены некоторые
+функции (например, \code{ledcAttach} из урока 4 появилась именно в 3.x). Чтобы собирать примеры
+книги без правок, используйте платформу сообщества \textbf{pioarduino}: вместо имени
+\code{espressif32} в поле \code{platform} указывается адрес её архива (см. пример ниже).
+Какой вариант актуален сегодня, проверьте в документации PlatformIO и pioarduino.
+\end{caution}
+
+\subsection{Из чего состоит проект}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[font=\sffamily\scriptsize,
+  f/.style={blk,fill=blkmem,minimum width=29mm,minimum height=13mm,align=center}]
+  \node[f,fill=blkper] (ini) at (0,0) {\textbf{platformio.ini}\\ плата, ядро,\\ библиотеки, флаги};
+  \node[f] (pkg) at (4.4,0) {\textbf{Менеджер пакетов}\\ платформа, компилятор,\\ ядро Arduino, библиотеки};
+  \node[f,fill=blkcpu] (bld) at (8.8,0) {\textbf{Сборка}\\ \code{src/}, \code{lib/},\\ \code{include/}};
+  \node[f,fill=blkrf] (brd) at (13.2,0) {\textbf{Плата}\\ запись, монитор,\\ отладка};
+  \node[f,fill=white,dashed] (tst) at (8.8,-2.1) {\textbf{Тесты и проверка}\\ \code{pio test},\\ \code{pio check}};
+  \draw[arr] (ini) -- (pkg);
+  \draw[arr] (pkg) -- (bld);
+  \draw[arr] (bld) -- (brd);
+  \draw[arr] (bld) -- (tst);
+\end{tikzpicture}
+\caption{Путь проекта в PlatformIO: всё начинается с файла настроек, остальное делают команды}
+\end{figure}
+
+Папка проекта выглядит так (в скобках указано, что попадает в Git):
+
+\begin{Verbatim}[fontsize=\small,bgcolor=codebg]
+lamp/
+├── platformio.ini        настройки проекта (в Git)
+├── src/
+│   └── main.cpp          основная программа вместо .ino (в Git)
+├── include/
+│   └── config.h          общие заголовочные файлы: выводы, пороги (в Git)
+├── lib/
+│   └── Debounce/         собственные библиотеки проекта (в Git)
+│       ├── library.json
+│       └── src/Debounce.h, Debounce.cpp
+├── test/
+│   └── test_debounce/    модульные тесты (в Git)
+└── .pio/                 результат сборки и скачанные пакеты (НЕ в Git)
+\end{Verbatim}
+
+Всё, что лежит в \code{.pio/}, PlatformIO создаёт сам и может создать заново. Там же находятся
+готовая прошивка \code{.pio/build/<окружение>/firmware.bin} и файл \code{firmware.elf}, который
+понадобится для разбора сбоев (урок 14) и отладки (урок 35). Папку \code{.pio} добавляют
+в \code{.gitignore}.
+
+\subsection{Файл platformio.ini: разбор по строкам}
+
+Файл состоит из разделов в квадратных скобках и пар «ключ = значение». Раздел
+\code{[env:имя]} описывает одну сборку (окружение); имя придумываете вы.
+
+\begin{Verbatim}[fontsize=\footnotesize,bgcolor=codebg]
+[platformio]
+default_envs = esp32s3                 ; что собирать, если окружение не указано
+
+[env:esp32s3]
+platform = https://github.com/pioarduino/platform-espressif32/releases/download/stable/platform-espressif32.zip
+board = esp32-s3-devkitc-1             ; плата из списка: pio boards esp32-s3
+framework = arduino                    ; Arduino-совместимые функции (setup, loop)
+monitor_speed = 115200                 ; скорость монитора порта
+monitor_filters = esp32_exception_decoder, time
+build_flags =
+    -Wall                              ; показывать больше предупреждений
+    -DCORE_DEBUG_LEVEL=1               ; уровень сообщений ядра (как в меню Arduino IDE)
+lib_deps =
+    adafruit/Adafruit SSD1306 @ ^2.5.0 ; библиотека и допустимые версии
+    bblanchon/ArduinoJson @ ^7.0.0
+\end{Verbatim}
+
+\begin{center}\small
+\begin{tabularx}{\textwidth}{@{}l X@{}}
+\toprule
+Ключ & Что означает \\
+\midrule
+\code{platform} & набор «платы, компилятор, ядро»: для ESP32 --- \code{espressif32} или pioarduino \\
+\code{board} & конкретная плата; от неё зависят размер Flash, частота, схема выводов. Список: \code{pio boards esp32-s3} \\
+\code{framework} & \code{arduino} (эта книга) или \code{espidf} (урок 35) \\
+\code{monitor\_speed} & скорость порта; должна совпадать с \code{Serial.begin()} \\
+\code{monitor\_filters} & \code{esp32\_exception\_decoder} превращает адреса из Guru Meditation в имена функций и строки (урок 14); \code{time} добавляет время к строкам \\
+\code{build\_flags} & параметры компилятора; \code{-DИМЯ=значение} то же, что \code{\#define} в коде \\
+\code{lib\_deps} & библиотеки проекта; PlatformIO скачивает их сам \\
+\code{upload\_port}, \code{monitor\_port} & порт, если автоматический выбор ошибается: \code{COM5} или \code{/dev/ttyACM0} \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\subsubsection*{Версии библиотек}
+После имени библиотеки указывают версию. Запись \code{@ \textasciicircum 7.0.0} означает «любая версия 7.x.y, не ниже 7.0.0»;
+\code{@ \textasciitilde 7.0.4} --- «7.0.x, не ниже 7.0.4»; \code{@ 7.0.4} --- ровно эта версия.
+Для учебного проекта закрепляйте версию: тогда через год проект соберётся так же, как сегодня.
+Библиотеку можно взять и прямо из Git: \code{https://github.com/автор/проект.git\#v1.2.3}.
+
+\subsubsection*{Несколько окружений}
+Раздел \code{[env:\dots]} можно расширять другим: ключ \code{extends} копирует все настройки и позволяет
+изменить лишь нужные. Общие строки выносят в обычный раздел и подставляют как
+\code{\$\{common.build\_flags\}}. Так в одном файле живут рабочая сборка, отладочная и сборка
+для проверки на компьютере (пример в папке \code{examples/platformio-lamp}).
+
+\subsection{Первый проект}
+
+Откройте вкладку PlatformIO в VS Code, выберите \textsf{PIO Home} $\rightarrow$ \textsf{New Project},
+плату \textsf{Espressif ESP32-S3-DevKitC-1} и фреймворк \textsf{Arduino}. Или в командной строке:
+
+\begin{Verbatim}[fontsize=\small,bgcolor=codebg]
+pio project init --board esp32-s3-devkitc-1 --project-option "framework=arduino"
+\end{Verbatim}
+
+Схема подключения такая же, как в уроках 3 и 4: кнопка между \pin{5} и GND (подтяжка внутренняя,
+внешний резистор не нужен), светодиод на \pin{4} через резистор \SI{220}{\ohm}.
+
+\begin{figure}[H]
+\centering
+\begin{circuitikz}[scale=0.95,transform shape]
+  \node[blk,fill=blkcpu,minimum width=2.8cm,minimum height=3.8cm] at (0,0) {};
+  \node[font=\sffamily\small\bfseries] at (0,2.3) {ESP32-S3};
+  \foreach \y/\n in {1.2/{\pin{4}},0/{\pin{5}},-1.2/GND}
+    \node[font=\sffamily\scriptsize,anchor=east] at (1.4,\y) {\n};
+  \draw[thick,wyellow] (1.4,1.2) -- (2.4,1.2);
+  \draw[thick] (2.4,1.2) to[R,l=\SI{220}{\ohm}] (4.6,1.2) to[led,l=LED] (6.6,1.2) -- (7.4,1.2);
+  \draw[thick,wgreen] (1.4,0) -- (3.0,0);
+  \draw[thick] (3.0,0) to[push button,l=S1] (5.2,0);
+  \draw[thick,wblack] (5.2,0) -- (7.4,0);
+  \draw[thick,wblack] (1.4,-1.2) -- (7.4,-1.2) -- (7.4,1.2);
+  \fill[wblack] (7.4,0) circle (1.6pt);
+\end{circuitikz}
+\caption{Подключение примера \code{platformio-lamp}: кнопка \pin{5}--GND, светодиод \pin{4} через
+\SI{220}{\ohm} на GND}
+\end{figure}
+
+Положите в \code{src/main.cpp} программу кнопки и светодиода из урока 28. Её отличие от скетча
+в Arduino IDE --- всего две строки: подключается \code{Arduino.h}, а время для проверки
+дребезга передаётся в класс снаружи.
+
+\begin{Verbatim}[fontsize=\small,bgcolor=codebg]
+#include <Arduino.h>                   // в .ino эту строку добавляла сама среда
+#include <Debounce.h>                  // наша библиотека из папки lib/
+#include "config.h"                    // выводы и интервалы из папки include/
+
+Debounce button(DEBOUNCE_MS);
+bool ledOn = false;
+
+void setup() {
+  Serial.begin(115200);
+  pinMode(BUTTON_PIN, INPUT_PULLUP);
+  pinMode(LED_PIN, OUTPUT);
+}
+
+void loop() {
+  if (button.update(digitalRead(BUTTON_PIN), millis())) {
+    ledOn = !ledOn;
+    digitalWrite(LED_PIN, ledOn);
+    Serial.printf("lamp %s\n", ledOn ? "ON" : "OFF");
+  }
+}
+\end{Verbatim}
+
+\begin{tip}
+Полный проект лежит в папке \code{examples/platformio-lamp} репозитория книги. Откройте её как папку
+в VS Code: PlatformIO сам найдёт \code{platformio.ini}.
+\end{tip}
+
+\subsubsection*{Как перенести скетч из Arduino IDE}
+\begin{enumerate}
+  \item Переименуйте файл \code{.ino} в \code{src/main.cpp}.
+  \item Добавьте первой строкой \code{\#include <Arduino.h>}.
+  \item Среда Arduino сама дописывала объявления функций. В \code{.cpp} функцию нужно
+        объявить \emph{раньше}, чем вызвать: поставьте определения выше места использования
+        или добавьте прототипы вроде \code{void showTemp(float t);} в начало файла.
+  \item Библиотеки, которые раньше ставились через менеджер, впишите в \code{lib\_deps}.
+\end{enumerate}
+
+\subsection{Команды}
+
+Кнопки внизу окна VS Code (галочка --- сборка, стрелка --- запись, вилка --- монитор порта,
+колба --- тесты) запускают те же команды, что и терминал:
+
+\begin{center}\small
+\begin{tabularx}{\textwidth}{@{}l X@{}}
+\toprule
+Команда & Что делает \\
+\midrule
+\code{pio run} & собрать окружение по умолчанию \\
+\code{pio run -e esp32s3\_debug} & собрать указанное окружение \\
+\code{pio run -t upload} & собрать и записать в плату \\
+\code{pio run -t clean} & удалить результаты сборки (помогает при странных ошибках) \\
+\code{pio device list} & показать подключённые порты \\
+\code{pio device monitor} & монитор порта с фильтрами из \code{platformio.ini} \\
+\code{pio pkg install -l "имя"} & добавить библиотеку в проект \\
+\code{pio pkg update} & обновить пакеты в рамках разрешённых версий \\
+\code{pio test -e native} & запустить тесты на компьютере \\
+\code{pio check} & статический анализ: поиск подозрительных мест без запуска \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+Запись по USB работает так же, как в уроке 0: у DevKitC-1 два разъёма. Порт с пометкой UART
+(через преобразователь) проще всего; на порту USB программа может не получить \code{Serial} без
+флагов \code{-DARDUINO\_USB\_MODE=1 -DARDUINO\_USB\_CDC\_ON\_BOOT=1} в \code{build\_flags}.
+Если запись не начинается, удерживайте BOOT, нажмите и отпустите RESET, затем отпустите BOOT.
+
+\subsection{Свои библиотеки и папка include}
+
+Код, который нужен в нескольких проектах или должен проверяться отдельно, оформляют как
+библиотеку в \code{lib/<имя>/}. Минимум --- заголовок и файл с реализацией в подпапке \code{src}.
+Файл \code{library.json} с именем и версией необязателен, но полезен: в нём можно перечислить
+зависимости.
+
+Заголовки, общие для всего проекта (\code{config.h}), кладут в \code{include/}.
+Пароль сети и ключи --- в \code{include/secrets.h}, который внесён в \code{.gitignore}. В Git
+добавляют образец \code{secrets.example.h} с пустыми значениями: так напарник сразу видит,
+какие поля нужно заполнить (напоминание из урока 28).
+
+\subsection{Тесты без платы}
+
+Самое ценное новшество PlatformIO --- проверка логики программы на самом компьютере. Чтобы это
+работало, класс не должен напрямую вызывать \code{millis()} или \code{digitalRead()}: время и
+уровень ему передают снаружи, как в классе \code{Debounce}. Тогда тест подаёт в него
+придуманные последовательности и проверяет ответы.
+
+\begin{Verbatim}[fontsize=\small,bgcolor=codebg]
+void test_bounce_then_stable_press_gives_one_event() {
+  Debounce d(50);
+  const bool bounce[] = {false, true, false, true, false};   // дребезг в первые 5 мс
+  for (uint32_t t = 0; t < 5; ++t) TEST_ASSERT_FALSE(d.update(bounce[t], t));
+  TEST_ASSERT_FALSE(d.update(false, 53));    // ещё 49 мс -- рано
+  TEST_ASSERT_TRUE(d.update(false, 54));     // 50 мс устойчивого уровня: событие
+  TEST_ASSERT_FALSE(d.update(false, 60));    // оно не повторяется
+}
+\end{Verbatim}
+
+Тесты лежат в папке \code{test/}, а для запуска на компьютере в \code{platformio.ini} нужно окружение
+\code{[env:native]} с \code{platform = native} (на компьютере должен быть установлен компилятор
+C++, на Windows --- например, MinGW). Команда \code{pio test -e native} собирает и запускает все тесты и печатает
+итоговую таблицу. Те же тесты можно запустить на плате: \code{pio test -e esp32s3}.
+
+Проверять так стоит всё, что считает и решает: фильтры, конечные автоматы (урок 21), разбор команд,
+битовые операции (урок 22). Чтение датчиков и управление выводами тестируют уже на плате.
+
+\subsection{Отладка и работа по сети}
+
+\paragraph{Пошаговая отладка.} В уроке 35 мы запускали GDB вручную. В PlatformIO то же самое
+описывается тремя строками, а запускается кнопкой \textsf{Debug}:
+
+\begin{Verbatim}[fontsize=\small,bgcolor=codebg]
+[env:esp32s3_debug]
+extends = env:esp32s3
+build_type = debug                 ; без оптимизации, с отладочной информацией
+debug_tool = esp-builtin           ; встроенный USB-JTAG ESP32-S3
+debug_init_break = tbreak setup    ; остановиться в начале setup()
+\end{Verbatim}
+
+Плата подключается к порту USB (а не UART). В Windows для интерфейса JTAG может потребоваться
+отдельный драйвер; ищите инструкцию в документации Espressif по JTAG.
+
+\paragraph{Файлы LittleFS.} Положите файлы в папку \code{data/} рядом с \code{platformio.ini},
+добавьте строку \code{board\_build.filesystem = littlefs} и выполните
+\code{pio run -t uploadfs}: образ файловой системы (урок 18) запишется в плату отдельно от прошивки.
+
+\paragraph{Обновление по Wi-Fi.} Если в прошивке есть ArduinoOTA (урок 13), запись можно
+перенаправить в сеть: \code{upload\_protocol = espota}, \code{upload\_port = lamp.local}.
+Первый раз прошивку всё равно записывают по кабелю.
+
+\paragraph{Платы с PSRAM и большим Flash.} Для модулей вроде ESP32-S3-WROOM-1 N16R8 (урок 11)
+добавляют \code{board\_build.arduino.memory\_type = qio\_opi},
+\code{board\_upload.flash\_size = 16MB}, \code{board\_build.partitions = default\_16MB.csv} и
+флаг \code{-DBOARD\_HAS\_PSRAM}. Сочетание параметров зависит от конкретного модуля: сверяйтесь
+с его маркировкой. Ошибочный выбор приводит к циклической перезагрузке на запуске.
+
+\subsection{PlatformIO в автоматической проверке}
+
+Раз всё описано файлом, проверку сборки легко поручить серверу. Для GitHub достаточно
+такого шага (так же устроены проверки примеров этой книги):
+
+\begin{Verbatim}[fontsize=\small,bgcolor=codebg]
+- uses: actions/setup-python@v5
+  with: { python-version: '3.12' }
+- run: pip install platformio
+- run: pio test -e native          # быстрые тесты логики
+- run: pio run -e esp32s3          # проект собирается
+\end{Verbatim}
+
+Каждая правка в репозитории теперь проверяется без участия человека: сломанная сборка видна
+сразу, а не в день защиты проекта.
+
+\subsection{Самостоятельный опыт: проект с тестом}
+
+\begin{enumerate}
+  \item Создайте проект для платы ESP32-S3-DevKitC-1 и перенесите в него кнопку и светодиод из урока 28.
+  \item Вынесите класс подавления дребезга в \code{lib/Debounce} так, чтобы в нём не было вызовов Arduino.
+  \item Напишите тест, подающий последовательность с дребезгом, и запустите \code{pio test -e native}.
+        Затем сломайте программу (например, замените \code{>=} на \code{<}) и убедитесь, что тест это заметил.
+  \item Добавьте окружение \code{esp32s3\_debug}, остановитесь на входе в \code{setup()} и посмотрите значение переменной.
+  \item Сделайте коммит. В Git должны попасть \code{platformio.ini}, \code{src}, \code{include}, \code{lib}, \code{test},
+        но не \code{.pio}.
+\end{enumerate}
+
+\begin{trouble}
+\begin{itemize}[leftmargin=*]
+  \item \textbf{«Плата не найдена»} --- порт занят монитором другой программы, кабель только для зарядки
+        или выбран не тот разъём. Проверьте \code{pio device list}.
+  \item \textbf{«… was not declared in this scope»} после переноса скетча --- функция вызвана раньше
+        определения: добавьте прототипы или переставьте функции.
+  \item \textbf{Ошибка при загрузке пакетов} --- нет доступа к интернету или к GitHub; PlatformIO качает
+        платформу при первой сборке. Подготовьте пакеты заранее.
+  \item \textbf{Странные ошибки после правки настроек} --- выполните \code{pio run -t clean} и соберите заново.
+  \item \textbf{\code{Serial} молчит на порту USB} --- добавьте флаги \code{-DARDUINO\_USB\_MODE=1} и
+        \code{-DARDUINO\_USB\_CDC\_ON\_BOOT=1} или подключитесь к порту UART.
+  \item \textbf{Не собираются функции 3.x (например, \code{ledcAttach})} --- выбрана платформа с ядром 2.x;
+        используйте платформу pioarduino.
+  \item \textbf{\code{pio test -e native} не запускается} --- на компьютере нет компилятора C++ или в тестируемой
+        библиотеке остались вызовы Arduino.
+\end{itemize}
+\end{trouble}
+
+\begin{summary}
+\begin{itemize}[leftmargin=*]
+  \item Файл \code{platformio.ini} полностью описывает проект: плату, ядро, библиотеки и их версии.
+  \item Структура \code{src}, \code{include}, \code{lib}, \code{test} отделяет программу, общие заголовки,
+        библиотеки и проверки; папка \code{.pio} в Git не попадает.
+  \item Логику, не зависящую от платы, проверяют тестами на компьютере; вызовы \code{millis()} и
+        \code{digitalRead()} передают в неё снаружи.
+  \item Для книги нужно ядро Arduino-ESP32 3.x: смотрите, какую платформу вы указали.
+\end{itemize}
+\end{summary}
+
+\begin{selfcheck}
+\begin{enumerate}
+  \item Какие преимущества даёт хранение версий библиотек в \code{platformio.ini}?
+  \item Почему класс подавления дребезга не вызывает \code{millis()} сам и как это помогает тестам?
+  \item Какие папки проекта попадают в Git, а какие нет и почему?
+\end{enumerate}
+\end{selfcheck}
+
+\needspace{20\baselineskip}
+\begin{tasks}
+\begin{enumerate}
+\item \lv{1} Установите PlatformIO, соберите и прошейте программу мигания светодиода.
+\item \lv{1} Найдите в папке \code{.pio} файлы \code{firmware.bin} и \code{firmware.elf} и сравните их размеры.
+\item \lv{2} Добавьте библиотеку из \code{lib\_deps} с закреплённой версией и выведите на OLED показание потенциометра.
+\item \lv{2} Добавьте окружение \code{esp32s3\_debug}, поставьте точку останова в \code{loop()} и покажите значение переменной.
+\item \lv{3} Напишите тесты для своего фильтра усреднения и конечного автомата и запустите их командой \code{pio test -e native}.
+\item \lv{4} Настройте автоматическую сборку и тесты вашего проекта в GitHub Actions; покажите, как ломающая сборку правка отражается в проверке.
+\end{enumerate}
+\end{tasks}
+
+\paragraph{Документация для продолжения}\href{https://docs.platformio.org/en/latest/boards/espressif32/esp32-s3-devkitc-1.html}{Плата ESP32-S3-DevKitC-1 в PlatformIO},
+\href{https://docs.platformio.org/en/latest/projectconf/index.html}{описание platformio.ini},
+\href{https://github.com/pioarduino/platform-espressif32}{платформа pioarduino}.

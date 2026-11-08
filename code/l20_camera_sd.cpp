@@ -17,14 +17,10 @@ bool startCamera() {
   config.ledc_timer = LEDC_TIMER_0;
   config.pin_d0 = 11;  config.pin_d1 = 9;   config.pin_d2 = 8;   config.pin_d3 = 10;
   config.pin_d4 = 12;  config.pin_d5 = 18;  config.pin_d6 = 17;  config.pin_d7 = 16;
-  config.pin_xclk = 15;
-  config.pin_pclk = 13;
-  config.pin_vsync = 6;
-  config.pin_href = 7;
-  config.pin_sccb_sda = 4;
-  config.pin_sccb_scl = 5;
-  config.pin_pwdn = -1;
-  config.pin_reset = -1;
+  config.pin_xclk = 15;  config.pin_pclk = 13;
+  config.pin_vsync = 6;  config.pin_href = 7;
+  config.pin_sccb_sda = 4;  config.pin_sccb_scl = 5;
+  config.pin_pwdn = -1;  config.pin_reset = -1;
   config.xclk_freq_hz = 20000000;
   config.pixel_format = PIXFORMAT_JPEG;
   config.frame_size = FRAMESIZE_SVGA;     // 800x600: для фото чуть больше, чем для потока

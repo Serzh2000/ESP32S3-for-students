@@ -63,7 +63,7 @@
 \midrule
 \code{millis()} в \code{loop()} & мигание, опрос датчиков, тайм-ауты & точность зависит от скорости \code{loop()} \\
 Аппаратный таймер & строгий период: измерения, генерация сигнала & обработчик должен быть очень коротким \\
-Задача FreeRTOS с \code{vTaskDelay()} & долгая работа по расписанию (урок 7) & шаг времени --- 1 мс \\
+Задача FreeRTOS с \code{vTaskDelay()} & долгая работа по расписанию (урок 8) & шаг времени --- 1 мс \\
 \bottomrule
 \end{tabularx}
 \end{center}
@@ -94,8 +94,76 @@
 В программе состояние хранит одна переменная. Тип \code{enum class} даёт состояниям имена вместо
 загадочных чисел, а оператор \code{switch} для каждого состояния проверяет только его переходы.
 
-\codecap{Светофор с кнопкой пешехода как конечный автомат}
+Светодиоды подключены к \pin{4}, \pin{6} и \pin{7} через резисторы \SI{220}{\ohm}, а кнопка пешехода
+стоит между \pin{5} и GND: внешний резистор не нужен, включена внутренняя подтяжка.
+
+\begin{figure}[H]
+\centering
+\begin{circuitikz}[scale=0.95,transform shape]
+  \node[blk,fill=blkcpu,minimum width=2.4cm,minimum height=6.2cm] (m) at (0,0) {};
+  \node[font=\sffamily\small\bfseries] at (0,3.7) {ESP32-S3};
+  \foreach \y/\p/\c in {2.4/4/red, 1.2/6/yellow, 0/7/green}{
+    \node[font=\sffamily\scriptsize,anchor=east] at (1.2,\y) {\pin{\p}};
+    \draw[thick] (1.2,\y) to[R,l=\SI{220}{\ohm}] (4.2,\y) to[led,color=\c!70!black] (6.8,\y) -- (8.0,\y);
+  }
+  \node[font=\sffamily\scriptsize,anchor=east] at (1.2,-1.5) {\pin{5}};
+  \draw[thick,wgreen] (1.2,-1.5) -- (3.4,-1.5) to[push button,l=S1] (6.0,-1.5) -- (8.0,-1.5);
+  \node[font=\sffamily\scriptsize,anchor=east] at (1.2,-2.7) {GND};
+  \draw[thick,wblack] (1.2,-2.7) -- (8.0,-2.7);
+  \draw[thick,wblack] (8.0,2.4) -- (8.0,-2.7);
+  \node[font=\sffamily\scriptsize,anchor=west] at (8.2,2.4) {красный};
+  \node[font=\sffamily\scriptsize,anchor=west] at (8.2,1.2) {жёлтый};
+  \node[font=\sffamily\scriptsize,anchor=west] at (8.2,0) {зелёный};
+  \fill[wblack] (8.0,1.2) circle (1.6pt) (8.0,0) circle (1.6pt) (8.0,-1.5) circle (1.6pt);
+\end{circuitikz}
+\caption{Подключение светофора: три светодиода через резисторы \SI{220}{\ohm} и кнопка пешехода.
+Аноды светодиодов (длинные ножки) смотрят в сторону платы, катоды идут на общую землю}
+\end{figure}
+
+Соберём светофор по шагам.
+
+\subsubsection{Шаг 1. Три состояния по кругу}
+
+Начнём с самого простого: зелёный, жёлтый, красный сменяют друг друга по таймеру, кнопки пока нет. Состояние
+хранится в переменной \code{state}, а время входа в него --- в \code{enteredAt}.
+
+\codecap{Шаг 1. Светофор без кнопки}
+\codeinput{l21_fsm_s1}
+
+\begin{itemize}[leftmargin=*]
+  \item \code{enum class State} --- свой тип с понятными именами вместо чисел 0, 1, 2;
+  \item \code{enter(s)} --- единственное место, где меняется состояние: заодно запоминается время и переключаются светодиоды;
+  \item \code{switch (state)} в \code{loop()} --- для каждого состояния проверяем только его собственный переход.
+\end{itemize}
+
+\subsubsection{Шаг 2. Четвёртое состояние}
+
+На настоящем светофоре перед зелёным на секунду горят красный и жёлтый вместе. Это новое состояние
+\code{RED\_YELLOW}: чтобы добавить его, достаточно дописать имя в \code{enum}, условие в \code{enter()} и
+ещё одну ветку в \code{switch}.
+
+\codecap{Шаг 2. Состояние «красный + жёлтый»}
+\codeinput{l21_fsm_s2}
+
+\begin{itemize}[leftmargin=*]
+  \item в \code{enter()} красный и жёлтый теперь горят не только в «своих» состояниях, но и в \code{RED\_YELLOW};
+  \item из \code{RED} автомат переходит не сразу в зелёный, а через \code{RED\_YELLOW};
+  \item остальные ветки \code{switch} не изменились --- в этом сила автомата.
+\end{itemize}
+
+\subsubsection{Шаг 3. Кнопка пешехода}
+
+Теперь светофор должен реагировать на пешехода: зелёный держится, пока кнопку не нажали. Нажатие
+запоминается во флаге \code{request} и учитывается позже, когда автомат дойдёт до нужного состояния.
+
+\codecap{Шаг 3. Светофор с кнопкой пешехода как конечный автомат}
 \codeinput{l21_fsm}
+
+\begin{itemize}[leftmargin=*]
+  \item \code{digitalRead(BTN\_PIN) == LOW} --- кнопка нажата (подтяжка внутренняя, кнопка замыкает на GND);
+  \item \code{GREEN} переходит в \code{YELLOW} только при \code{request \&\& t > 5000}: зелёный горит не меньше пяти секунд;
+  \item когда пешеходы прошли, в состоянии \code{RED} флаг \code{request} сбрасывается.
+\end{itemize}
 
 Обратите внимание на три приёма. Состояние меняется только в функции \code{enter()}: там же
 запоминается время входа и переключаются светодиоды, поэтому забыть что-то одно невозможно. Нажатие

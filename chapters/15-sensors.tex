@@ -3,7 +3,7 @@
 % =====================================================================
 \lessonintro
   {подключать цифровые датчики температуры, влажности и расстояния и уметь читать описание (datasheet) незнакомого датчика}
-  {урок 3 (подтяжка), урок 5 (делитель напряжения), урок 7 (опрос по \code{millis()} без пауз)}
+  {урок 3 (подтяжка), урок 6 (делитель напряжения), урок 1 (опрос по \code{millis()} без пауз)}
   {плата измеряет температуру, влажность и расстояние и печатает результаты в Serial Monitor}
   {DS18B20 и резистор \SI{4.7}{k\ohm}; DHT22; HC-SR04 и резисторы \SI{1}{k\ohm} и \SI{2}{k\ohm}}
 
@@ -50,7 +50,7 @@
 
 DS18B20 --- маленький датчик температуры в корпусе, похожем на транзистор, или в герметичном щупе. Он
 использует шину \textbf{1-Wire}: один провод данных плюс питание и земля. Выход датчика
---- с открытым стоком, как у I\textsuperscript{2}C (урок 6), поэтому линию данных к питанию притягивает
+--- с открытым стоком, как у I\textsuperscript{2}C (урок 7), поэтому линию данных к питанию притягивает
 \emph{подтягивающий резистор} \SI{4.7}{k\ohm}. Без него шина не работает.
 
 У каждого DS18B20 есть уникальный 64-битный адрес, записанный на заводе. Поэтому несколько датчиков
@@ -102,6 +102,28 @@ DHT22 (AM2302) измеряет температуру и относительн
 слегка его нагревает. Поэтому опрашивать DHT22 чаще раза в \SI{2}{s} нельзя --- вы получите повтор
 старого значения или ошибку. В примере для этого стоит проверка по \code{millis()}, а не \code{delay()},
 как в уроке 1.
+
+\begin{figure}[H]
+\centering
+\begin{circuitikz}[scale=0.95,transform shape]
+  \node[blk,fill=blkcpu,minimum width=2.8cm,minimum height=4.6cm] (m) at (0,0) {};
+  \node[blk,fill=blkper,minimum width=2.8cm,minimum height=4.6cm] (d) at (8,0) {};
+  \node[font=\sffamily\small\bfseries] at (0,2.7) {ESP32-S3};
+  \node[font=\sffamily\small\bfseries,align=center] at (8,2.85) {DHT22\\[-2pt]\scriptsize 4 ножки, вид спереди};
+  \foreach \y/\n in {1.8/3V3,0.6/{\pin{15}},-1.8/GND}
+    \node[font=\sffamily\scriptsize,anchor=east] at (1.4,\y) {\n};
+  \foreach \y/\n in {1.8/{1~VCC},0.6/{2~DATA},-0.6/{3~NC},-1.8/{4~GND}}
+    \node[font=\sffamily\scriptsize,anchor=west] at (6.6,\y) {\n};
+  \draw[thick,wred]   (1.4,1.8)  -- (6.6,1.8);
+  \draw[thick,wgreen] (1.4,0.6)  -- (6.6,0.6);
+  \draw[thick,wblack] (1.4,-1.8) -- (6.6,-1.8);
+  \draw[thick,wred] (4,1.8) to[R,l=\SI{10}{k\ohm},-*] (4,0.6);
+  \fill[wred] (4,1.8) circle (1.6pt);
+  \node[font=\sffamily\scriptsize,text=wgreen!70!black] at (4,0.2) {линия данных};
+\end{circuitikz}
+\caption{Подключение DHT22 (датчик без платы): данные одним проводом на \pin{15}, подтяжка
+\SI{10}{k\ohm} к 3V3. В модуле с тремя контактами (VCC, DATA, GND) резистор уже установлен}
+\end{figure}
 
 \codecap{DHT22: температура и влажность раз в 2,5 секунды}
 \codeinput{l15_dht22}
@@ -166,17 +188,30 @@ $L \approx \SI{20}{cm}$.
 \begin{figure}[H]
 \centering
 \begin{circuitikz}[scale=0.95,transform shape]
-  \draw (0,0) node[left,font=\sffamily\small]{ECHO (\SI{5}{V})}
-    to[R,l=\SI{1}{k\ohm}] (3.6,0) to[short,-o] (6,0)
-    node[right,font=\sffamily\small]{\pin{21}};
-  \fill (3.6,0) circle (1.6pt);
-  \draw (3.6,0) to[R,l=\SI{2}{k\ohm}] (3.6,-2.4) node[ground]{};
-  \draw[->,>=Stealth,accent,thick] (5.2,-0.2) -- (5.2,-1.2);
-  \node[font=\sffamily\small,anchor=west,text=accent,align=left] at (5.3,-0.8)
+  \node[blk,fill=blkcpu,minimum width=2.8cm,minimum height=6.4cm] (m) at (0,0) {};
+  \node[blk,fill=blkper,minimum width=2.8cm,minimum height=6.4cm] (d) at (8.6,0) {};
+  \node[font=\sffamily\small\bfseries] at (0,3.8) {ESP32-S3};
+  \node[font=\sffamily\small\bfseries,align=center] at (8.6,3.95) {HC-SR04};
+  \foreach \y/\n in {2.7/5V,0.9/{\pin{16}},-0.9/{\pin{21}},-2.7/GND}
+    \node[font=\sffamily\scriptsize,anchor=east] at (1.4,\y) {\n};
+  \foreach \y/\n in {2.7/VCC,0.9/TRIG,-0.9/ECHO,-2.7/GND}
+    \node[font=\sffamily\scriptsize,anchor=west] at (7.2,\y) {\n};
+  \draw[thick,wred]    (1.4,2.7)  -- (7.2,2.7);
+  \draw[thick,wgreen]  (1.4,0.9)  -- (7.2,0.9);
+  \draw[thick,wblack]  (1.4,-2.7) -- (7.2,-2.7);
+  % ECHO через делитель
+  \draw[thick,worange] (7.2,-0.9) to[R,l=\SI{1}{k\ohm}] (4.6,-0.9) -- (1.4,-0.9);
+  \draw[thick,worange] (3.0,-0.9) to[R,l_=\SI{2}{k\ohm},-*] (3.0,-2.7);
+  \fill[worange] (3.0,-0.9) circle (1.6pt);
+  \fill[wblack] (3.0,-2.7) circle (1.6pt);
+  \node[font=\sffamily\scriptsize,text=worange!70!black,anchor=south] at (6.6,-0.85) {5\,В};
+  \node[font=\sffamily\scriptsize,text=worange!70!black,anchor=north west] at (1.5,-1.0) {3,3\,В};
+  \node[font=\sffamily\small,anchor=west,text=accent] at (3.6,-1.85)
     {$U = 5\cdot\dfrac{2}{1+2}\approx\SI{3.3}{V}$};
 \end{circuitikz}
-\caption{Делитель напряжения для сигнала ECHO. Нижний резистор вдвое больше верхнего, поэтому на вход
-платы попадает две трети от \SI{5}{V}}
+\caption{Подключение HC-SR04. Питание \SI{5}{V}, TRIG идёт на \pin{16} напрямую, а ECHO попадает на \pin{21}
+только через делитель: нижний резистор вдвое больше верхнего, поэтому на вход платы приходит две трети
+от \SI{5}{V}}
 \end{figure}
 
 Питание самого HC-SR04 --- \SI{5}{V} (вывод 5V платы, который при питании от USB даёт напряжение
@@ -203,10 +238,50 @@ $L \approx \SI{20}{cm}$.
 
 Парковочный радар из самостоятельного опыта удобно смотреть на экране: круговая шкала даёт
 мгновенное «далеко/близко», график показывает, как менялось расстояние. Схема подключения
-HC-SR04 прежняя (ECHO через делитель!), добавляется только телефон.
+HC-SR04 прежняя (ECHO через делитель!), добавляется только телефон. Программу соберём в три шага.
 
-\codecap{ESPUI: расстояние HC-SR04 как Gauge и Graph}
+\subsubsection{Шаг 1. Только датчик}
+
+Сначала убедитесь, что сам дальномер работает, и не трогайте сеть. Функция \code{readDistanceCm()}
+оформляет измерение из листинга выше, а результат пока уходит в Serial Monitor.
+
+\codecap{Шаг 1. Расстояние в Serial Monitor}
+\codeinput{l15_espui_radar_s1}
+
+\begin{itemize}[leftmargin=*]
+  \item \code{readDistanceCm()} возвращает $-1$, если эхо не вернулось, --- ошибка не маскируется под ноль;
+  \item замер запускается по \code{millis()} раз в \SI{200}{ms}, то есть не чаще пяти раз в секунду;
+  \item при $-1$ печатаем «нет эха», иначе расстояние в сантиметрах.
+\end{itemize}
+
+\subsubsection{Шаг 2. Шкала на экране телефона}
+
+Теперь плата сама создаёт Wi-Fi-сеть, а расстояние показывает круговая шкала \code{Gauge}.
+
+\codecap{Шаг 2. Шкала Gauge в панели ESPUI}
+\codeinput{l15_espui_radar_s2}
+
+\begin{itemize}[leftmargin=*]
+  \item \code{WiFi.softAP(имя, пароль)} --- плата создаёт свою сеть (как в уроке~5);
+  \item \code{addControl(ControlType::Gauge, \ldots)} создаёт шкалу, а два элемента \code{Min} и \code{Max}
+        задают её края: от 0 до \SI{200}{cm};
+  \item \code{updateControlValue(gaugeId, \ldots)} двигает стрелку; \code{constrain()} не даёт ей выйти за шкалу;
+  \item неудачные замеры пока просто пропускаются. Это мы исправим на следующем шаге.
+\end{itemize}
+
+\subsubsection{Шаг 3. Подпись, график и честная ошибка}
+
+Добавим подпись состояния и график истории. Главное изменение: при ошибке датчика выводится сообщение,
+а стрелка и график не получают ложный «нуль».
+
+\codecap{Шаг 3. ESPUI: расстояние HC-SR04 как Gauge и Graph}
 \codeinput{l15_espui_radar}
+
+\begin{itemize}[leftmargin=*]
+  \item \code{ESPUI.label(\ldots)} создаёт подпись; \code{updateLabel()} меняет её текст;
+  \item \code{ESPUI.graph(\ldots)} создаёт график, а \code{addGraphPoint()} добавляет в него очередную точку;
+  \item ветка \code{if (d < 0)} показывает «нет эха» вместо расстояния.
+\end{itemize}
 
 Подключитесь к сети \code{S3-Radar} (пароль \code{lesson-39-demo}). Поднесите ладонь к датчику:
 стрелка уйдёт к нулю, а в графике появится «ступенька». Закройте датчик мягкой тканью или

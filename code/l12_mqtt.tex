@@ -10,7 +10,7 @@
 \PY{n}{PubSubClient}\PY{+w}{ }\PY{n+nf}{mqtt}\PY{p}{(}\PY{n}{net}\PY{p}{)}\PY{p}{;}
 \PY{k+kt}{uint32\PYZus{}t}\PY{+w}{ }\PY{n}{lastTry}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{,}\PY{+w}{ }\PY{n}{lastPub}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}
 
-\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{onMessage}\PY{p}{(}\PY{k+kt}{char}\PY{o}{*}\PY{+w}{ }\PY{n}{topic}\PY{p}{,}\PY{+w}{ }\PY{n}{byte}\PY{o}{*}\PY{+w}{ }\PY{n}{payload}\PY{p}{,}\PY{+w}{ }\PY{k+kt}{unsigned}\PY{+w}{ }\PY{k+kt}{int}\PY{+w}{ }\PY{n}{len}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{onMessage}\PY{p}{(}\PY{k+kt}{char}\PY{o}{*}\PY{+w}{ }\PY{n}{topic}\PY{p}{,}\PY{+w}{ }\PY{k+kt}{byte}\PY{o}{*}\PY{+w}{ }\PY{n}{payload}\PY{p}{,}\PY{+w}{ }\PY{k+kt}{unsigned}\PY{+w}{ }\PY{k+kt}{int}\PY{+w}{ }\PY{n}{len}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
 \PY{+w}{  }\PY{n}{String}\PY{+w}{ }\PY{n}{msg}\PY{p}{;}
 \PY{+w}{  }\PY{k}{for}\PY{+w}{ }\PY{p}{(}\PY{k+kt}{unsigned}\PY{+w}{ }\PY{k+kt}{int}\PY{+w}{ }\PY{n}{i}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}\PY{+w}{ }\PY{n}{i}\PY{+w}{ }\PY{o}{\PYZlt{}}\PY{+w}{ }\PY{n}{len}\PY{p}{;}\PY{+w}{ }\PY{n}{i}\PY{o}{+}\PY{o}{+}\PY{p}{)}\PY{+w}{ }\PY{n}{msg}\PY{+w}{ }\PY{o}{+}\PY{o}{=}\PY{+w}{ }\PY{p}{(}\PY{k+kt}{char}\PY{p}{)}\PY{n}{payload}\PY{p}{[}\PY{n}{i}\PY{p}{]}\PY{p}{;}
 \PY{+w}{  }\PY{n}{Serial}\PY{p}{.}\PY{n}{printf}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{\PYZpc{}s \PYZhy{}\PYZgt{} \PYZpc{}s}\PY{l+s+se}{\PYZbs{}n}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{n}{topic}\PY{p}{,}\PY{+w}{ }\PY{n}{msg}\PY{p}{.}\PY{n}{c\PYZus{}str}\PY{p}{(}\PY{p}{)}\PY{p}{)}\PY{p}{;}\PY{+w}{  }\PY{c+c1}{// здесь проверяем и применяем команду}

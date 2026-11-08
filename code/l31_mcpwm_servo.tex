@@ -4,21 +4,21 @@
 \PY{c+cp}{\PYZsh{}}\PY{c+cp}{include}\PY{+w}{ }\PY{c+cpf}{\PYZdq{}driver/mcpwm\PYZus{}prelude.h\PYZdq{}}
 \PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{setup}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
 \PY{+w}{  }\PY{n}{Serial}\PY{p}{.}\PY{n}{begin}\PY{p}{(}\PY{l+m+mi}{115200}\PY{p}{)}\PY{p}{;}
-\PY{+w}{  }\PY{n}{mcpwm\PYZus{}timer\PYZus{}handle\PYZus{}t}\PY{+w}{ }\PY{n}{timer}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{k}{nullptr}\PY{p}{;}
+\PY{+w}{  }\PY{n}{mcpwm\PYZus{}timer\PYZus{}handle\PYZus{}t}\PY{+w}{ }\PY{n}{timer}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n+nb}{nullptr}\PY{p}{;}
 \PY{+w}{  }\PY{n}{mcpwm\PYZus{}timer\PYZus{}config\PYZus{}t}\PY{+w}{ }\PY{n}{tc}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{p}{\PYZcb{}}\PY{p}{;}
 \PY{+w}{  }\PY{n}{tc}\PY{p}{.}\PY{n}{group\PYZus{}id}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}\PY{+w}{ }\PY{n}{tc}\PY{p}{.}\PY{n}{clk\PYZus{}src}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{MCPWM\PYZus{}TIMER\PYZus{}CLK\PYZus{}SRC\PYZus{}DEFAULT}\PY{p}{;}
 \PY{+w}{  }\PY{n}{tc}\PY{p}{.}\PY{n}{resolution\PYZus{}hz}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{1000000}\PY{p}{;}\PY{+w}{ }\PY{n}{tc}\PY{p}{.}\PY{n}{period\PYZus{}ticks}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{20000}\PY{p}{;}
 \PY{+w}{  }\PY{n}{tc}\PY{p}{.}\PY{n}{count\PYZus{}mode}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{MCPWM\PYZus{}TIMER\PYZus{}COUNT\PYZus{}MODE\PYZus{}UP}\PY{p}{;}
 \PY{+w}{  }\PY{n}{ESP\PYZus{}ERROR\PYZus{}CHECK}\PY{p}{(}\PY{n}{mcpwm\PYZus{}new\PYZus{}timer}\PY{p}{(}\PY{o}{\PYZam{}}\PY{n}{tc}\PY{p}{,}\PY{+w}{ }\PY{o}{\PYZam{}}\PY{n}{timer}\PY{p}{)}\PY{p}{)}\PY{p}{;}
-\PY{+w}{  }\PY{n}{mcpwm\PYZus{}oper\PYZus{}handle\PYZus{}t}\PY{+w}{ }\PY{n}{oper}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{k}{nullptr}\PY{p}{;}
+\PY{+w}{  }\PY{n}{mcpwm\PYZus{}oper\PYZus{}handle\PYZus{}t}\PY{+w}{ }\PY{n}{oper}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n+nb}{nullptr}\PY{p}{;}
 \PY{+w}{  }\PY{n}{mcpwm\PYZus{}operator\PYZus{}config\PYZus{}t}\PY{+w}{ }\PY{n}{oc}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{p}{\PYZcb{}}\PY{p}{;}\PY{+w}{ }\PY{n}{oc}\PY{p}{.}\PY{n}{group\PYZus{}id}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}
 \PY{+w}{  }\PY{n}{ESP\PYZus{}ERROR\PYZus{}CHECK}\PY{p}{(}\PY{n}{mcpwm\PYZus{}new\PYZus{}operator}\PY{p}{(}\PY{o}{\PYZam{}}\PY{n}{oc}\PY{p}{,}\PY{+w}{ }\PY{o}{\PYZam{}}\PY{n}{oper}\PY{p}{)}\PY{p}{)}\PY{p}{;}
 \PY{+w}{  }\PY{n}{ESP\PYZus{}ERROR\PYZus{}CHECK}\PY{p}{(}\PY{n}{mcpwm\PYZus{}operator\PYZus{}connect\PYZus{}timer}\PY{p}{(}\PY{n}{oper}\PY{p}{,}\PY{+w}{ }\PY{n}{timer}\PY{p}{)}\PY{p}{)}\PY{p}{;}
-\PY{+w}{  }\PY{n}{mcpwm\PYZus{}cmpr\PYZus{}handle\PYZus{}t}\PY{+w}{ }\PY{n}{cmp}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{k}{nullptr}\PY{p}{;}
+\PY{+w}{  }\PY{n}{mcpwm\PYZus{}cmpr\PYZus{}handle\PYZus{}t}\PY{+w}{ }\PY{n}{cmp}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n+nb}{nullptr}\PY{p}{;}
 \PY{+w}{  }\PY{n}{mcpwm\PYZus{}comparator\PYZus{}config\PYZus{}t}\PY{+w}{ }\PY{n}{cc}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{p}{\PYZcb{}}\PY{p}{;}\PY{+w}{ }\PY{n}{cc}\PY{p}{.}\PY{n}{flags}\PY{p}{.}\PY{n}{update\PYZus{}cmp\PYZus{}on\PYZus{}tez}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n+nb}{true}\PY{p}{;}
 \PY{+w}{  }\PY{n}{ESP\PYZus{}ERROR\PYZus{}CHECK}\PY{p}{(}\PY{n}{mcpwm\PYZus{}new\PYZus{}comparator}\PY{p}{(}\PY{n}{oper}\PY{p}{,}\PY{+w}{ }\PY{o}{\PYZam{}}\PY{n}{cc}\PY{p}{,}\PY{+w}{ }\PY{o}{\PYZam{}}\PY{n}{cmp}\PY{p}{)}\PY{p}{)}\PY{p}{;}
 \PY{+w}{  }\PY{n}{ESP\PYZus{}ERROR\PYZus{}CHECK}\PY{p}{(}\PY{n}{mcpwm\PYZus{}comparator\PYZus{}set\PYZus{}compare\PYZus{}value}\PY{p}{(}\PY{n}{cmp}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{1500}\PY{p}{)}\PY{p}{)}\PY{p}{;}
-\PY{+w}{  }\PY{n}{mcpwm\PYZus{}gen\PYZus{}handle\PYZus{}t}\PY{+w}{ }\PY{n}{gen}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{k}{nullptr}\PY{p}{;}
+\PY{+w}{  }\PY{n}{mcpwm\PYZus{}gen\PYZus{}handle\PYZus{}t}\PY{+w}{ }\PY{n}{gen}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n+nb}{nullptr}\PY{p}{;}
 \PY{+w}{  }\PY{n}{mcpwm\PYZus{}generator\PYZus{}config\PYZus{}t}\PY{+w}{ }\PY{n}{gc}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{p}{\PYZcb{}}\PY{p}{;}\PY{+w}{ }\PY{n}{gc}\PY{p}{.}\PY{n}{gen\PYZus{}gpio\PYZus{}num}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{6}\PY{p}{;}
 \PY{+w}{  }\PY{n}{ESP\PYZus{}ERROR\PYZus{}CHECK}\PY{p}{(}\PY{n}{mcpwm\PYZus{}new\PYZus{}generator}\PY{p}{(}\PY{n}{oper}\PY{p}{,}\PY{+w}{ }\PY{o}{\PYZam{}}\PY{n}{gc}\PY{p}{,}\PY{+w}{ }\PY{o}{\PYZam{}}\PY{n}{gen}\PY{p}{)}\PY{p}{)}\PY{p}{;}
 \PY{+w}{  }\PY{n}{ESP\PYZus{}ERROR\PYZus{}CHECK}\PY{p}{(}\PY{n}{mcpwm\PYZus{}generator\PYZus{}set\PYZus{}action\PYZus{}on\PYZus{}timer\PYZus{}event}\PY{p}{(}\PY{n}{gen}\PY{p}{,}

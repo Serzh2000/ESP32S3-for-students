@@ -1,0 +1,42 @@
+\begin{CodeVerbatim}
+\PY{c+c1}{// Шаг 3. ФРАГМЕНТ для книги: сеть 1\PYZhy{}8\PYZhy{}8\PYZhy{}1. Блок весов сокращён многоточием;}
+\PY{c+c1}{// полный блок создаёт examples/tinyml/train\PYZus{}sine.py, готовый скетч \PYZhy{}\PYZhy{} code/l42\PYZus{}sine\PYZus{}nn.cpp.}
+
+\PY{c+c1}{// \PYZhy{}\PYZhy{}\PYZhy{}\PYZhy{} НАЧАЛО СГЕНЕРИРОВАННОЙ МОДЕЛИ \PYZhy{}\PYZhy{}\PYZhy{}\PYZhy{}}
+\PY{c+c1}{// слой 1: 1 \PYZhy{}\PYZgt{} 8}
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{int8\PYZus{}t}\PY{+w}{ }\PY{n}{W1}\PY{p}{[}\PY{l+m+mi}{8}\PY{p}{]}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{ }\PY{l+m+mi}{40}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{124}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{100}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{\PYZhy{}127}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{99}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{56}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{\PYZhy{}52}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{80}\PY{+w}{ }\PY{p}{\PYZcb{}}\PY{p}{;}
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{float}\PY{+w}{ }\PY{n}{S1}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mf}{0.01451136f}\PY{p}{;}
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{float}\PY{+w}{ }\PY{n}{BIAS1}\PY{p}{[}\PY{l+m+mi}{8}\PY{p}{]}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{ }\PY{l+m+mf}{0.59202f}\PY{p}{,}\PY{+w}{ }\PY{l+m+mf}{\PYZhy{}0.72172f}\PY{p}{,}\PY{+w}{ }\PY{l+m+mf}{\PYZhy{}0.37317f}\PY{p}{,}\PY{+w}{ }\PY{c+cm}{/* ... */}\PY{+w}{ }\PY{l+m+mf}{\PYZhy{}0.00330f}\PY{+w}{ }\PY{p}{\PYZcb{}}\PY{p}{;}
+\PY{c+c1}{// слой 2: 8 \PYZhy{}\PYZgt{} 8}
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{int8\PYZus{}t}\PY{+w}{ }\PY{n}{W2}\PY{p}{[}\PY{l+m+mi}{64}\PY{p}{]}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{l+m+mi}{3}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{36}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{30}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{38}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{\PYZhy{}25}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{\PYZhy{}9}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{\PYZhy{}64}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{21}\PY{p}{,}
+\PY{+w}{  }\PY{c+cm}{/* ... ещё 7 строк по 8 весов ... */}
+\PY{p}{\PYZcb{}}\PY{p}{;}
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{float}\PY{+w}{ }\PY{n}{S2}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mf}{0.01495892f}\PY{p}{;}
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{float}\PY{+w}{ }\PY{n}{BIAS2}\PY{p}{[}\PY{l+m+mi}{8}\PY{p}{]}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{ }\PY{l+m+mf}{\PYZhy{}0.26971f}\PY{p}{,}\PY{+w}{ }\PY{l+m+mf}{0.27132f}\PY{p}{,}\PY{+w}{ }\PY{c+cm}{/* ... */}\PY{+w}{ }\PY{l+m+mf}{0.05801f}\PY{+w}{ }\PY{p}{\PYZcb{}}\PY{p}{;}
+\PY{c+c1}{// слой 3: 8 \PYZhy{}\PYZgt{} 1}
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{int8\PYZus{}t}\PY{+w}{ }\PY{n}{W3}\PY{p}{[}\PY{l+m+mi}{8}\PY{p}{]}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{ }\PY{l+m+mi}{\PYZhy{}127}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{101}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{87}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{93}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{\PYZhy{}12}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{\PYZhy{}51}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{50}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{\PYZhy{}76}\PY{+w}{ }\PY{p}{\PYZcb{}}\PY{p}{;}
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{float}\PY{+w}{ }\PY{n}{S3}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mf}{0.01427681f}\PY{p}{;}
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{float}\PY{+w}{ }\PY{n}{BIAS3}\PY{p}{[}\PY{l+m+mi}{1}\PY{p}{]}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{ }\PY{l+m+mf}{\PYZhy{}2.20406f}\PY{+w}{ }\PY{p}{\PYZcb{}}\PY{p}{;}
+\PY{c+c1}{// \PYZhy{}\PYZhy{}\PYZhy{}\PYZhy{} КОНЕЦ СГЕНЕРИРОВАННОЙ МОДЕЛИ \PYZhy{}\PYZhy{}\PYZhy{}\PYZhy{}}
+
+\PY{c+c1}{// Один полносвязный слой: out[j] = sum\PYZus{}i(in[i] * w[i][j]) * scale + b[j]}
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{dense}\PY{p}{(}\PY{k}{const}\PY{+w}{ }\PY{k+kt}{float}\PY{o}{*}\PY{+w}{ }\PY{n}{in}\PY{p}{,}\PY{+w}{ }\PY{k+kt}{int}\PY{+w}{ }\PY{n}{nIn}\PY{p}{,}\PY{+w}{ }\PY{k}{const}\PY{+w}{ }\PY{k+kt}{int8\PYZus{}t}\PY{o}{*}\PY{+w}{ }\PY{n}{w}\PY{p}{,}\PY{+w}{ }\PY{k+kt}{float}\PY{+w}{ }\PY{n}{scale}\PY{p}{,}
+\PY{+w}{           }\PY{k}{const}\PY{+w}{ }\PY{k+kt}{float}\PY{o}{*}\PY{+w}{ }\PY{n}{b}\PY{p}{,}\PY{+w}{ }\PY{k+kt}{float}\PY{o}{*}\PY{+w}{ }\PY{n}{out}\PY{p}{,}\PY{+w}{ }\PY{k+kt}{int}\PY{+w}{ }\PY{n}{nOut}\PY{p}{,}\PY{+w}{ }\PY{k+kt}{bool}\PY{+w}{ }\PY{n}{relu}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{k}{for}\PY{+w}{ }\PY{p}{(}\PY{k+kt}{int}\PY{+w}{ }\PY{n}{j}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}\PY{+w}{ }\PY{n}{j}\PY{+w}{ }\PY{o}{\PYZlt{}}\PY{+w}{ }\PY{n}{nOut}\PY{p}{;}\PY{+w}{ }\PY{o}{+}\PY{o}{+}\PY{n}{j}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{    }\PY{k+kt}{float}\PY{+w}{ }\PY{n}{sum}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}
+\PY{+w}{    }\PY{k}{for}\PY{+w}{ }\PY{p}{(}\PY{k+kt}{int}\PY{+w}{ }\PY{n}{i}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}\PY{+w}{ }\PY{n}{i}\PY{+w}{ }\PY{o}{\PYZlt{}}\PY{+w}{ }\PY{n}{nIn}\PY{p}{;}\PY{+w}{ }\PY{o}{+}\PY{o}{+}\PY{n}{i}\PY{p}{)}\PY{+w}{ }\PY{n}{sum}\PY{+w}{ }\PY{o}{+}\PY{o}{=}\PY{+w}{ }\PY{n}{in}\PY{p}{[}\PY{n}{i}\PY{p}{]}\PY{+w}{ }\PY{o}{*}\PY{+w}{ }\PY{n}{w}\PY{p}{[}\PY{n}{i}\PY{+w}{ }\PY{o}{*}\PY{+w}{ }\PY{n}{nOut}\PY{+w}{ }\PY{o}{+}\PY{+w}{ }\PY{n}{j}\PY{p}{]}\PY{p}{;}
+\PY{+w}{    }\PY{n}{sum}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{sum}\PY{+w}{ }\PY{o}{*}\PY{+w}{ }\PY{n}{scale}\PY{+w}{ }\PY{o}{+}\PY{+w}{ }\PY{n}{b}\PY{p}{[}\PY{n}{j}\PY{p}{]}\PY{p}{;}
+\PY{+w}{    }\PY{n}{out}\PY{p}{[}\PY{n}{j}\PY{p}{]}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{p}{(}\PY{n}{relu}\PY{+w}{ }\PY{o}{\PYZam{}}\PY{o}{\PYZam{}}\PY{+w}{ }\PY{n}{sum}\PY{+w}{ }\PY{o}{\PYZlt{}}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{)}\PY{+w}{ }\PY{o}{?}\PY{+w}{ }\PY{l+m+mi}{0}\PY{+w}{ }\PY{o}{:}\PY{+w}{ }\PY{n}{sum}\PY{p}{;}
+\PY{+w}{  }\PY{p}{\PYZcb{}}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{float}\PY{+w}{ }\PY{n+nf}{predictSin}\PY{p}{(}\PY{k+kt}{float}\PY{+w}{ }\PY{n}{x}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{                 }\PY{c+c1}{// x в радианах, от 0 до 2π}
+\PY{+w}{  }\PY{k+kt}{float}\PY{+w}{ }\PY{n}{in}\PY{p}{[}\PY{l+m+mi}{1}\PY{p}{]}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{ }\PY{n}{x}\PY{+w}{ }\PY{o}{/}\PY{+w}{ }\PY{p}{(}\PY{l+m+mi}{2}\PY{+w}{ }\PY{o}{*}\PY{+w}{ }\PY{n}{PI}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZcb{}}\PY{p}{;}\PY{+w}{           }\PY{c+c1}{// та же нормализация, что при обучении}
+\PY{+w}{  }\PY{k+kt}{float}\PY{+w}{ }\PY{n}{h1}\PY{p}{[}\PY{l+m+mi}{8}\PY{p}{]}\PY{p}{,}\PY{+w}{ }\PY{n}{h2}\PY{p}{[}\PY{l+m+mi}{8}\PY{p}{]}\PY{p}{,}\PY{+w}{ }\PY{n}{y}\PY{p}{[}\PY{l+m+mi}{1}\PY{p}{]}\PY{p}{;}
+\PY{+w}{  }\PY{n}{dense}\PY{p}{(}\PY{n}{in}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{1}\PY{p}{,}\PY{+w}{ }\PY{n}{W1}\PY{p}{,}\PY{+w}{ }\PY{n}{S1}\PY{p}{,}\PY{+w}{ }\PY{n}{BIAS1}\PY{p}{,}\PY{+w}{ }\PY{n}{h1}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{8}\PY{p}{,}\PY{+w}{ }\PY{n+nb}{true}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{dense}\PY{p}{(}\PY{n}{h1}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{8}\PY{p}{,}\PY{+w}{ }\PY{n}{W2}\PY{p}{,}\PY{+w}{ }\PY{n}{S2}\PY{p}{,}\PY{+w}{ }\PY{n}{BIAS2}\PY{p}{,}\PY{+w}{ }\PY{n}{h2}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{8}\PY{p}{,}\PY{+w}{ }\PY{n+nb}{true}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{dense}\PY{p}{(}\PY{n}{h2}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{8}\PY{p}{,}\PY{+w}{ }\PY{n}{W3}\PY{p}{,}\PY{+w}{ }\PY{n}{S3}\PY{p}{,}\PY{+w}{ }\PY{n}{BIAS3}\PY{p}{,}\PY{+w}{ }\PY{n}{y}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{1}\PY{p}{,}\PY{+w}{ }\PY{n+nb}{false}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{k}{return}\PY{+w}{ }\PY{n}{y}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{]}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+\end{CodeVerbatim}

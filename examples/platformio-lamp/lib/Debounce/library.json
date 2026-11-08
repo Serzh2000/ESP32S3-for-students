@@ -1,0 +1,7 @@
+{
+  "name": "Debounce",
+  "version": "1.0.0",
+  "description": "Подавление дребезга контакта без привязки к Arduino: логику можно проверять на компьютере",
+  "frameworks": "*",
+  "platforms": "*"
+}

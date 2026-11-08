@@ -1,0 +1,63 @@
+name: Сборка книги
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+    paths: ['chapters/**', 'code/**', 'main.tex', '*.sty', 'highlight.py', '.github/workflows/book.yml']
+  pull_request:
+    paths: ['chapters/**', 'code/**', 'main.tex', '*.sty', 'highlight.py', '.github/workflows/book.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  pdf:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Установить XeLaTeX и шрифты
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends latexmk texlive-xetex texlive-latex-extra \
+            texlive-fonts-extra texlive-lang-cyrillic texlive-pictures texlive-science \
+            fonts-paratype fonts-dejavu
+      - run: pip install pygments
+
+      - name: Подсветить код (code/*.tex)
+        run: python highlight.py
+
+      - name: Собрать PDF
+        run: latexmk -xelatex -interaction=nonstopmode -halt-on-error main.tex
+
+      - name: Проверить ссылки и ссылки на рисунки
+        run: |
+          if grep -E "LaTeX Warning: (Reference|Citation) .* undefined|Label\(s\) may have changed" main.log; then
+            echo "::warning::в книге есть неразрешённые ссылки"
+          fi
+          pdfinfo main.pdf | grep Pages
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: esp32s3-book
+          path: main.pdf
+
+      # Свежий PDF всегда лежит в релизе «latest»; по тегу vX.Y создаётся отдельный релиз
+      - name: Обновить релиз latest
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: Свежая сборка книги
+          prerelease: true
+          files: main.pdf
+      - name: Релиз по тегу
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: main.pdf

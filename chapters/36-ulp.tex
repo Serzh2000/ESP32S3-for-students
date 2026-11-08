@@ -20,6 +20,29 @@ Wi-Fi и обычные задачи FreeRTOS. Набор доступной п�
 \draw[arr] (a)--(b);\draw[arr] (b)--node[above,font=\scriptsize,align=center]{10 отсчётов\\ LOW}(c);
 \end{tikzpicture}\caption{Простой частый опрос отделён от сложного редкого действия}\end{figure}
 
+Кнопка подключена к RTC-входу \pin{4}: внешний резистор \SI{10}{k\ohm} подтягивает вход к 3V3, кнопка
+замыкает его на GND. Встроенную подтяжку для этого входа в коде отключают, поэтому внешний резистор обязателен.
+
+\begin{figure}[H]
+\centering
+\begin{circuitikz}[scale=0.95,transform shape]
+  \node[blk,fill=blkcpu,minimum width=2.8cm,minimum height=3.8cm] at (0,0) {};
+  \node[font=\sffamily\small\bfseries] at (0,2.3) {ESP32-S3};
+  \foreach \y/\n in {1.2/3V3,0/{\pin{4}},-1.2/GND}
+    \node[font=\sffamily\scriptsize,anchor=east] at (1.4,\y) {\n};
+  \draw[thick,wred]    (1.4,1.2) -- (3.2,1.2);
+  \draw[thick,wyellow] (1.4,0) -- (5.6,0);
+  \draw[thick,wblack]  (1.4,-1.2) -- (5.6,-1.2);
+  \draw[thick] (3.2,1.2) to[R,l_=\SI{10}{k\ohm}] (3.2,0);
+  \draw[thick] (5.6,0) to[push button,l_=S1] (5.6,-1.2);
+  \fill[wyellow] (3.2,0) circle (1.6pt);
+  \fill[wyellow] (5.6,0) circle (1.6pt);
+  \node[font=\sffamily\scriptsize,text=accent] at (4.4,0.35) {RTC GPIO};
+\end{circuitikz}
+\caption{Подключение кнопки к \pin{4}: внешняя подтяжка \SI{10}{k\ohm} к 3V3 и кнопка на GND.
+Светодиод с этого вывода нужно снять}
+\end{figure}
+
 \subsection{Проект с двумя образами}
 Основной код компилируется для Xtensa, ULP --- для RISC-V. CMake встраивает маленький образ
 в основную прошивку и создаёт заголовок общих символов.

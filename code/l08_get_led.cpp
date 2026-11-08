@@ -1,32 +1,21 @@
-// Управляем светодиодом через GET-запросы: /toggle и /level?v=...
+// Светодиод (GPIO4) управляется ссылками: /toggle переключает, /level?v=... задаёт яркость.
 #include <WiFi.h>
 #include <WebServer.h>
-#include <ESPmDNS.h>
 
-const char* SSID = "MyNetwork";              // имя твоей Wi-Fi сети
-const char* PASS = "MyPassword";             // и пароль
 const int LED_PIN = 4;
-
 WebServer server(80);
 bool ledOn = false;
 int level = 50;                              // яркость, %
 
-uint32_t gammaDuty(int percent) {
-  return (uint32_t)(255 * pow(percent / 100.0, 2.2) + 0.5);
-}
+void applyLed() { ledcWrite(LED_PIN, ledOn ? level * 255 / 100 : 0); }
 
-void applyLed() { ledcWrite(LED_PIN, ledOn ? gammaDuty(level) : 0); }
-
-String page() {                              // собираем HTML-страницу
+String page() {                              // собираем HTML-страницу из текущего состояния
   String html = "<!DOCTYPE html><html><head><meta charset='utf-8'>"
-                "<meta name='viewport' content='width=device-width'>"
-                "<title>Светодиод</title></head><body style='font-family:sans-serif'>";
-  html += "<h1>Светодиод: ";
-  html += ledOn ? "ВКЛ" : "ВЫКЛ";
-  html += "</h1><p><a href='/toggle'><button>Вкл/выкл</button></a></p>"
-          "<form action='/level'>Яркость: <input type='range' name='v' "
-          "min='0' max='100' value='" + String(level) + "' "
-          "onchange='this.form.submit()'></form></body></html>";
+                "<meta name='viewport' content='width=device-width'></head><body>";
+  html += String("<h1>Светодиод: ") + (ledOn ? "ВКЛ" : "ВЫКЛ") + "</h1>";
+  html += "<p><a href='/toggle'><button>Вкл/выкл</button></a></p>"
+          "<form action='/level'>Яркость: <input type='range' name='v' min='0' max='100' value='"
+          + String(level) + "' onchange='this.form.submit()'></form></body></html>";
   return html;
 }
 
@@ -36,24 +25,8 @@ void goHome() {                              // «перейди на главн
 }
 
 void setup() {
-  Serial.begin(115200);
   ledcAttach(LED_PIN, 5000, 8);
-  applyLed();
-
-  WiFi.mode(WIFI_STA);
-  WiFi.begin(SSID, PASS);
-  const uint32_t started = millis();
-  while (WiFi.status() != WL_CONNECTED && millis() - started < 15000) {
-    delay(300); Serial.print(".");
-  }
-  if (WiFi.status() != WL_CONNECTED) {
-    Serial.println("\nWi-Fi: проверьте сеть и перезапустите плату");
-    return;
-  }
-  Serial.printf("\nОткрой http://%s или http://esp32-led.local\n",
-                WiFi.localIP().toString().c_str());
-  MDNS.begin("esp32-led");
-
+  WiFi.softAP("S3-Web", "lesson-44-demo");
   server.on("/",       []() { server.send(200, "text/html; charset=utf-8", page()); });
   server.on("/toggle", []() { ledOn = !ledOn; applyLed(); goHome(); });
   server.on("/level",  []() {
@@ -65,5 +38,5 @@ void setup() {
 }
 
 void loop() {
-  server.handleClient();                     // ответить браузеру, если он что-то спросил
+  server.handleClient();
 }

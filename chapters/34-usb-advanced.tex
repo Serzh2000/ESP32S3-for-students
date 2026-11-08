@@ -22,6 +22,30 @@ ESP32-S3 поддерживает Full Speed: 12 Мбит/с на линии, а
 Объект CDC создаёт сам скетч, поэтому автоматический CDC отключён.
 Подключите нативный USB, откройте появившийся порт и отправьте \code{ping} с переводом строки.
 При этих настройках диагностический \code{Serial} направлен в мост UART.
+Поэтому в этом опыте к компьютеру подключают \emph{оба} разъёма DevKitC-1.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[font=\sffamily\scriptsize]
+  \node[blk,fill=blkper,minimum width=2.2cm,minimum height=3cm] (pc) at (0,0) {Компьютер};
+  \node[blk,fill=blkrtc,minimum width=1.6cm,minimum height=0.7cm] (c1) at (4.2,0.9) {«UART»};
+  \node[blk,fill=blkrtc,minimum width=1.6cm,minimum height=0.7cm] (c2) at (4.2,-0.9) {«USB»};
+  \node[blk,fill=blkmem,minimum width=2.3cm,minimum height=1.0cm] (br) at (7.6,0.9) {Мост\\ USB--UART};
+  \node[blk,fill=blkcpu,minimum width=2.6cm,minimum height=3cm] (esp) at (11.4,0) {};
+  \node[font=\sffamily\small\bfseries] at (11.4,1.1) {ESP32-S3};
+  \node[align=center] at (11.4,0) {UART0\\ (\pin{43}, \pin{44})};
+  \node[align=center] at (11.4,-0.95) {USB: D$-$ \pin{19},\\ D$+$ \pin{20}};
+  \draw[thick,accent] (pc.east |- c1) -- node[above]{кабель 1} (c1.west);
+  \draw[thick,esp] (pc.east |- c2) -- node[above]{кабель 2} (c2.west);
+  \draw[thick,accent] (c1.east) -- (br.west);
+  \draw[thick,accent] (br.east) -- (esp.west |- br.east);
+  \draw[thick,esp] (c2.east) -- node[above]{D$-$, D$+$} (esp.west |- c2.east);
+  \node[align=center,text=accent] at (5.9,1.75) {прошивка, \code{Serial}};
+  \node[align=center,text=esp] at (6.4,-1.65) {TinyUSB CDC: команды \code{ping} / \code{pong}};
+\end{tikzpicture}
+\caption{Какой разъём для чего: «UART» через мост даёт прошивку и диагностический \code{Serial},
+«USB» идёт прямо на выводы \pin{19}/\pin{20} и несёт TinyUSB CDC}
+\end{figure}
 
 \codecap{Одна команда на строку через USB CDC}
 \codeinput{l34_usb_cdc}

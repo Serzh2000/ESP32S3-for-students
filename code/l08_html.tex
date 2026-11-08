@@ -1,0 +1,39 @@
+\begin{CodeVerbatim}
+\PY{c+c1}{// Страница, написанная на HTML: заголовок, абзац, список, ссылка и кнопка. Пока без оформления.}
+\PY{c+cp}{\PYZsh{}}\PY{c+cp}{include}\PY{+w}{ }\PY{c+cpf}{\PYZlt{}WiFi.h\PYZgt{}}
+\PY{c+cp}{\PYZsh{}}\PY{c+cp}{include}\PY{+w}{ }\PY{c+cpf}{\PYZlt{}WebServer.h\PYZgt{}}
+
+\PY{n}{WebServer}\PY{+w}{ }\PY{n+nf}{server}\PY{p}{(}\PY{l+m+mi}{80}\PY{p}{)}\PY{p}{;}
+
+\PY{c+c1}{// R\PYZdq{}rawliteral( ... )rawliteral\PYZdq{} позволяет писать кавычки и переносы строк без лишних значков.}
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{char}\PY{+w}{ }\PY{n}{PAGE}\PY{p}{[}\PY{p}{]}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+s+sa}{R}\PY{l+s}{\PYZdq{}}\PY{l+s+dl}{rawliteral}\PY{l+s+dl}{(}
+\PY{l+s}{\PYZlt{}!DOCTYPE html\PYZgt{}}
+\PY{l+s}{\PYZlt{}html lang=\PYZdq{}ru\PYZdq{}\PYZgt{}}
+\PY{l+s}{\PYZlt{}head\PYZgt{}}
+\PY{l+s}{  \PYZlt{}meta charset=\PYZdq{}utf\PYZhy{}8\PYZdq{}\PYZgt{}}
+\PY{l+s}{  \PYZlt{}meta name=\PYZdq{}viewport\PYZdq{} content=\PYZdq{}width=device\PYZhy{}width, initial\PYZhy{}scale=1\PYZdq{}\PYZgt{}}
+\PY{l+s}{  \PYZlt{}title\PYZgt{}Моя плата\PYZlt{}/title\PYZgt{}}
+\PY{l+s}{\PYZlt{}/head\PYZgt{}}
+\PY{l+s}{\PYZlt{}body\PYZgt{}}
+\PY{l+s}{  \PYZlt{}h1\PYZgt{}Моя плата\PYZlt{}/h1\PYZgt{}}
+\PY{l+s}{  \PYZlt{}p\PYZgt{}Эта страница лежит в памяти \PYZlt{}b\PYZgt{}ESP32\PYZhy{}S3\PYZlt{}/b\PYZgt{}.\PYZlt{}/p\PYZgt{}}
+\PY{l+s}{  \PYZlt{}ul\PYZgt{}}
+\PY{l+s}{    \PYZlt{}li\PYZgt{}процессор: 2 ядра\PYZlt{}/li\PYZgt{}}
+\PY{l+s}{    \PYZlt{}li\PYZgt{}связь: Wi\PYZhy{}Fi и Bluetooth\PYZlt{}/li\PYZgt{}}
+\PY{l+s}{  \PYZlt{}/ul\PYZgt{}}
+\PY{l+s}{  \PYZlt{}p\PYZgt{}\PYZlt{}a href=\PYZdq{}https://www.espressif.com\PYZdq{}\PYZgt{}Сайт производителя\PYZlt{}/a\PYZgt{}\PYZlt{}/p\PYZgt{}}
+\PY{l+s}{  \PYZlt{}button\PYZgt{}Кнопка (пока ничего не делает)\PYZlt{}/button\PYZgt{}}
+\PY{l+s}{\PYZlt{}/body\PYZgt{}}
+\PY{l+s}{\PYZlt{}/html\PYZgt{}}
+\PY{l+s+dl}{)rawliteral}\PY{l+s}{\PYZdq{}}\PY{p}{;}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{setup}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{n}{WiFi}\PY{p}{.}\PY{n}{softAP}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{S3\PYZhy{}Web}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{lesson\PYZhy{}44\PYZhy{}demo}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{server}\PY{p}{.}\PY{n}{on}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{/}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{p}{[}\PY{p}{]}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{ }\PY{n}{server}\PY{p}{.}\PY{n}{send}\PY{p}{(}\PY{l+m+mi}{200}\PY{p}{,}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{text/html; charset=utf\PYZhy{}8}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{n}{PAGE}\PY{p}{)}\PY{p}{;}\PY{+w}{ }\PY{p}{\PYZcb{}}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{server}\PY{p}{.}\PY{n}{begin}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{loop}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{n}{server}\PY{p}{.}\PY{n}{handleClient}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+\end{CodeVerbatim}

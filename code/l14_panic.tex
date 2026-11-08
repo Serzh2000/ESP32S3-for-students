@@ -1,6 +1,6 @@
 \begin{CodeVerbatim}
 \PY{k}{struct}\PY{+w}{ }\PY{n+nc}{Sensor}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{ }\PY{k+kt}{int}\PY{+w}{ }\PY{n}{pin}\PY{p}{;}\PY{+w}{ }\PY{k+kt}{int}\PY{+w}{ }\PY{n}{value}\PY{p}{;}\PY{+w}{ }\PY{p}{\PYZcb{}}\PY{p}{;}
-\PY{n}{Sensor}\PY{o}{*}\PY{+w}{ }\PY{n}{sensor}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{k}{nullptr}\PY{p}{;}\PY{+w}{               }\PY{c+c1}{// ошибка: объект так и не создан}
+\PY{n}{Sensor}\PY{o}{*}\PY{+w}{ }\PY{n}{sensor}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n+nb}{nullptr}\PY{p}{;}\PY{+w}{               }\PY{c+c1}{// ошибка: объект так и не создан}
 
 \PY{k+kt}{int}\PY{+w}{ }\PY{n+nf}{readSensor}\PY{p}{(}\PY{n}{Sensor}\PY{o}{*}\PY{+w}{ }\PY{n}{s}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
 \PY{+w}{  }\PY{n}{s}\PY{o}{\PYZhy{}}\PY{o}{\PYZgt{}}\PY{n}{value}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{analogRead}\PY{p}{(}\PY{n}{s}\PY{o}{\PYZhy{}}\PY{o}{\PYZgt{}}\PY{n}{pin}\PY{p}{)}\PY{p}{;}\PY{+w}{        }\PY{c+c1}{// s == nullptr \PYZhy{}\PYZgt{} LoadProhibited}

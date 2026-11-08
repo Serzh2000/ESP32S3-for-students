@@ -60,6 +60,30 @@
 подключают прямо между \pin{21} и GND. Электромагнитную пищалку и тем более динамик так подключать
 нельзя: им нужен транзисторный ключ из урока 16.
 
+Для опытов урока понадобится ещё кнопка из урока 3: она включена между \pin{5} и GND, подтяжку
+к питанию включает программа.
+
+\begin{figure}[H]
+\centering
+\begin{circuitikz}[scale=0.95,transform shape]
+  \node[blk,fill=blkcpu,minimum width=2.8cm,minimum height=4.2cm] (m) at (0,0) {};
+  \node[font=\sffamily\small\bfseries] at (0,2.6) {ESP32-S3};
+  \foreach \y/\n in {1/{\pin{21}},-0.5/{\pin{5}},-1.7/GND}
+    \node[font=\sffamily\scriptsize,anchor=east] at (1.4,\y) {\n};
+  % пищалка
+  \draw[thick,accent] (1.4,1) -- (4.2,1) to[buzzer,l=пищалка,color=accent] (6.4,1) -- (7.4,1) -- (7.4,-1.7);
+  \node[font=\sffamily\scriptsize,anchor=south] at (4.2,0.55) {+};
+  % кнопка
+  \draw[thick,warn] (1.4,-0.5) -- (4.2,-0.5) to[normally open push button,l=кнопка,color=warn] (6.4,-0.5)
+    -- (7.4,-0.5);
+  \fill[black!70] (7.4,-0.5) circle (1.5pt);
+  \draw[thick,black!70] (7.4,-1.7) -- (1.4,-1.7);
+  \node[font=\sffamily\scriptsize,anchor=west,text=black!70] at (7.6,-1.1) {общий GND};
+\end{circuitikz}
+\caption{Подключение пассивной пьезопищалки к \pin{21} и кнопки к \pin{5}. Резисторы не нужны:
+пищалка потребляет микроамперы, а подтяжку кнопки включает \code{INPUT\_PULLUP}}
+\end{figure}
+
 \subsection{Функция \texttt{tone()}}
 
 \code{tone(вывод, частота, длительность)} запускает звук и сразу возвращается: программа продолжает
@@ -102,12 +126,37 @@ MAX98357A) или принимает его с цифрового микрофо
 Вместо клавиатуры можно взять телефон: список нот и кнопка «Играть». Это хороший способ
 проверить таблицу частот урока на слух и увидеть, как выбор из списка превращается в частоту.
 
-\codecap{ESPUI: Select ноты и Button «Играть»}
+Панели ESPUI мы уже делали в уроке 5; здесь два шага. Сеть называется \code{S3-Notes}
+(пароль \code{lesson-39-demo}), адрес панели --- \code{http://192.168.4.1/}.
+
+\subsubsection{Шаг 1. Список нот}
+
+Сначала только выбор: список из восьми нот и подпись с частотой выбранной ноты. Пищалка пока не нужна:
+проверяем, что панель открывается и список работает. Обработчик списка только записывает номер ноты
+в \code{std::atomic}, а подпись меняет \code{loop()}.
+
+\codecap{Шаг 1. Select ноты и подпись с частотой}
+\codeinput[\footnotesize]{l24_espui_notes_s1}
+
+\begin{itemize}[leftmargin=*]
+  \item \code{ControlType::Select} --- выпадающий список, а каждая строка в нём --- элемент \code{Option};
+  \item в \code{sender->value} приходит номер строки текстом, \code{toInt()} превращает его в число;
+  \item \code{loop()} обновляет подпись только когда номер изменился, а не сто раз в секунду.
+\end{itemize}
+
+\subsubsection{Шаг 2. Кнопка «Играть» и звук}
+
+Добавляем кнопку и пищалку между GPIO21 и GND. Нажатие только поднимает флаг \code{playRequest}, а
+\code{loop()} забирает его, запускает \code{tone()} и запоминает момент, когда звук надо выключить.
+
+\codecap{Шаг 2. Кнопка «Играть» включает звук на 400 мс}
 \codeinput[\footnotesize]{l24_espui_notes}
 
-Сеть называется \code{S3-Notes} (пароль \code{lesson-39-demo}), пищалка по-прежнему между GPIO21
-и GND. Звук включается \code{tone()}, а выключается позже, когда \code{loop()} видит, что время
-прошло: программа ни разу не останавливается на \code{delay()}.
+\begin{itemize}[leftmargin=*]
+  \item \code{playRequest.exchange(false)} --- прочитать флаг и сразу сбросить, чтобы звук включился один раз на щелчок;
+  \item \code{tone(BUZZER\_PIN, f)} без длительности включает звук, а \code{stopAt} хранит время его конца;
+  \item условие с \code{millis()} выключает звук позже, поэтому программа ни разу не останавливается на \code{delay()}.
+\end{itemize}
 
 \begin{trouble}
 \begin{itemize}[leftmargin=*]

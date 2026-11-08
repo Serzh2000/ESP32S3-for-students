@@ -17,6 +17,22 @@ PCNT считает фронты аппаратно; процессор пери
 PCNT считает положительные фронты. За секунду ожидаем около 1000 событий; точное время окна
 измеряем через \code{millis()}. Все логические сигналы в опыте имеют уровень 3,3 В.
 
+\begin{figure}[H]
+\centering
+\begin{circuitikz}[scale=0.95,transform shape]
+  \node[blk,fill=blkcpu,minimum width=2.8cm,minimum height=3.2cm] (m) at (0,0) {};
+  \node[font=\sffamily\small\bfseries] at (0,2) {ESP32-S3};
+  \node[font=\sffamily\scriptsize,anchor=east] at (1.4,0.7) {\pin{4}};
+  \node[font=\sffamily\scriptsize,anchor=east] at (1.4,-0.7) {\pin{5}};
+  \draw[thick,accent] (1.4,0.7) -- (3.4,0.7) -- (3.4,-0.7) -- (1.4,-0.7);
+  \node[font=\sffamily\scriptsize,text=accent,anchor=west,align=left] at (3.7,0.7) {выход LEDC, \SI{1}{kHz}};
+  \node[font=\sffamily\scriptsize,text=accent,anchor=west,align=left] at (3.7,-0.7) {вход PCNT};
+  \node[font=\sffamily\scriptsize,text=accent,anchor=west] at (3.7,0) {перемычка (один провод)};
+\end{circuitikz}
+\caption{Частотомер на одной плате: перемычка соединяет выход генератора \pin{4} со входом счётчика
+\pin{5}. Другие детали к этим выводам не подключайте}
+\end{figure}
+
 \codecap{PCNT: аппаратный подсчёт фронтов генератора}
 \codeinput{l31_pcnt}
 
@@ -39,6 +55,32 @@ GPIO всё равно управляет входом драйвера, а не
 совпадение с компаратором 1500 выключает его. Получается команда среднего положения
 на GPIO6. Питание сервопривода отдельное, GND объединён. Допустимый диапазон импульсов
 проверьте для модели: начинайте с середины, не с механических упоров.
+
+\begin{figure}[H]
+\centering
+\begin{circuitikz}[scale=0.95,transform shape]
+  \node[blk,fill=blkcpu,minimum width=2.8cm,minimum height=3.4cm] (m) at (0,0) {};
+  \node[blk,fill=blkper,minimum width=2.8cm,minimum height=2.4cm] (d) at (8,0.3) {};
+  \node[blk,fill=blkrtc,minimum width=2.8cm,minimum height=1.2cm,align=center] (s) at (8,-2.6) {};
+  \node[font=\sffamily\scriptsize,align=center] at (8.5,-2.6) {Внешний\\[-2pt] источник \SI{5}{V}};
+  \node[font=\sffamily\small\bfseries] at (0,2.1) {ESP32-S3};
+  \node[font=\sffamily\small\bfseries,align=center] at (8,1.95) {Сервопривод};
+  \node[font=\sffamily\scriptsize,anchor=east] at (1.4,0.9) {\pin{6}};
+  \node[font=\sffamily\scriptsize,anchor=east] at (1.4,-1) {GND};
+  \foreach \y/\n in {0.9/{сигнал},0.3/{+5 В},-0.3/GND}
+    \node[font=\sffamily\scriptsize,anchor=west] at (6.6,\y) {\n};
+  \foreach \y/\n in {-2.3/{+},-2.9/{$-$}}
+    \node[font=\sffamily\scriptsize,anchor=west] at (6.6,\y) {\n};
+  \draw[thick,warn]     (1.4,0.9) -- (6.6,0.9);
+  \draw[thick,esp]      (6.6,0.3) -- (5.6,0.3) -- (5.6,-2.3) -- (6.6,-2.3);
+  \draw[thick,black!70] (6.6,-0.3) -- (4.8,-0.3) -- (4.8,-2.9) -- (6.6,-2.9);
+  \draw[thick,black!70] (1.4,-1) -- (4.8,-1);
+  \fill[black!70] (4.8,-1) circle (1.5pt);
+  \node[font=\sffamily\scriptsize,text=black!70,anchor=north] at (3.1,-1) {общий GND};
+\end{circuitikz}
+\caption{Подключение сервопривода: сигнал с \pin{6}, питание \SI{5}{V} от отдельного источника, земли платы
+и источника соединены. Провод питания сервопривода к 3V3 платы не подключайте}
+\end{figure}
 
 \subsection{Первый контур обратной связи}
 Управление скоростью состоит из задания, измерения PCNT, ошибки и изменения PWM.

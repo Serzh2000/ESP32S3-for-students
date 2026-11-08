@@ -6,30 +6,18 @@ const char* SSID = "MyNetwork";
 const char* PASS = "MyPassword";
 const uint32_t MAX_STREAM_MS = 10UL * 60 * 1000;   // поток сам закончится через 10 минут
 
-// Выводы камеры (ESP32-S3-EYE). Сверьте со схемой своей платы!
-#define XCLK_GPIO_NUM  15
-#define SIOD_GPIO_NUM  4
-#define SIOC_GPIO_NUM  5
-#define VSYNC_GPIO_NUM 6
-#define HREF_GPIO_NUM  7
-#define PCLK_GPIO_NUM  13
-
 WebServer server(80);
 
-bool startCamera() {
+bool startCamera() {                      // выводы ESP32-S3-EYE, сверьте со схемой
   camera_config_t config = {};
   config.ledc_channel = LEDC_CHANNEL_0;
   config.ledc_timer = LEDC_TIMER_0;
   config.pin_d0 = 11;  config.pin_d1 = 9;   config.pin_d2 = 8;   config.pin_d3 = 10;
   config.pin_d4 = 12;  config.pin_d5 = 18;  config.pin_d6 = 17;  config.pin_d7 = 16;
-  config.pin_xclk = XCLK_GPIO_NUM;
-  config.pin_pclk = PCLK_GPIO_NUM;
-  config.pin_vsync = VSYNC_GPIO_NUM;
-  config.pin_href = HREF_GPIO_NUM;
-  config.pin_sccb_sda = SIOD_GPIO_NUM;
-  config.pin_sccb_scl = SIOC_GPIO_NUM;
-  config.pin_pwdn = -1;
-  config.pin_reset = -1;
+  config.pin_xclk = 15;  config.pin_pclk = 13;
+  config.pin_vsync = 6;  config.pin_href = 7;
+  config.pin_sccb_sda = 4;  config.pin_sccb_scl = 5;
+  config.pin_pwdn = -1;  config.pin_reset = -1;
   config.xclk_freq_hz = 20000000;
   config.pixel_format = PIXFORMAT_JPEG;
   config.frame_size = FRAMESIZE_VGA;      // для потока хватает 640x480

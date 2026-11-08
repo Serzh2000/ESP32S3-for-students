@@ -1,0 +1,36 @@
+\begin{CodeVerbatim}
+\PY{c+c1}{// Шаг 1. Радуга на ленте WS2812 из 8 пикселей: один шаг анимации каждые 40 мс, без delay().}
+\PY{c+cp}{\PYZsh{}}\PY{c+cp}{include}\PY{+w}{ }\PY{c+cpf}{\PYZlt{}Adafruit\PYZus{}NeoPixel.h\PYZgt{}}
+
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{int}\PY{+w}{ }\PY{n}{DATA\PYZus{}PIN}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{16}\PY{p}{;}\PY{+w}{                  }\PY{c+c1}{// через резистор 330 Ом}
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{int}\PY{+w}{ }\PY{n}{NUM\PYZus{}PIXELS}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{8}\PY{p}{;}
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{uint8\PYZus{}t}\PY{+w}{ }\PY{n}{BRIGHTNESS}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{40}\PY{p}{;}\PY{+w}{            }\PY{c+c1}{// 0..255; ограничивает ток всей ленты}
+
+\PY{n}{Adafruit\PYZus{}NeoPixel}\PY{+w}{ }\PY{n+nf}{strip}\PY{p}{(}\PY{n}{NUM\PYZus{}PIXELS}\PY{p}{,}\PY{+w}{ }\PY{n}{DATA\PYZus{}PIN}\PY{p}{,}\PY{+w}{ }\PY{n}{NEO\PYZus{}GRB}\PY{+w}{ }\PY{o}{+}\PY{+w}{ }\PY{n}{NEO\PYZus{}KHZ800}\PY{p}{)}\PY{p}{;}
+
+\PY{k+kt}{uint32\PYZus{}t}\PY{+w}{ }\PY{n}{lastStep}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}
+\PY{k+kt}{uint16\PYZus{}t}\PY{+w}{ }\PY{n}{hueOffset}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}\PY{+w}{                   }\PY{c+c1}{// сдвиг радуги, 0..65535}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{rainbowStep}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{k}{for}\PY{+w}{ }\PY{p}{(}\PY{k+kt}{int}\PY{+w}{ }\PY{n}{i}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}\PY{+w}{ }\PY{n}{i}\PY{+w}{ }\PY{o}{\PYZlt{}}\PY{+w}{ }\PY{n}{NUM\PYZus{}PIXELS}\PY{p}{;}\PY{+w}{ }\PY{n}{i}\PY{o}{+}\PY{o}{+}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{    }\PY{k+kt}{uint16\PYZus{}t}\PY{+w}{ }\PY{n}{hue}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{hueOffset}\PY{+w}{ }\PY{o}{+}\PY{+w}{ }\PY{n}{i}\PY{+w}{ }\PY{o}{*}\PY{+w}{ }\PY{l+m+mi}{65536UL}\PY{+w}{ }\PY{o}{/}\PY{+w}{ }\PY{n}{NUM\PYZus{}PIXELS}\PY{p}{;}
+\PY{+w}{    }\PY{n}{strip}\PY{p}{.}\PY{n}{setPixelColor}\PY{p}{(}\PY{n}{i}\PY{p}{,}\PY{+w}{ }\PY{n}{strip}\PY{p}{.}\PY{n}{gamma32}\PY{p}{(}\PY{n}{strip}\PY{p}{.}\PY{n}{ColorHSV}\PY{p}{(}\PY{n}{hue}\PY{p}{)}\PY{p}{)}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{p}{\PYZcb{}}
+\PY{+w}{  }\PY{n}{hueOffset}\PY{+w}{ }\PY{o}{+}\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{256}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{setup}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{n}{strip}\PY{p}{.}\PY{n}{begin}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{strip}\PY{p}{.}\PY{n}{setBrightness}\PY{p}{(}\PY{n}{BRIGHTNESS}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{strip}\PY{p}{.}\PY{n}{show}\PY{p}{(}\PY{p}{)}\PY{p}{;}\PY{+w}{                           }\PY{c+c1}{// сразу погасить все пиксели}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{loop}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{k+kt}{uint32\PYZus{}t}\PY{+w}{ }\PY{n}{now}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{millis}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{now}\PY{+w}{ }\PY{o}{\PYZhy{}}\PY{+w}{ }\PY{n}{lastStep}\PY{+w}{ }\PY{o}{\PYZgt{}}\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{40}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{             }\PY{c+c1}{// шаг анимации без delay()}
+\PY{+w}{    }\PY{n}{lastStep}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{now}\PY{p}{;}
+\PY{+w}{    }\PY{n}{rainbowStep}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+\PY{+w}{    }\PY{n}{strip}\PY{p}{.}\PY{n}{show}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{p}{\PYZcb{}}
+\PY{p}{\PYZcb{}}
+\end{CodeVerbatim}

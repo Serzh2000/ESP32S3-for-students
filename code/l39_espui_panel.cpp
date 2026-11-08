@@ -8,40 +8,42 @@ struct Command { Kind kind; int value; };
 QueueHandle_t commands;
 std::atomic<unsigned> dropped{0};
 uint16_t powerId, levelId, voltageId, stateId, queueId;
-bool on = false, ready = false;
+bool on = false;
 int level = 40;
 
 void enqueue(Kind kind, int value) {
   Command cmd{kind, value};
   if (xQueueSend(commands, &cmd, 0) != pdTRUE) ++dropped;
 }
+int parsePercent(const String& text) {
+  if (text.length() == 0 || text.length() > 3) return -1;
+  for (size_t i = 0; i < text.length(); ++i)
+    if (text[i] < '0' || text[i] > '9') return -1;
+  int value = text.toInt();
+  return value <= 100 ? value : -1;
+}
 void powerCallback(Control*, int event) {
-  if (event == S_ACTIVE) enqueue(Kind::Power, 1);
+  if (event == S_ACTIVE)   enqueue(Kind::Power, 1);
   if (event == S_INACTIVE) enqueue(Kind::Power, 0);
 }
 void levelCallback(Control* sender, int event) {
   if (event != SL_VALUE) return;
-  const String text = sender->value;
-  if (text.length() == 0 || text.length() > 3) return;
-  for (size_t i = 0; i < text.length(); ++i)
-    if (text[i] < '0' || text[i] > '9') return;
-  int value = text.toInt();
-  if (value >= 0 && value <= 100) enqueue(Kind::Level, value);
+  int value = parsePercent(sender->value);
+  if (value >= 0) enqueue(Kind::Level, value);
 }
 void stopCallback(Control*, int event) {
   if (event == B_UP) enqueue(Kind::Stop, 0); // once per completed click
 }
+
 void setup() {
   Serial.begin(115200);
   commands = xQueueCreate(12, sizeof(Command));
   if (!commands || !ledcAttach(4, 5000, 8)) {
-    Serial.println("Queue or PWM init failed"); return;
+    Serial.println("Queue or PWM init failed");
+    while (true) delay(1000);
   }
-  ledcWrite(4, 0);
   WiFi.mode(WIFI_AP);
-  if (!WiFi.softAP("S3-Panel", "lesson-39-demo")) {
-    Serial.println("AP failed"); return;
-  }
+  WiFi.softAP("S3-Panel", "lesson-39-demo");
   ESPUI.sliderContinuous = false;
   auto mainTab = ESPUI.addControl(ControlType::Tab, "", "Control");
   auto dataTab = ESPUI.addControl(ControlType::Tab, "", "Measurements");
@@ -60,11 +62,10 @@ void setup() {
   queueId = ESPUI.addControl(ControlType::Label, "Dropped commands", "0",
       ControlColor::Carrot, dataTab);
   ESPUI.begin("ESP32-S3 control panel");
-  ready = true;
   Serial.println(WiFi.softAPIP());
 }
+
 void loop() {
-  if (!ready) { delay(10); return; }
   Command cmd;
   // All changes to our application model and GPIO happen here.
   while (xQueueReceive(commands, &cmd, 0) == pdTRUE) {

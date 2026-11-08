@@ -1,0 +1,91 @@
+\begin{CodeVerbatim}
+\PY{c+c1}{// Урок 42. Сеть 1\PYZhy{}8\PYZhy{}8\PYZhy{}1 повторяет sin(x); яркость светодиода следует за её ответом.}
+\PY{c+c1}{// Веса получены скриптом examples/tinyml/train\PYZus{}sine.py и хранятся как int8.}
+\PY{c+cp}{\PYZsh{}}\PY{c+cp}{include}\PY{+w}{ }\PY{c+cpf}{\PYZlt{}Arduino.h\PYZgt{}}
+
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{int}\PY{+w}{ }\PY{n}{LED\PYZus{}PIN}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{4}\PY{p}{;}
+
+\PY{c+c1}{// \PYZhy{}\PYZhy{}\PYZhy{}\PYZhy{} НАЧАЛО СГЕНЕРИРОВАННОЙ МОДЕЛИ \PYZhy{}\PYZhy{}\PYZhy{}\PYZhy{}}
+\PY{c+c1}{// слой 1: 1 \PYZhy{}\PYZgt{} 8}
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{int8\PYZus{}t}\PY{+w}{ }\PY{n}{W1}\PY{p}{[}\PY{l+m+mi}{8}\PY{p}{]}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{l+m+mi}{40}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{124}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{100}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{\PYZhy{}127}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{99}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{56}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{\PYZhy{}52}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{80}
+\PY{p}{\PYZcb{}}\PY{p}{;}
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{float}\PY{+w}{ }\PY{n}{S1}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mf}{0.01451136f}\PY{p}{;}
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{float}\PY{+w}{ }\PY{n}{BIAS1}\PY{p}{[}\PY{l+m+mi}{8}\PY{p}{]}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{l+m+mf}{0.59202f}\PY{p}{,}\PY{+w}{ }\PY{l+m+mf}{\PYZhy{}0.72172f}\PY{p}{,}\PY{+w}{ }\PY{l+m+mf}{\PYZhy{}0.37317f}\PY{p}{,}\PY{+w}{ }\PY{l+m+mf}{0.00000f}\PY{p}{,}\PY{+w}{ }\PY{l+m+mf}{\PYZhy{}0.89024f}\PY{p}{,}\PY{+w}{ }\PY{l+m+mf}{\PYZhy{}0.00234f}\PY{p}{,}\PY{+w}{ }\PY{l+m+mf}{0.00000f}\PY{p}{,}\PY{+w}{ }\PY{l+m+mf}{\PYZhy{}0.00330f}
+\PY{p}{\PYZcb{}}\PY{p}{;}
+\PY{c+c1}{// слой 2: 8 \PYZhy{}\PYZgt{} 8}
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{int8\PYZus{}t}\PY{+w}{ }\PY{n}{W2}\PY{p}{[}\PY{l+m+mi}{64}\PY{p}{]}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{l+m+mi}{3}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{36}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{30}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{38}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{\PYZhy{}25}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{\PYZhy{}9}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{\PYZhy{}64}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{21}\PY{p}{,}
+\PY{+w}{  }\PY{l+m+mi}{0}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{\PYZhy{}2}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{\PYZhy{}41}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{\PYZhy{}14}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{\PYZhy{}12}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{102}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{28}\PY{p}{,}
+\PY{+w}{  }\PY{l+m+mi}{\PYZhy{}118}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{\PYZhy{}123}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{\PYZhy{}72}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{\PYZhy{}59}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{7}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{7}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{123}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{\PYZhy{}41}\PY{p}{,}
+\PY{+w}{  }\PY{l+m+mi}{\PYZhy{}13}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{68}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{22}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{22}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{\PYZhy{}17}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{\PYZhy{}55}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{6}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{4}\PY{p}{,}
+\PY{+w}{  }\PY{l+m+mi}{\PYZhy{}45}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{\PYZhy{}21}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{\PYZhy{}37}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{\PYZhy{}47}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{\PYZhy{}3}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{68}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{\PYZhy{}22}\PY{p}{,}
+\PY{+w}{  }\PY{l+m+mi}{52}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{42}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{20}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{\PYZhy{}23}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{24}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{\PYZhy{}17}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{46}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{\PYZhy{}127}\PY{p}{,}
+\PY{+w}{  }\PY{l+m+mi}{31}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{\PYZhy{}1}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{\PYZhy{}42}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{\PYZhy{}10}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{2}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{9}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{\PYZhy{}33}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{\PYZhy{}37}\PY{p}{,}
+\PY{+w}{  }\PY{l+m+mi}{36}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{7}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{25}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{37}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{\PYZhy{}55}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{5}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{59}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{\PYZhy{}49}
+\PY{p}{\PYZcb{}}\PY{p}{;}
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{float}\PY{+w}{ }\PY{n}{S2}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mf}{0.01495892f}\PY{p}{;}
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{float}\PY{+w}{ }\PY{n}{BIAS2}\PY{p}{[}\PY{l+m+mi}{8}\PY{p}{]}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{l+m+mf}{\PYZhy{}0.26971f}\PY{p}{,}\PY{+w}{ }\PY{l+m+mf}{0.27132f}\PY{p}{,}\PY{+w}{ }\PY{l+m+mf}{0.38404f}\PY{p}{,}\PY{+w}{ }\PY{l+m+mf}{0.29878f}\PY{p}{,}\PY{+w}{ }\PY{l+m+mf}{0.00000f}\PY{p}{,}\PY{+w}{ }\PY{l+m+mf}{\PYZhy{}0.05366f}\PY{p}{,}\PY{+w}{ }\PY{l+m+mf}{\PYZhy{}1.61403f}\PY{p}{,}\PY{+w}{ }\PY{l+m+mf}{0.05801f}
+\PY{p}{\PYZcb{}}\PY{p}{;}
+\PY{c+c1}{// слой 3: 8 \PYZhy{}\PYZgt{} 1}
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{int8\PYZus{}t}\PY{+w}{ }\PY{n}{W3}\PY{p}{[}\PY{l+m+mi}{8}\PY{p}{]}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{l+m+mi}{\PYZhy{}127}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{101}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{87}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{93}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{\PYZhy{}12}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{\PYZhy{}51}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{50}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{\PYZhy{}76}
+\PY{p}{\PYZcb{}}\PY{p}{;}
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{float}\PY{+w}{ }\PY{n}{S3}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mf}{0.01427681f}\PY{p}{;}
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{float}\PY{+w}{ }\PY{n}{BIAS3}\PY{p}{[}\PY{l+m+mi}{1}\PY{p}{]}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{l+m+mf}{\PYZhy{}2.20406f}
+\PY{p}{\PYZcb{}}\PY{p}{;}
+\PY{c+c1}{// всего весов: 80 (int8: 80 байт; во float было бы 320)}
+
+\PY{c+c1}{// \PYZhy{}\PYZhy{}\PYZhy{}\PYZhy{} КОНЕЦ СГЕНЕРИРОВАННОЙ МОДЕЛИ \PYZhy{}\PYZhy{}\PYZhy{}\PYZhy{}}
+
+\PY{c+c1}{// Один полносвязный слой: out[j] = sum\PYZus{}i(in[i] * w[i][j]) * scale + b[j]}
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{dense}\PY{p}{(}\PY{k}{const}\PY{+w}{ }\PY{k+kt}{float}\PY{o}{*}\PY{+w}{ }\PY{n}{in}\PY{p}{,}\PY{+w}{ }\PY{k+kt}{int}\PY{+w}{ }\PY{n}{nIn}\PY{p}{,}\PY{+w}{ }\PY{k}{const}\PY{+w}{ }\PY{k+kt}{int8\PYZus{}t}\PY{o}{*}\PY{+w}{ }\PY{n}{w}\PY{p}{,}\PY{+w}{ }\PY{k+kt}{float}\PY{+w}{ }\PY{n}{scale}\PY{p}{,}
+\PY{+w}{           }\PY{k}{const}\PY{+w}{ }\PY{k+kt}{float}\PY{o}{*}\PY{+w}{ }\PY{n}{b}\PY{p}{,}\PY{+w}{ }\PY{k+kt}{float}\PY{o}{*}\PY{+w}{ }\PY{n}{out}\PY{p}{,}\PY{+w}{ }\PY{k+kt}{int}\PY{+w}{ }\PY{n}{nOut}\PY{p}{,}\PY{+w}{ }\PY{k+kt}{bool}\PY{+w}{ }\PY{n}{relu}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{k}{for}\PY{+w}{ }\PY{p}{(}\PY{k+kt}{int}\PY{+w}{ }\PY{n}{j}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}\PY{+w}{ }\PY{n}{j}\PY{+w}{ }\PY{o}{\PYZlt{}}\PY{+w}{ }\PY{n}{nOut}\PY{p}{;}\PY{+w}{ }\PY{o}{+}\PY{o}{+}\PY{n}{j}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{    }\PY{k+kt}{float}\PY{+w}{ }\PY{n}{sum}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}
+\PY{+w}{    }\PY{k}{for}\PY{+w}{ }\PY{p}{(}\PY{k+kt}{int}\PY{+w}{ }\PY{n}{i}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}\PY{+w}{ }\PY{n}{i}\PY{+w}{ }\PY{o}{\PYZlt{}}\PY{+w}{ }\PY{n}{nIn}\PY{p}{;}\PY{+w}{ }\PY{o}{+}\PY{o}{+}\PY{n}{i}\PY{p}{)}\PY{+w}{ }\PY{n}{sum}\PY{+w}{ }\PY{o}{+}\PY{o}{=}\PY{+w}{ }\PY{n}{in}\PY{p}{[}\PY{n}{i}\PY{p}{]}\PY{+w}{ }\PY{o}{*}\PY{+w}{ }\PY{n}{w}\PY{p}{[}\PY{n}{i}\PY{+w}{ }\PY{o}{*}\PY{+w}{ }\PY{n}{nOut}\PY{+w}{ }\PY{o}{+}\PY{+w}{ }\PY{n}{j}\PY{p}{]}\PY{p}{;}
+\PY{+w}{    }\PY{n}{sum}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{sum}\PY{+w}{ }\PY{o}{*}\PY{+w}{ }\PY{n}{scale}\PY{+w}{ }\PY{o}{+}\PY{+w}{ }\PY{n}{b}\PY{p}{[}\PY{n}{j}\PY{p}{]}\PY{p}{;}
+\PY{+w}{    }\PY{n}{out}\PY{p}{[}\PY{n}{j}\PY{p}{]}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{p}{(}\PY{n}{relu}\PY{+w}{ }\PY{o}{\PYZam{}}\PY{o}{\PYZam{}}\PY{+w}{ }\PY{n}{sum}\PY{+w}{ }\PY{o}{\PYZlt{}}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{)}\PY{+w}{ }\PY{o}{?}\PY{+w}{ }\PY{l+m+mi}{0}\PY{+w}{ }\PY{o}{:}\PY{+w}{ }\PY{n}{sum}\PY{p}{;}
+\PY{+w}{  }\PY{p}{\PYZcb{}}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{float}\PY{+w}{ }\PY{n+nf}{predictSin}\PY{p}{(}\PY{k+kt}{float}\PY{+w}{ }\PY{n}{x}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{                 }\PY{c+c1}{// x в радианах, от 0 до 2π}
+\PY{+w}{  }\PY{k+kt}{float}\PY{+w}{ }\PY{n}{in}\PY{p}{[}\PY{l+m+mi}{1}\PY{p}{]}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{ }\PY{n}{x}\PY{+w}{ }\PY{o}{/}\PY{+w}{ }\PY{p}{(}\PY{l+m+mi}{2}\PY{+w}{ }\PY{o}{*}\PY{+w}{ }\PY{n}{PI}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZcb{}}\PY{p}{;}\PY{+w}{           }\PY{c+c1}{// та же нормализация, что при обучении}
+\PY{+w}{  }\PY{k+kt}{float}\PY{+w}{ }\PY{n}{h1}\PY{p}{[}\PY{l+m+mi}{8}\PY{p}{]}\PY{p}{,}\PY{+w}{ }\PY{n}{h2}\PY{p}{[}\PY{l+m+mi}{8}\PY{p}{]}\PY{p}{,}\PY{+w}{ }\PY{n}{y}\PY{p}{[}\PY{l+m+mi}{1}\PY{p}{]}\PY{p}{;}
+\PY{+w}{  }\PY{n}{dense}\PY{p}{(}\PY{n}{in}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{1}\PY{p}{,}\PY{+w}{ }\PY{n}{W1}\PY{p}{,}\PY{+w}{ }\PY{n}{S1}\PY{p}{,}\PY{+w}{ }\PY{n}{BIAS1}\PY{p}{,}\PY{+w}{ }\PY{n}{h1}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{8}\PY{p}{,}\PY{+w}{ }\PY{n+nb}{true}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{dense}\PY{p}{(}\PY{n}{h1}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{8}\PY{p}{,}\PY{+w}{ }\PY{n}{W2}\PY{p}{,}\PY{+w}{ }\PY{n}{S2}\PY{p}{,}\PY{+w}{ }\PY{n}{BIAS2}\PY{p}{,}\PY{+w}{ }\PY{n}{h2}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{8}\PY{p}{,}\PY{+w}{ }\PY{n+nb}{true}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{dense}\PY{p}{(}\PY{n}{h2}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{8}\PY{p}{,}\PY{+w}{ }\PY{n}{W3}\PY{p}{,}\PY{+w}{ }\PY{n}{S3}\PY{p}{,}\PY{+w}{ }\PY{n}{BIAS3}\PY{p}{,}\PY{+w}{ }\PY{n}{y}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{1}\PY{p}{,}\PY{+w}{ }\PY{n+nb}{false}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{k}{return}\PY{+w}{ }\PY{n}{y}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{]}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{setup}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{n}{Serial}\PY{p}{.}\PY{n}{begin}\PY{p}{(}\PY{l+m+mi}{115200}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{o}{!}\PY{n}{ledcAttach}\PY{p}{(}\PY{n}{LED\PYZus{}PIN}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{5000}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{8}\PY{p}{)}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{ }\PY{n}{Serial}\PY{p}{.}\PY{n}{println}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{PWM init failed}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{;}\PY{+w}{ }\PY{k}{return}\PY{p}{;}\PY{+w}{ }\PY{p}{\PYZcb{}}
+
+\PY{+w}{  }\PY{c+c1}{// Проверка качества: максимальное отличие от настоящего sinf() на 100 точках}
+\PY{+w}{  }\PY{k+kt}{float}\PY{+w}{ }\PY{n}{worst}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}
+\PY{+w}{  }\PY{k}{for}\PY{+w}{ }\PY{p}{(}\PY{k+kt}{int}\PY{+w}{ }\PY{n}{k}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}\PY{+w}{ }\PY{n}{k}\PY{+w}{ }\PY{o}{\PYZlt{}}\PY{+w}{ }\PY{l+m+mi}{100}\PY{p}{;}\PY{+w}{ }\PY{o}{+}\PY{o}{+}\PY{n}{k}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{    }\PY{k+kt}{float}\PY{+w}{ }\PY{n}{x}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{2}\PY{+w}{ }\PY{o}{*}\PY{+w}{ }\PY{n}{PI}\PY{+w}{ }\PY{o}{*}\PY{+w}{ }\PY{n}{k}\PY{+w}{ }\PY{o}{/}\PY{+w}{ }\PY{l+m+mf}{99.0f}\PY{p}{;}
+\PY{+w}{    }\PY{n}{worst}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{max}\PY{p}{(}\PY{n}{worst}\PY{p}{,}\PY{+w}{ }\PY{n}{fabsf}\PY{p}{(}\PY{n}{predictSin}\PY{p}{(}\PY{n}{x}\PY{p}{)}\PY{+w}{ }\PY{o}{\PYZhy{}}\PY{+w}{ }\PY{n}{sinf}\PY{p}{(}\PY{n}{x}\PY{p}{)}\PY{p}{)}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{p}{\PYZcb{}}
+\PY{+w}{  }\PY{n}{Serial}\PY{p}{.}\PY{n}{printf}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{max error = \PYZpc{}.3f}\PY{l+s+se}{\PYZbs{}n}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{n}{worst}\PY{p}{)}\PY{p}{;}
+
+\PY{+w}{  }\PY{c+c1}{// Время одного предсказания: усредняем по 1000 запусков}
+\PY{+w}{  }\PY{k}{volatile}\PY{+w}{ }\PY{k+kt}{float}\PY{+w}{ }\PY{n}{sink}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}\PY{+w}{                  }\PY{c+c1}{// чтобы компилятор не выбросил цикл}
+\PY{+w}{  }\PY{k+kt}{uint32\PYZus{}t}\PY{+w}{ }\PY{n}{t0}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{micros}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{k}{for}\PY{+w}{ }\PY{p}{(}\PY{k+kt}{int}\PY{+w}{ }\PY{n}{k}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}\PY{+w}{ }\PY{n}{k}\PY{+w}{ }\PY{o}{\PYZlt{}}\PY{+w}{ }\PY{l+m+mi}{1000}\PY{p}{;}\PY{+w}{ }\PY{o}{+}\PY{o}{+}\PY{n}{k}\PY{p}{)}\PY{+w}{ }\PY{n}{sink}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{predictSin}\PY{p}{(}\PY{n}{k}\PY{+w}{ }\PY{o}{*}\PY{+w}{ }\PY{l+m+mf}{0.00628f}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{Serial}\PY{p}{.}\PY{n}{printf}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{one inference = \PYZpc{}.2f us}\PY{l+s+se}{\PYZbs{}n}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{p}{(}\PY{n}{micros}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{o}{\PYZhy{}}\PY{+w}{ }\PY{n}{t0}\PY{p}{)}\PY{+w}{ }\PY{o}{/}\PY{+w}{ }\PY{l+m+mf}{1000.0f}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{loop}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{k+kt}{float}\PY{+w}{ }\PY{n}{x}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{2}\PY{+w}{ }\PY{o}{*}\PY{+w}{ }\PY{n}{PI}\PY{+w}{ }\PY{o}{*}\PY{+w}{ }\PY{p}{(}\PY{n}{millis}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{o}{\PYZpc{}}\PY{+w}{ }\PY{l+m+mi}{4000}\PY{p}{)}\PY{+w}{ }\PY{o}{/}\PY{+w}{ }\PY{l+m+mf}{4000.0f}\PY{p}{;}\PY{+w}{   }\PY{c+c1}{// один оборот за 4 секунды}
+\PY{+w}{  }\PY{k+kt}{float}\PY{+w}{ }\PY{n}{y}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{predictSin}\PY{p}{(}\PY{n}{x}\PY{p}{)}\PY{p}{;}\PY{+w}{                          }\PY{c+c1}{// от \PYZhy{}1 до +1}
+\PY{+w}{  }\PY{k+kt}{int}\PY{+w}{ }\PY{n}{duty}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{constrain}\PY{p}{(}\PY{p}{(}\PY{k+kt}{int}\PY{p}{)}\PY{p}{(}\PY{p}{(}\PY{n}{y}\PY{+w}{ }\PY{o}{+}\PY{+w}{ }\PY{l+m+mi}{1}\PY{p}{)}\PY{+w}{ }\PY{o}{*}\PY{+w}{ }\PY{l+m+mf}{127.5f}\PY{p}{)}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{255}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{ledcWrite}\PY{p}{(}\PY{n}{LED\PYZus{}PIN}\PY{p}{,}\PY{+w}{ }\PY{n}{duty}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{Serial}\PY{p}{.}\PY{n}{printf}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{x:\PYZpc{}.2f y:\PYZpc{}.3f}\PY{l+s+se}{\PYZbs{}n}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{n}{x}\PY{p}{,}\PY{+w}{ }\PY{n}{y}\PY{p}{)}\PY{p}{;}\PY{+w}{           }\PY{c+c1}{// формат Serial Plotter}
+\PY{+w}{  }\PY{n}{delay}\PY{p}{(}\PY{l+m+mi}{20}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+\end{CodeVerbatim}

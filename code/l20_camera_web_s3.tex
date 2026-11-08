@@ -1,0 +1,24 @@
+\begin{CodeVerbatim}
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{uint32\PYZus{}t}\PY{+w}{ }\PY{n}{MAX\PYZus{}STREAM\PYZus{}MS}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{10UL}\PY{+w}{ }\PY{o}{*}\PY{+w}{ }\PY{l+m+mi}{60}\PY{+w}{ }\PY{o}{*}\PY{+w}{ }\PY{l+m+mi}{1000}\PY{p}{;}\PY{+w}{   }\PY{c+c1}{// поток сам закончится через 10 минут}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{handleStream}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{                     }\PY{c+c1}{// MJPEG: непрерывная череда JPEG\PYZhy{}кадров}
+\PY{+w}{  }\PY{n}{WiFiClient}\PY{+w}{ }\PY{n}{client}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{server}\PY{p}{.}\PY{n}{client}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{client}\PY{p}{.}\PY{n}{print}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{HTTP/1.1 200 OK}\PY{l+s+se}{\PYZbs{}r}\PY{l+s+se}{\PYZbs{}n}\PY{l+s}{\PYZdq{}}
+\PY{+w}{               }\PY{l+s}{\PYZdq{}}\PY{l+s}{Content\PYZhy{}Type: multipart/x\PYZhy{}mixed\PYZhy{}replace; boundary=frame}\PY{l+s+se}{\PYZbs{}r}\PY{l+s+se}{\PYZbs{}n}\PY{l+s+se}{\PYZbs{}r}\PY{l+s+se}{\PYZbs{}n}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{k+kt}{uint32\PYZus{}t}\PY{+w}{ }\PY{n}{start}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{millis}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{k}{while}\PY{+w}{ }\PY{p}{(}\PY{n}{client}\PY{p}{.}\PY{n}{connected}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{o}{\PYZam{}}\PY{o}{\PYZam{}}\PY{+w}{ }\PY{n}{millis}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{o}{\PYZhy{}}\PY{+w}{ }\PY{n}{start}\PY{+w}{ }\PY{o}{\PYZlt{}}\PY{+w}{ }\PY{n}{MAX\PYZus{}STREAM\PYZus{}MS}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{    }\PY{n}{camera\PYZus{}fb\PYZus{}t}\PY{+w}{ }\PY{o}{*}\PY{n}{fb}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{esp\PYZus{}camera\PYZus{}fb\PYZus{}get}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+\PY{+w}{    }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{o}{!}\PY{n}{fb}\PY{p}{)}\PY{+w}{ }\PY{k}{break}\PY{p}{;}
+\PY{+w}{    }\PY{k+kt}{size\PYZus{}t}\PY{+w}{ }\PY{n}{len}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{fb}\PY{o}{\PYZhy{}}\PY{o}{\PYZgt{}}\PY{n}{len}\PY{p}{;}
+\PY{+w}{    }\PY{n}{client}\PY{p}{.}\PY{n}{printf}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{\PYZhy{}\PYZhy{}frame}\PY{l+s+se}{\PYZbs{}r}\PY{l+s+se}{\PYZbs{}n}\PY{l+s}{Content\PYZhy{}Type: image/jpeg}\PY{l+s+se}{\PYZbs{}r}\PY{l+s+se}{\PYZbs{}n}\PY{l+s}{Content\PYZhy{}Length: \PYZpc{}u}\PY{l+s+se}{\PYZbs{}r}\PY{l+s+se}{\PYZbs{}n}\PY{l+s+se}{\PYZbs{}r}\PY{l+s+se}{\PYZbs{}n}\PY{l+s}{\PYZdq{}}\PY{p}{,}
+\PY{+w}{                  }\PY{p}{(}\PY{k+kt}{unsigned}\PY{p}{)}\PY{n}{len}\PY{p}{)}\PY{p}{;}
+\PY{+w}{    }\PY{k+kt}{size\PYZus{}t}\PY{+w}{ }\PY{n}{sent}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{client}\PY{p}{.}\PY{n}{write}\PY{p}{(}\PY{n}{fb}\PY{o}{\PYZhy{}}\PY{o}{\PYZgt{}}\PY{n}{buf}\PY{p}{,}\PY{+w}{ }\PY{n}{len}\PY{p}{)}\PY{p}{;}
+\PY{+w}{    }\PY{n}{client}\PY{p}{.}\PY{n}{print}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s+se}{\PYZbs{}r}\PY{l+s+se}{\PYZbs{}n}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{;}
+\PY{+w}{    }\PY{n}{esp\PYZus{}camera\PYZus{}fb\PYZus{}return}\PY{p}{(}\PY{n}{fb}\PY{p}{)}\PY{p}{;}\PY{+w}{             }\PY{c+c1}{// вернуть кадр до любого выхода из цикла}
+\PY{+w}{    }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{sent}\PY{+w}{ }\PY{o}{!}\PY{o}{=}\PY{+w}{ }\PY{n}{len}\PY{p}{)}\PY{+w}{ }\PY{k}{break}\PY{p}{;}\PY{+w}{               }\PY{c+c1}{// клиент отключился \PYZhy{}\PYZhy{} выходим}
+\PY{+w}{  }\PY{p}{\PYZcb{}}
+\PY{p}{\PYZcb{}}
+
+\PY{c+c1}{// в setup() после server.on(\PYZdq{}/capture\PYZdq{}, handleCapture):}
+\PY{c+c1}{//   server.on(\PYZdq{}/stream\PYZdq{}, handleStream);}
+\end{CodeVerbatim}

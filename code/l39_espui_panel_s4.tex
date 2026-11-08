@@ -1,0 +1,79 @@
+\begin{CodeVerbatim}
+\PY{c+c1}{// Шаг 4. Кнопка All off и «применённое состояние»: браузер видит то, что реально сделала плата.}
+\PY{c+c1}{// LED: GPIO4 \PYZhy{}\PYZgt{} 220 ohm \PYZhy{}\PYZgt{} LED \PYZhy{}\PYZgt{} GND.}
+\PY{c+cp}{\PYZsh{}}\PY{c+cp}{include}\PY{+w}{ }\PY{c+cpf}{\PYZlt{}WiFi.h\PYZgt{}}
+\PY{c+cp}{\PYZsh{}}\PY{c+cp}{include}\PY{+w}{ }\PY{c+cpf}{\PYZlt{}ESPUI.h\PYZgt{}}
+\PY{c+cp}{\PYZsh{}}\PY{c+cp}{include}\PY{+w}{ }\PY{c+cpf}{\PYZlt{}atomic\PYZgt{}}
+
+\PY{k}{enum}\PY{+w}{ }\PY{k}{class}\PY{+w}{ }\PY{n+nc}{Kind}\PY{+w}{ }\PY{o}{:}\PY{+w}{ }\PY{k+kt}{uint8\PYZus{}t}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{ }\PY{n}{Power}\PY{p}{,}\PY{+w}{ }\PY{n}{Level}\PY{p}{,}\PY{+w}{ }\PY{n}{Stop}\PY{+w}{ }\PY{p}{\PYZcb{}}\PY{p}{;}
+\PY{k}{struct}\PY{+w}{ }\PY{n+nc}{Command}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{ }\PY{n}{Kind}\PY{+w}{ }\PY{n}{kind}\PY{p}{;}\PY{+w}{ }\PY{k+kt}{int}\PY{+w}{ }\PY{n}{value}\PY{p}{;}\PY{+w}{ }\PY{p}{\PYZcb{}}\PY{p}{;}
+\PY{n}{QueueHandle\PYZus{}t}\PY{+w}{ }\PY{n}{commands}\PY{p}{;}
+\PY{n}{std}\PY{o}{:}\PY{o}{:}\PY{n}{atomic}\PY{o}{\PYZlt{}}\PY{k+kt}{unsigned}\PY{o}{\PYZgt{}}\PY{+w}{ }\PY{n}{dropped}\PY{p}{\PYZob{}}\PY{l+m+mi}{0}\PY{p}{\PYZcb{}}\PY{p}{;}
+\PY{k+kt}{uint16\PYZus{}t}\PY{+w}{ }\PY{n}{powerId}\PY{p}{,}\PY{+w}{ }\PY{n}{levelId}\PY{p}{,}\PY{+w}{ }\PY{n}{stateId}\PY{p}{;}
+\PY{k+kt}{bool}\PY{+w}{ }\PY{n}{on}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n+nb}{false}\PY{p}{;}
+\PY{k+kt}{int}\PY{+w}{ }\PY{n}{level}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{40}\PY{p}{;}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{enqueue}\PY{p}{(}\PY{n}{Kind}\PY{+w}{ }\PY{n}{kind}\PY{p}{,}\PY{+w}{ }\PY{k+kt}{int}\PY{+w}{ }\PY{n}{value}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{n}{Command}\PY{+w}{ }\PY{n}{cmd}\PY{p}{\PYZob{}}\PY{n}{kind}\PY{p}{,}\PY{+w}{ }\PY{n}{value}\PY{p}{\PYZcb{}}\PY{p}{;}
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{xQueueSend}\PY{p}{(}\PY{n}{commands}\PY{p}{,}\PY{+w}{ }\PY{o}{\PYZam{}}\PY{n}{cmd}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{)}\PY{+w}{ }\PY{o}{!}\PY{o}{=}\PY{+w}{ }\PY{n}{pdTRUE}\PY{p}{)}\PY{+w}{ }\PY{o}{+}\PY{o}{+}\PY{n}{dropped}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+\PY{k+kt}{int}\PY{+w}{ }\PY{n+nf}{parsePercent}\PY{p}{(}\PY{k}{const}\PY{+w}{ }\PY{n}{String}\PY{o}{\PYZam{}}\PY{+w}{ }\PY{n}{text}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{text}\PY{p}{.}\PY{n}{length}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{o}{=}\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{+w}{ }\PY{o}{|}\PY{o}{|}\PY{+w}{ }\PY{n}{text}\PY{p}{.}\PY{n}{length}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{o}{\PYZgt{}}\PY{+w}{ }\PY{l+m+mi}{3}\PY{p}{)}\PY{+w}{ }\PY{k}{return}\PY{+w}{ }\PY{l+m+mi}{\PYZhy{}1}\PY{p}{;}
+\PY{+w}{  }\PY{k}{for}\PY{+w}{ }\PY{p}{(}\PY{k+kt}{size\PYZus{}t}\PY{+w}{ }\PY{n}{i}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}\PY{+w}{ }\PY{n}{i}\PY{+w}{ }\PY{o}{\PYZlt{}}\PY{+w}{ }\PY{n}{text}\PY{p}{.}\PY{n}{length}\PY{p}{(}\PY{p}{)}\PY{p}{;}\PY{+w}{ }\PY{o}{+}\PY{o}{+}\PY{n}{i}\PY{p}{)}
+\PY{+w}{    }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{text}\PY{p}{[}\PY{n}{i}\PY{p}{]}\PY{+w}{ }\PY{o}{\PYZlt{}}\PY{+w}{ }\PY{l+s+sc}{\PYZsq{}}\PY{l+s+sc}{0}\PY{l+s+sc}{\PYZsq{}}\PY{+w}{ }\PY{o}{|}\PY{o}{|}\PY{+w}{ }\PY{n}{text}\PY{p}{[}\PY{n}{i}\PY{p}{]}\PY{+w}{ }\PY{o}{\PYZgt{}}\PY{+w}{ }\PY{l+s+sc}{\PYZsq{}}\PY{l+s+sc}{9}\PY{l+s+sc}{\PYZsq{}}\PY{p}{)}\PY{+w}{ }\PY{k}{return}\PY{+w}{ }\PY{l+m+mi}{\PYZhy{}1}\PY{p}{;}
+\PY{+w}{  }\PY{k+kt}{int}\PY{+w}{ }\PY{n}{value}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{text}\PY{p}{.}\PY{n}{toInt}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{k}{return}\PY{+w}{ }\PY{n}{value}\PY{+w}{ }\PY{o}{\PYZlt{}}\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{100}\PY{+w}{ }\PY{o}{?}\PY{+w}{ }\PY{n}{value}\PY{+w}{ }\PY{o}{:}\PY{+w}{ }\PY{l+m+mi}{\PYZhy{}1}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{powerCallback}\PY{p}{(}\PY{n}{Control}\PY{o}{*}\PY{p}{,}\PY{+w}{ }\PY{k+kt}{int}\PY{+w}{ }\PY{n}{event}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{event}\PY{+w}{ }\PY{o}{=}\PY{o}{=}\PY{+w}{ }\PY{n}{S\PYZus{}ACTIVE}\PY{p}{)}\PY{+w}{   }\PY{n}{enqueue}\PY{p}{(}\PY{n}{Kind}\PY{o}{:}\PY{o}{:}\PY{n}{Power}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{1}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{event}\PY{+w}{ }\PY{o}{=}\PY{o}{=}\PY{+w}{ }\PY{n}{S\PYZus{}INACTIVE}\PY{p}{)}\PY{+w}{ }\PY{n}{enqueue}\PY{p}{(}\PY{n}{Kind}\PY{o}{:}\PY{o}{:}\PY{n}{Power}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{levelCallback}\PY{p}{(}\PY{n}{Control}\PY{o}{*}\PY{+w}{ }\PY{n}{sender}\PY{p}{,}\PY{+w}{ }\PY{k+kt}{int}\PY{+w}{ }\PY{n}{event}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{event}\PY{+w}{ }\PY{o}{!}\PY{o}{=}\PY{+w}{ }\PY{n}{SL\PYZus{}VALUE}\PY{p}{)}\PY{+w}{ }\PY{k}{return}\PY{p}{;}
+\PY{+w}{  }\PY{k+kt}{int}\PY{+w}{ }\PY{n}{value}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{parsePercent}\PY{p}{(}\PY{n}{sender}\PY{o}{\PYZhy{}}\PY{o}{\PYZgt{}}\PY{n}{value}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{value}\PY{+w}{ }\PY{o}{\PYZgt{}}\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{)}\PY{+w}{ }\PY{n}{enqueue}\PY{p}{(}\PY{n}{Kind}\PY{o}{:}\PY{o}{:}\PY{n}{Level}\PY{p}{,}\PY{+w}{ }\PY{n}{value}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{stopCallback}\PY{p}{(}\PY{n}{Control}\PY{o}{*}\PY{p}{,}\PY{+w}{ }\PY{k+kt}{int}\PY{+w}{ }\PY{n}{event}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{event}\PY{+w}{ }\PY{o}{=}\PY{o}{=}\PY{+w}{ }\PY{n}{B\PYZus{}UP}\PY{p}{)}\PY{+w}{ }\PY{n}{enqueue}\PY{p}{(}\PY{n}{Kind}\PY{o}{:}\PY{o}{:}\PY{n}{Stop}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{;}\PY{+w}{     }\PY{c+c1}{// один раз за щелчок}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{setup}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{n}{Serial}\PY{p}{.}\PY{n}{begin}\PY{p}{(}\PY{l+m+mi}{115200}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{commands}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{xQueueCreate}\PY{p}{(}\PY{l+m+mi}{12}\PY{p}{,}\PY{+w}{ }\PY{k}{sizeof}\PY{p}{(}\PY{n}{Command}\PY{p}{)}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{ledcAttach}\PY{p}{(}\PY{l+m+mi}{4}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{5000}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{8}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{WiFi}\PY{p}{.}\PY{n}{mode}\PY{p}{(}\PY{n}{WIFI\PYZus{}AP}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{WiFi}\PY{p}{.}\PY{n}{softAP}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{S3\PYZhy{}Panel}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{lesson\PYZhy{}39\PYZhy{}demo}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{ESPUI}\PY{p}{.}\PY{n}{sliderContinuous}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n+nb}{false}\PY{p}{;}
+\PY{+w}{  }\PY{k}{auto}\PY{+w}{ }\PY{n}{mainTab}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{ESPUI}\PY{p}{.}\PY{n}{addControl}\PY{p}{(}\PY{n}{ControlType}\PY{o}{:}\PY{o}{:}\PY{n}{Tab}\PY{p}{,}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{Control}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{powerId}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{ESPUI}\PY{p}{.}\PY{n}{addControl}\PY{p}{(}\PY{n}{ControlType}\PY{o}{:}\PY{o}{:}\PY{n}{Switcher}\PY{p}{,}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{LED enabled}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{0}\PY{l+s}{\PYZdq{}}\PY{p}{,}
+\PY{+w}{      }\PY{n}{ControlColor}\PY{o}{:}\PY{o}{:}\PY{n}{Emerald}\PY{p}{,}\PY{+w}{ }\PY{n}{mainTab}\PY{p}{,}\PY{+w}{ }\PY{n}{powerCallback}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{levelId}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{ESPUI}\PY{p}{.}\PY{n}{addControl}\PY{p}{(}\PY{n}{ControlType}\PY{o}{:}\PY{o}{:}\PY{n}{Slider}\PY{p}{,}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{Brightness, \PYZpc{}}\PY{l+s}{\PYZdq{}}\PY{p}{,}
+\PY{+w}{      }\PY{n}{String}\PY{p}{(}\PY{n}{level}\PY{p}{)}\PY{p}{,}\PY{+w}{ }\PY{n}{ControlColor}\PY{o}{:}\PY{o}{:}\PY{n}{Peterriver}\PY{p}{,}\PY{+w}{ }\PY{n}{mainTab}\PY{p}{,}\PY{+w}{ }\PY{n}{levelCallback}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{ESPUI}\PY{p}{.}\PY{n}{addControl}\PY{p}{(}\PY{n}{ControlType}\PY{o}{:}\PY{o}{:}\PY{n}{Min}\PY{p}{,}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{0}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{n}{ControlColor}\PY{o}{:}\PY{o}{:}\PY{n}{None}\PY{p}{,}\PY{+w}{ }\PY{n}{levelId}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{ESPUI}\PY{p}{.}\PY{n}{addControl}\PY{p}{(}\PY{n}{ControlType}\PY{o}{:}\PY{o}{:}\PY{n}{Max}\PY{p}{,}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{100}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{n}{ControlColor}\PY{o}{:}\PY{o}{:}\PY{n}{None}\PY{p}{,}\PY{+w}{ }\PY{n}{levelId}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{ESPUI}\PY{p}{.}\PY{n}{addControl}\PY{p}{(}\PY{n}{ControlType}\PY{o}{:}\PY{o}{:}\PY{n}{Button}\PY{p}{,}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{Output}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{All off}\PY{l+s}{\PYZdq{}}\PY{p}{,}
+\PY{+w}{      }\PY{n}{ControlColor}\PY{o}{:}\PY{o}{:}\PY{n}{Alizarin}\PY{p}{,}\PY{+w}{ }\PY{n}{mainTab}\PY{p}{,}\PY{+w}{ }\PY{n}{stopCallback}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{stateId}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{ESPUI}\PY{p}{.}\PY{n}{addControl}\PY{p}{(}\PY{n}{ControlType}\PY{o}{:}\PY{o}{:}\PY{n}{Label}\PY{p}{,}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{Applied state}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{OFF}\PY{l+s}{\PYZdq{}}\PY{p}{,}
+\PY{+w}{      }\PY{n}{ControlColor}\PY{o}{:}\PY{o}{:}\PY{n}{Turquoise}\PY{p}{,}\PY{+w}{ }\PY{n}{mainTab}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{ESPUI}\PY{p}{.}\PY{n}{begin}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{ESP32\PYZhy{}S3 control panel}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{Serial}\PY{p}{.}\PY{n}{println}\PY{p}{(}\PY{n}{WiFi}\PY{p}{.}\PY{n}{softAPIP}\PY{p}{(}\PY{p}{)}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{loop}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{n}{Command}\PY{+w}{ }\PY{n}{cmd}\PY{p}{;}
+\PY{+w}{  }\PY{k}{while}\PY{+w}{ }\PY{p}{(}\PY{n}{xQueueReceive}\PY{p}{(}\PY{n}{commands}\PY{p}{,}\PY{+w}{ }\PY{o}{\PYZam{}}\PY{n}{cmd}\PY{p}{,}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{)}\PY{+w}{ }\PY{o}{=}\PY{o}{=}\PY{+w}{ }\PY{n}{pdTRUE}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{    }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{cmd}\PY{p}{.}\PY{n}{kind}\PY{+w}{ }\PY{o}{=}\PY{o}{=}\PY{+w}{ }\PY{n}{Kind}\PY{o}{:}\PY{o}{:}\PY{n}{Power}\PY{p}{)}\PY{+w}{ }\PY{n}{on}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{cmd}\PY{p}{.}\PY{n}{value}\PY{+w}{ }\PY{o}{!}\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}
+\PY{+w}{    }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{cmd}\PY{p}{.}\PY{n}{kind}\PY{+w}{ }\PY{o}{=}\PY{o}{=}\PY{+w}{ }\PY{n}{Kind}\PY{o}{:}\PY{o}{:}\PY{n}{Level}\PY{p}{)}\PY{+w}{ }\PY{n}{level}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{cmd}\PY{p}{.}\PY{n}{value}\PY{p}{;}
+\PY{+w}{    }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{cmd}\PY{p}{.}\PY{n}{kind}\PY{+w}{ }\PY{o}{=}\PY{o}{=}\PY{+w}{ }\PY{n}{Kind}\PY{o}{:}\PY{o}{:}\PY{n}{Stop}\PY{p}{)}\PY{+w}{ }\PY{n}{on}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n+nb}{false}\PY{p}{;}
+\PY{+w}{  }\PY{p}{\PYZcb{}}
+\PY{+w}{  }\PY{n}{ledcWrite}\PY{p}{(}\PY{l+m+mi}{4}\PY{p}{,}\PY{+w}{ }\PY{n}{on}\PY{+w}{ }\PY{o}{?}\PY{+w}{ }\PY{n}{level}\PY{+w}{ }\PY{o}{*}\PY{+w}{ }\PY{l+m+mi}{255}\PY{+w}{ }\PY{o}{/}\PY{+w}{ }\PY{l+m+mi}{100}\PY{+w}{ }\PY{o}{:}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{k}{static}\PY{+w}{ }\PY{k+kt}{uint32\PYZus{}t}\PY{+w}{ }\PY{n}{last}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{millis}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{o}{\PYZhy{}}\PY{+w}{ }\PY{n}{last}\PY{+w}{ }\PY{o}{\PYZgt{}}\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{500}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{                  }\PY{c+c1}{// публикуем применённое состояние}
+\PY{+w}{    }\PY{n}{last}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{millis}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+\PY{+w}{    }\PY{n}{ESPUI}\PY{p}{.}\PY{n}{updateSwitcher}\PY{p}{(}\PY{n}{powerId}\PY{p}{,}\PY{+w}{ }\PY{n}{on}\PY{p}{)}\PY{p}{;}
+\PY{+w}{    }\PY{n}{ESPUI}\PY{p}{.}\PY{n}{updateSlider}\PY{p}{(}\PY{n}{levelId}\PY{p}{,}\PY{+w}{ }\PY{n}{level}\PY{p}{)}\PY{p}{;}
+\PY{+w}{    }\PY{n}{ESPUI}\PY{p}{.}\PY{n}{updateLabel}\PY{p}{(}\PY{n}{stateId}\PY{p}{,}\PY{+w}{ }\PY{n}{on}\PY{+w}{ }\PY{o}{?}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{ON}\PY{l+s}{\PYZdq{}}\PY{+w}{ }\PY{o}{:}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{OFF}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{p}{\PYZcb{}}
+\PY{+w}{  }\PY{n}{delay}\PY{p}{(}\PY{l+m+mi}{1}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+\end{CodeVerbatim}

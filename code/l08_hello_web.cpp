@@ -1,10 +1,6 @@
-// Самый простой веб-сервер: страница «Привет!»
+// Самый простой веб-сервер: страница «Привет!». Плата сама раздаёт сеть, роутер не нужен.
 #include <WiFi.h>
 #include <WebServer.h>
-#include <ESPmDNS.h>
-
-const char* SSID = "MyNetwork";
-const char* PASS = "MyPassword";
 
 WebServer server(80);                        // 80 -- стандартный «порт» для HTTP
 
@@ -14,28 +10,11 @@ void handleRoot() {                          // кто-то открыл адр�
   server.send(200, "text/html; charset=utf-8", html);  // 200 = «всё хорошо»
 }
 
-void handleNotFound() {                      // адрес, которого у нас нет
-  server.send(404, "text/plain; charset=utf-8", "Такой страницы нет");
-}
-
 void setup() {
   Serial.begin(115200);
-  WiFi.mode(WIFI_STA);
-  WiFi.begin(SSID, PASS);
-  const uint32_t started = millis();
-  while (WiFi.status() != WL_CONNECTED && millis() - started < 15000) {
-    delay(300); Serial.print(".");
-  }
-  if (WiFi.status() != WL_CONNECTED) {
-    Serial.println("\nWi-Fi: проверьте сеть и перезапустите плату");
-    return;
-  }
-  Serial.printf("\nОткрой http://%s или http://esp32.local\n",
-                WiFi.localIP().toString().c_str());
-  MDNS.begin("esp32");
-
+  WiFi.softAP("S3-Web", "lesson-44-demo");   // своя сеть, как в уроке 5
+  Serial.println(WiFi.softAPIP());           // этот адрес вводим в браузере
   server.on("/", handleRoot);                // адрес -> функция-обработчик
-  server.onNotFound(handleNotFound);
   server.begin();
 }
 

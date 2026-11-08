@@ -1,7 +1,7 @@
 \begin{CodeVerbatim}
 \PY{k}{const}\PY{+w}{ }\PY{k+kt}{int}\PY{+w}{ }\PY{n}{LED\PYZus{}PIN}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{4}\PY{p}{;}
 
-\PY{n}{hw\PYZus{}timer\PYZus{}t}\PY{o}{*}\PY{+w}{ }\PY{n}{timer}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{k}{nullptr}\PY{p}{;}
+\PY{n}{hw\PYZus{}timer\PYZus{}t}\PY{o}{*}\PY{+w}{ }\PY{n}{timer}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n+nb}{nullptr}\PY{p}{;}
 \PY{k}{volatile}\PY{+w}{ }\PY{k+kt}{uint32\PYZus{}t}\PY{+w}{ }\PY{n}{ticks}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}\PY{+w}{                 }\PY{c+c1}{// меняется в обработчике}
 
 \PY{k+kt}{void}\PY{+w}{ }\PY{n}{ARDUINO\PYZus{}ISR\PYZus{}ATTR}\PY{+w}{ }\PY{n+nf}{onTimer}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{            }\PY{c+c1}{// вызывается ровно раз в 0,5 с}

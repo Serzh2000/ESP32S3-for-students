@@ -1,0 +1,23 @@
+\begin{CodeVerbatim}
+\PY{c+c1}{// Шаг 1. Первая панель: платформа сама создаёт сеть, в панели одна строка с временем работы.}
+\PY{c+cp}{\PYZsh{}}\PY{c+cp}{include}\PY{+w}{ }\PY{c+cpf}{\PYZlt{}WiFi.h\PYZgt{}}
+\PY{c+cp}{\PYZsh{}}\PY{c+cp}{include}\PY{+w}{ }\PY{c+cpf}{\PYZlt{}ESPUI.h\PYZgt{}}
+
+\PY{k+kt}{uint16\PYZus{}t}\PY{+w}{ }\PY{n}{uptimeId}\PY{p}{;}\PY{+w}{                        }\PY{c+c1}{// номер элемента, чтобы потом менять его текст}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{setup}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{n}{Serial}\PY{p}{.}\PY{n}{begin}\PY{p}{(}\PY{l+m+mi}{115200}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{WiFi}\PY{p}{.}\PY{n}{mode}\PY{p}{(}\PY{n}{WIFI\PYZus{}AP}\PY{p}{)}\PY{p}{;}\PY{+w}{                     }\PY{c+c1}{// плата сама раздаёт сеть}
+\PY{+w}{  }\PY{n}{WiFi}\PY{p}{.}\PY{n}{softAP}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{S3\PYZhy{}Panel}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{lesson\PYZhy{}05\PYZhy{}demo}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{;}
+
+\PY{+w}{  }\PY{n}{ESPUI}\PY{p}{.}\PY{n}{label}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{Плата}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{n}{ControlColor}\PY{o}{:}\PY{o}{:}\PY{n}{Peterriver}\PY{p}{,}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{Привет из ESP32\PYZhy{}S3!}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{uptimeId}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{ESPUI}\PY{p}{.}\PY{n}{label}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{Работает, с}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{n}{ControlColor}\PY{o}{:}\PY{o}{:}\PY{n}{Emerald}\PY{p}{,}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{0}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{ESPUI}\PY{p}{.}\PY{n}{begin}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{Моя первая панель}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{;}\PY{+w}{       }\PY{c+c1}{// запустить веб\PYZhy{}сервер панели}
+\PY{+w}{  }\PY{n}{Serial}\PY{p}{.}\PY{n}{println}\PY{p}{(}\PY{n}{WiFi}\PY{p}{.}\PY{n}{softAPIP}\PY{p}{(}\PY{p}{)}\PY{p}{)}\PY{p}{;}\PY{+w}{        }\PY{c+c1}{// этот адрес вводим в браузер телефона}
+\PY{p}{\PYZcb{}}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{loop}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{n}{ESPUI}\PY{p}{.}\PY{n}{updateLabel}\PY{p}{(}\PY{n}{uptimeId}\PY{p}{,}\PY{+w}{ }\PY{n}{String}\PY{p}{(}\PY{n}{millis}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{o}{/}\PY{+w}{ }\PY{l+m+mi}{1000}\PY{p}{)}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{delay}\PY{p}{(}\PY{l+m+mi}{1000}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+\end{CodeVerbatim}

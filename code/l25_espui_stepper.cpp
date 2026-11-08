@@ -17,9 +17,7 @@ uint16_t angleId;
 void applyPhase(int phase) {
   for (int i = 0; i < 4; i++) digitalWrite(PINS[i], (PHASES[phase] >> i) & 1);
 }
-void release() {
-  for (int i = 0; i < 4; i++) digitalWrite(PINS[i], LOW);
-}
+void release() { for (int i = 0; i < 4; i++) digitalWrite(PINS[i], LOW); }
 void stepperRun() {
   if (current == target) return;
   if (micros() - lastStep < STEP_US) return;
@@ -29,9 +27,7 @@ void stepperRun() {
   if (current == target) release();
 }
 
-void stepCallback(Control* sender, int event) {
-  if (event == N_VALUE) stepSize = constrain(sender->value.toInt(), 1, 360);
-}
+void stepCallback(Control* sender, int event) { if (event == N_VALUE) stepSize = constrain(sender->value.toInt(), 1, 360); }
 void plusCallback(Control*, int event)  { if (event == B_UP) requestDeg += stepSize; }
 void minusCallback(Control*, int event) { if (event == B_UP) requestDeg -= stepSize; }
 void zeroCallback(Control*, int event)  { if (event == B_UP) requestDeg += -(current * 360 / STEPS_PER_REV); }
@@ -42,14 +38,12 @@ void setup() {
   release();
   WiFi.mode(WIFI_AP);
   if (!WiFi.softAP("S3-Stepper", "lesson-39-demo")) { Serial.println("AP failed"); return; }
-
   ESPUI.number("Шаг поворота, °", stepCallback, ControlColor::Peterriver, 90, 1, 360);
   ESPUI.button("Вправо", plusCallback, ControlColor::Emerald, "+ шаг");
   ESPUI.button("Влево", minusCallback, ControlColor::Carrot, "− шаг");
   ESPUI.button("К нулю", zeroCallback, ControlColor::Alizarin, "В начало");
   angleId = ESPUI.label("Текущий угол, °", ControlColor::Turquoise, "0");
   ESPUI.begin("ESP32-S3 stepper");
-  Serial.println(WiFi.softAPIP());
 }
 
 void loop() {

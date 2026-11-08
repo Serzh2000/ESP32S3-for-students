@@ -41,3 +41,5 @@ https://docs.espressif.com/projects/esp-idf/en/v5.1/esp32s3/api-reference/periph
 
 После дополнения веб-панелей: уроки 39–40 — ESPUI и WiFiManager, проект — 41.
 Актуальный объём: 42 урока, четыре вводные главы и 276 заданий.
+
+После дополнения PlatformIO/TinyML: уроки 41–42 (PlatformIO, TinyML), итоговый проект — 43. Актуальный объём: 44 урока, четыре вводные главы и 288 заданий.

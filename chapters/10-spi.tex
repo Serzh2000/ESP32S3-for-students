@@ -3,7 +3,7 @@
 % =====================================================================
 \lessonintro
   {подключать быстрые устройства по SPI и безопасно делить одну шину между несколькими микросхемами}
-  {урок 6 (I\textsuperscript{2}C), урок 2 (провода и логические уровни)}
+  {урок 7 (I\textsuperscript{2}C), урок 2 (провода и логические уровни)}
   {плата сохраняет журнал событий на SD-карту}
   {модуль microSD с логикой 3,3 В, карта памяти, короткие провода}
 
@@ -58,6 +58,25 @@ SD и платы должны совпадать \emph{все четыре} на
 Выберите, например, GPIO12 (SCK), GPIO11 (MOSI), GPIO13 (MISO), GPIO10 (CS SD), если они свободны
 на вашей ревизии. Перед подключением всегда сверяйтесь с pinout именно своего модуля: у плат с PSRAM
 часть выводов занята памятью.
+
+\begin{figure}[H]
+\centering
+\begin{circuitikz}[scale=0.95,transform shape]
+  \node[blk,fill=blkcpu,minimum width=2.8cm,minimum height=6.2cm] (m) at (0,0) {};
+  \node[blk,fill=blkper,minimum width=2.8cm,minimum height=6.2cm] (d) at (8,0) {};
+  \node[font=\sffamily\small\bfseries] at (0,3.7) {ESP32-S3};
+  \node[font=\sffamily\small\bfseries,align=center] at (8,3.85) {Модуль microSD\\[-2pt]\scriptsize логика \SI{3.3}{V}};
+  \foreach \y/\a/\b/\c in {2.5/3V3/VCC/wred, 1.5/{\pin{10}}/CS/wblue, 0.5/{\pin{11}}/MOSI/wgreen,
+      -0.5/{\pin{12}}/SCK/wyellow, -1.5/{\pin{13}}/MISO/worange, -2.5/GND/GND/wblack}{
+    \node[font=\sffamily\scriptsize,anchor=east] at (1.4,\y) {\a};
+    \node[font=\sffamily\scriptsize,anchor=west] at (6.6,\y) {\b};
+    \draw[thick,\c] (1.4,\y) -- (6.6,\y);
+  }
+\end{circuitikz}
+\caption{Подключение модуля microSD к SPI-шине: \pin{12} --- SCK, \pin{11} --- MOSI, \pin{13} --- MISO,
+\pin{10} --- CS. Питание \SI{3.3}{V} и общая земля. Порядок контактов на вашем модуле может отличаться:
+ориентируйтесь на надписи}
+\end{figure}
 
 \subsection{Первый журнал на SD-карте}
 

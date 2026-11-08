@@ -1,7 +1,7 @@
 \section{Цветной экран: SPI, RGB, память и DMA}\label{les:lcd}
 \lessonintro
   {рассчитать память кадра и обновлять экран без лишней перерисовки}
-  {уроки 6, 10 и 11}
+  {уроки 7, 10 и 11}
   {цветная полоса потенциометра с измерением времени рисования}
   {ST7789 240×240 с CS и логикой 3,3 В, потенциометр}
 
@@ -21,6 +21,39 @@ MOSI с GPIO11, CS с GPIO10, DC с GPIO9, RST с GPIO8; MISO не исполь�
 Потенциометр: края к 3V3/GND, движок к GPIO1. OLED отключите от GPIO8/9.
 Питание и подсветка зависят от модуля: LED/BL может требовать драйвера.
 Не подключайте ток подсветки к сигнальному GPIO без проверки документации.
+
+\begin{figure}[H]
+\centering
+\begin{circuitikz}[scale=0.9,transform shape]
+  \node[blk,fill=blkcpu,minimum width=2.8cm,minimum height=5.8cm] at (0,0) {};
+  \node[blk,fill=blkper,minimum width=2.8cm,minimum height=5.8cm] at (9,0) {};
+  \node[font=\sffamily\small\bfseries] at (0,3.2) {ESP32-S3};
+  \node[font=\sffamily\small\bfseries,align=center] at (9,3.4) {ST7789\\[-2pt]\scriptsize 240$\times$240, SPI};
+  \foreach \y/\n in {2.25/3V3,1.5/GND,0.75/{\pin{12}},0/{\pin{11}},-0.75/{\pin{10}},-1.5/{\pin{9}},-2.25/{\pin{8}}}
+    \node[font=\sffamily\scriptsize,anchor=east] at (1.4,\y) {\n};
+  \foreach \y/\n in {2.25/VCC,1.5/GND,0.75/{SCL (SCK)},0/{SDA (MOSI)},-0.75/CS,-1.5/DC,-2.25/{RES (RST)}}
+    \node[font=\sffamily\scriptsize,anchor=west] at (7.6,\y) {\n};
+  \draw[thick,wred]    (1.4,2.25)  -- (7.6,2.25);
+  \draw[thick,wblack]  (1.4,1.5)   -- (7.6,1.5);
+  \draw[thick,wyellow] (1.4,0.75)  -- (7.6,0.75);
+  \draw[thick,wgreen]  (1.4,0)     -- (7.6,0);
+  \draw[thick,wblue]   (1.4,-0.75) -- (7.6,-0.75);
+  \draw[thick,worange] (1.4,-1.5)  -- (7.6,-1.5);
+  \draw[thick,wpurple] (1.4,-2.25) -- (7.6,-2.25);
+  % потенциометр слева
+  \node[font=\sffamily\scriptsize,anchor=west] at (-1.4,1.2) {3V3};
+  \node[font=\sffamily\scriptsize,anchor=west] at (-1.4,0) {\pin{1}};
+  \node[font=\sffamily\scriptsize,anchor=west] at (-1.4,-1.2) {GND};
+  \draw[thick,wred]   (-1.4,1.2) -- (-3.6,1.2);
+  \draw[thick,wblack] (-1.4,-1.2) -- (-3.6,-1.2);
+  \draw[thick] (-3.6,1.2) to[R,l_=\SI{10}{k\ohm}] (-3.6,-1.2);
+  \draw[thick,wblue] (-1.4,0) -- (-3.0,0);
+  \draw[-latex,thick] (-3.0,0) -- (-3.6,0);
+  \node[font=\sffamily\scriptsize,align=center] at (-3.4,-2.1) {потенциометр\\ (движок)};
+\end{circuitikz}
+\caption{Подключение ST7789 по SPI (\pin{12}, \pin{11}, \pin{10}, \pin{9}, \pin{8}) и потенциометра на \pin{1}.
+Вывод MISO не используется. Подсветку (BLK) подключайте по документации модуля}
+\end{figure}
 Установите Adafruit GFX Library и Adafruit ST7735 and ST7789 Library.
 Базовый шрифт GFX не содержит кириллицу, поэтому пример использует латинские подписи.
 

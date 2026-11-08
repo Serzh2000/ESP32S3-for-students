@@ -1,0 +1,19 @@
+\begin{CodeVerbatim}
+\PY{c+c1}{// Шаг 4. ФРАГМЕНТ: самопроверка сети. Блок модели, dense() и predictSin() \PYZhy{}\PYZhy{} из шага 3;}
+\PY{c+c1}{// функцию вызывают из setup() после Serial.begin(115200).}
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{selfTest}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{c+c1}{// Качество: максимальное отличие от настоящего sinf() на 100 точках}
+\PY{+w}{  }\PY{k+kt}{float}\PY{+w}{ }\PY{n}{worst}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}
+\PY{+w}{  }\PY{k}{for}\PY{+w}{ }\PY{p}{(}\PY{k+kt}{int}\PY{+w}{ }\PY{n}{k}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}\PY{+w}{ }\PY{n}{k}\PY{+w}{ }\PY{o}{\PYZlt{}}\PY{+w}{ }\PY{l+m+mi}{100}\PY{p}{;}\PY{+w}{ }\PY{o}{+}\PY{o}{+}\PY{n}{k}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{    }\PY{k+kt}{float}\PY{+w}{ }\PY{n}{x}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{2}\PY{+w}{ }\PY{o}{*}\PY{+w}{ }\PY{n}{PI}\PY{+w}{ }\PY{o}{*}\PY{+w}{ }\PY{n}{k}\PY{+w}{ }\PY{o}{/}\PY{+w}{ }\PY{l+m+mf}{99.0f}\PY{p}{;}
+\PY{+w}{    }\PY{n}{worst}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{max}\PY{p}{(}\PY{n}{worst}\PY{p}{,}\PY{+w}{ }\PY{n}{fabsf}\PY{p}{(}\PY{n}{predictSin}\PY{p}{(}\PY{n}{x}\PY{p}{)}\PY{+w}{ }\PY{o}{\PYZhy{}}\PY{+w}{ }\PY{n}{sinf}\PY{p}{(}\PY{n}{x}\PY{p}{)}\PY{p}{)}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{p}{\PYZcb{}}
+\PY{+w}{  }\PY{n}{Serial}\PY{p}{.}\PY{n}{printf}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{max error = \PYZpc{}.3f}\PY{l+s+se}{\PYZbs{}n}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{n}{worst}\PY{p}{)}\PY{p}{;}
+
+\PY{+w}{  }\PY{c+c1}{// Время одного предсказания: усредняем по 1000 запусков}
+\PY{+w}{  }\PY{k}{volatile}\PY{+w}{ }\PY{k+kt}{float}\PY{+w}{ }\PY{n}{sink}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}\PY{+w}{                  }\PY{c+c1}{// чтобы компилятор не выбросил цикл}
+\PY{+w}{  }\PY{k+kt}{uint32\PYZus{}t}\PY{+w}{ }\PY{n}{t0}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{micros}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{k}{for}\PY{+w}{ }\PY{p}{(}\PY{k+kt}{int}\PY{+w}{ }\PY{n}{k}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}\PY{+w}{ }\PY{n}{k}\PY{+w}{ }\PY{o}{\PYZlt{}}\PY{+w}{ }\PY{l+m+mi}{1000}\PY{p}{;}\PY{+w}{ }\PY{o}{+}\PY{o}{+}\PY{n}{k}\PY{p}{)}\PY{+w}{ }\PY{n}{sink}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{predictSin}\PY{p}{(}\PY{n}{k}\PY{+w}{ }\PY{o}{*}\PY{+w}{ }\PY{l+m+mf}{0.00628f}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{Serial}\PY{p}{.}\PY{n}{printf}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{one inference = \PYZpc{}.2f us}\PY{l+s+se}{\PYZbs{}n}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{p}{(}\PY{n}{micros}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{o}{\PYZhy{}}\PY{+w}{ }\PY{n}{t0}\PY{p}{)}\PY{+w}{ }\PY{o}{/}\PY{+w}{ }\PY{l+m+mf}{1000.0f}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+\end{CodeVerbatim}

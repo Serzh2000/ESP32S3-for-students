@@ -1,7 +1,7 @@
 # ESPUI и WiFiManager: воспроизводимые учебные примеры
 
 Код хранится в code/l39_espui_hello.cpp, code/l39_espui_panel.cpp и code/l40_wifimanager.cpp.
-После python export_sketches.py открывайте соответствующие папки sketches/ в Arduino IDE.
+Готовые скетчи лежат в sketches/arduino/39-espui/ и sketches/arduino/40-wifi-provisioning/ (Arduino IDE) и в sketches/platformio/ (окружения l39_*, l40_*).
 Цель: ESP32-S3 Dev Module, Arduino-ESP32 3.2.0; обычная схема разделов с OTA.
 
 | Библиотека | Версия | Проверенный commit |

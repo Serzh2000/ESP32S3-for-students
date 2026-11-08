@@ -1,0 +1,17 @@
+\begin{CodeVerbatim}
+\PY{c+c1}{// Шаг 2. ФРАГМЕНТ: признаки окна на плате \PYZhy{}\PYZhy{} те же, что считал скетч сбора данных.}
+\PY{c+c1}{// readAccel() и настройка датчика в setup() \PYZhy{}\PYZhy{} как в сборе данных.}
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{int}\PY{+w}{ }\PY{n}{WINDOW}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{50}\PY{p}{;}
+\PY{k+kt}{float}\PY{+w}{ }\PY{n}{samples}\PY{p}{[}\PY{n}{WINDOW}\PY{p}{]}\PY{p}{[}\PY{l+m+mi}{3}\PY{p}{]}\PY{p}{;}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{windowFeatures}\PY{p}{(}\PY{k+kt}{float}\PY{o}{*}\PY{+w}{ }\PY{n}{feat}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{           }\PY{c+c1}{// feat[0..2] \PYZhy{}\PYZhy{} средние, feat[3..5] \PYZhy{}\PYZhy{} разброс}
+\PY{+w}{  }\PY{k}{for}\PY{+w}{ }\PY{p}{(}\PY{k+kt}{int}\PY{+w}{ }\PY{n}{a}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}\PY{+w}{ }\PY{n}{a}\PY{+w}{ }\PY{o}{\PYZlt{}}\PY{+w}{ }\PY{l+m+mi}{3}\PY{p}{;}\PY{+w}{ }\PY{o}{+}\PY{o}{+}\PY{n}{a}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{    }\PY{n}{feat}\PY{p}{[}\PY{n}{a}\PY{p}{]}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}
+\PY{+w}{    }\PY{k}{for}\PY{+w}{ }\PY{p}{(}\PY{k+kt}{int}\PY{+w}{ }\PY{n}{i}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}\PY{+w}{ }\PY{n}{i}\PY{+w}{ }\PY{o}{\PYZlt{}}\PY{+w}{ }\PY{n}{WINDOW}\PY{p}{;}\PY{+w}{ }\PY{o}{+}\PY{o}{+}\PY{n}{i}\PY{p}{)}\PY{+w}{ }\PY{n}{feat}\PY{p}{[}\PY{n}{a}\PY{p}{]}\PY{+w}{ }\PY{o}{+}\PY{o}{=}\PY{+w}{ }\PY{n}{samples}\PY{p}{[}\PY{n}{i}\PY{p}{]}\PY{p}{[}\PY{n}{a}\PY{p}{]}\PY{p}{;}
+\PY{+w}{    }\PY{n}{feat}\PY{p}{[}\PY{n}{a}\PY{p}{]}\PY{+w}{ }\PY{o}{/}\PY{o}{=}\PY{+w}{ }\PY{n}{WINDOW}\PY{p}{;}
+\PY{+w}{    }\PY{n}{feat}\PY{p}{[}\PY{l+m+mi}{3}\PY{+w}{ }\PY{o}{+}\PY{+w}{ }\PY{n}{a}\PY{p}{]}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}
+\PY{+w}{    }\PY{k}{for}\PY{+w}{ }\PY{p}{(}\PY{k+kt}{int}\PY{+w}{ }\PY{n}{i}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}\PY{+w}{ }\PY{n}{i}\PY{+w}{ }\PY{o}{\PYZlt{}}\PY{+w}{ }\PY{n}{WINDOW}\PY{p}{;}\PY{+w}{ }\PY{o}{+}\PY{o}{+}\PY{n}{i}\PY{p}{)}\PY{+w}{ }\PY{n}{feat}\PY{p}{[}\PY{l+m+mi}{3}\PY{+w}{ }\PY{o}{+}\PY{+w}{ }\PY{n}{a}\PY{p}{]}\PY{+w}{ }\PY{o}{+}\PY{o}{=}\PY{+w}{ }\PY{n}{sq}\PY{p}{(}\PY{n}{samples}\PY{p}{[}\PY{n}{i}\PY{p}{]}\PY{p}{[}\PY{n}{a}\PY{p}{]}\PY{+w}{ }\PY{o}{\PYZhy{}}\PY{+w}{ }\PY{n}{feat}\PY{p}{[}\PY{n}{a}\PY{p}{]}\PY{p}{)}\PY{p}{;}
+\PY{+w}{    }\PY{n}{feat}\PY{p}{[}\PY{l+m+mi}{3}\PY{+w}{ }\PY{o}{+}\PY{+w}{ }\PY{n}{a}\PY{p}{]}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{sqrtf}\PY{p}{(}\PY{n}{feat}\PY{p}{[}\PY{l+m+mi}{3}\PY{+w}{ }\PY{o}{+}\PY{+w}{ }\PY{n}{a}\PY{p}{]}\PY{+w}{ }\PY{o}{/}\PY{+w}{ }\PY{n}{WINDOW}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{p}{\PYZcb{}}
+\PY{p}{\PYZcb{}}
+\end{CodeVerbatim}

@@ -1,0 +1,27 @@
+\begin{CodeVerbatim}
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{uint32\PYZus{}t}\PY{+w}{ }\PY{n}{SHOT\PYZus{}PERIOD\PYZus{}MS}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{5000}\PY{p}{;}\PY{+w}{     }\PY{c+c1}{// один снимок раз в 5 секунд}
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{int}\PY{+w}{ }\PY{n}{MAX\PYZus{}SHOTS}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{10}\PY{p}{;}\PY{+w}{                 }\PY{c+c1}{// и не больше 10 штук}
+
+\PY{k+kt}{int}\PY{+w}{ }\PY{n}{shotNo}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}
+\PY{k+kt}{uint32\PYZus{}t}\PY{+w}{ }\PY{n}{lastShot}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{loop}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{shotNo}\PY{+w}{ }\PY{o}{\PYZgt{}}\PY{o}{=}\PY{+w}{ }\PY{n}{MAX\PYZus{}SHOTS}\PY{+w}{ }\PY{o}{|}\PY{o}{|}\PY{+w}{ }\PY{n}{millis}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{o}{\PYZhy{}}\PY{+w}{ }\PY{n}{lastShot}\PY{+w}{ }\PY{o}{\PYZlt{}}\PY{+w}{ }\PY{n}{SHOT\PYZus{}PERIOD\PYZus{}MS}\PY{p}{)}\PY{+w}{ }\PY{k}{return}\PY{p}{;}
+\PY{+w}{  }\PY{n}{lastShot}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{millis}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+
+\PY{+w}{  }\PY{n}{camera\PYZus{}fb\PYZus{}t}\PY{+w}{ }\PY{o}{*}\PY{n}{fb}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{esp\PYZus{}camera\PYZus{}fb\PYZus{}get}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{o}{!}\PY{n}{fb}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{ }\PY{n}{Serial}\PY{p}{.}\PY{n}{println}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{Кадр не получен}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{;}\PY{+w}{ }\PY{k}{return}\PY{p}{;}\PY{+w}{ }\PY{p}{\PYZcb{}}
+
+\PY{+w}{  }\PY{n}{String}\PY{+w}{ }\PY{n}{path}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{/photo\PYZus{}}\PY{l+s}{\PYZdq{}}\PY{+w}{ }\PY{o}{+}\PY{+w}{ }\PY{n}{String}\PY{p}{(}\PY{n}{shotNo}\PY{p}{)}\PY{+w}{ }\PY{o}{+}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{.jpg}\PY{l+s}{\PYZdq{}}\PY{p}{;}
+\PY{+w}{  }\PY{n}{File}\PY{+w}{ }\PY{n}{f}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{SD\PYZus{}MMC}\PY{p}{.}\PY{n}{open}\PY{p}{(}\PY{n}{path}\PY{p}{,}\PY{+w}{ }\PY{n}{FILE\PYZus{}WRITE}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{f}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{    }\PY{n}{f}\PY{p}{.}\PY{n}{write}\PY{p}{(}\PY{n}{fb}\PY{o}{\PYZhy{}}\PY{o}{\PYZgt{}}\PY{n}{buf}\PY{p}{,}\PY{+w}{ }\PY{n}{fb}\PY{o}{\PYZhy{}}\PY{o}{\PYZgt{}}\PY{n}{len}\PY{p}{)}\PY{p}{;}\PY{+w}{            }\PY{c+c1}{// JPEG уже готов \PYZhy{}\PYZhy{} пишем как есть}
+\PY{+w}{    }\PY{n}{f}\PY{p}{.}\PY{n}{close}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+\PY{+w}{    }\PY{n}{Serial}\PY{p}{.}\PY{n}{printf}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{Сохранено \PYZpc{}s (\PYZpc{}u байт)}\PY{l+s+se}{\PYZbs{}n}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{n}{path}\PY{p}{.}\PY{n}{c\PYZus{}str}\PY{p}{(}\PY{p}{)}\PY{p}{,}\PY{+w}{ }\PY{p}{(}\PY{k+kt}{unsigned}\PY{p}{)}\PY{n}{fb}\PY{o}{\PYZhy{}}\PY{o}{\PYZgt{}}\PY{n}{len}\PY{p}{)}\PY{p}{;}
+\PY{+w}{    }\PY{n}{shotNo}\PY{o}{+}\PY{o}{+}\PY{p}{;}
+\PY{+w}{  }\PY{p}{\PYZcb{}}\PY{+w}{ }\PY{k}{else}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{    }\PY{n}{Serial}\PY{p}{.}\PY{n}{println}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{Не удалось открыть файл на карте}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{p}{\PYZcb{}}
+\PY{+w}{  }\PY{n}{esp\PYZus{}camera\PYZus{}fb\PYZus{}return}\PY{p}{(}\PY{n}{fb}\PY{p}{)}\PY{p}{;}\PY{+w}{               }\PY{c+c1}{// кадр возвращаем в любом случае}
+\PY{p}{\PYZcb{}}
+\end{CodeVerbatim}

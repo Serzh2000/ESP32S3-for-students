@@ -7,30 +7,18 @@
 \PY{k}{const}\PY{+w}{ }\PY{k+kt}{char}\PY{o}{*}\PY{+w}{ }\PY{n}{PASS}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{MyPassword}\PY{l+s}{\PYZdq{}}\PY{p}{;}
 \PY{k}{const}\PY{+w}{ }\PY{k+kt}{uint32\PYZus{}t}\PY{+w}{ }\PY{n}{MAX\PYZus{}STREAM\PYZus{}MS}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{10UL}\PY{+w}{ }\PY{o}{*}\PY{+w}{ }\PY{l+m+mi}{60}\PY{+w}{ }\PY{o}{*}\PY{+w}{ }\PY{l+m+mi}{1000}\PY{p}{;}\PY{+w}{   }\PY{c+c1}{// поток сам закончится через 10 минут}
 
-\PY{c+c1}{// Выводы камеры (ESP32\PYZhy{}S3\PYZhy{}EYE). Сверьте со схемой своей платы!}
-\PY{c+cp}{\PYZsh{}}\PY{c+cp}{define XCLK\PYZus{}GPIO\PYZus{}NUM  15}
-\PY{c+cp}{\PYZsh{}}\PY{c+cp}{define SIOD\PYZus{}GPIO\PYZus{}NUM  4}
-\PY{c+cp}{\PYZsh{}}\PY{c+cp}{define SIOC\PYZus{}GPIO\PYZus{}NUM  5}
-\PY{c+cp}{\PYZsh{}}\PY{c+cp}{define VSYNC\PYZus{}GPIO\PYZus{}NUM 6}
-\PY{c+cp}{\PYZsh{}}\PY{c+cp}{define HREF\PYZus{}GPIO\PYZus{}NUM  7}
-\PY{c+cp}{\PYZsh{}}\PY{c+cp}{define PCLK\PYZus{}GPIO\PYZus{}NUM  13}
-
 \PY{n}{WebServer}\PY{+w}{ }\PY{n+nf}{server}\PY{p}{(}\PY{l+m+mi}{80}\PY{p}{)}\PY{p}{;}
 
-\PY{k+kt}{bool}\PY{+w}{ }\PY{n+nf}{startCamera}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{k+kt}{bool}\PY{+w}{ }\PY{n+nf}{startCamera}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{                      }\PY{c+c1}{// выводы ESP32\PYZhy{}S3\PYZhy{}EYE, сверьте со схемой}
 \PY{+w}{  }\PY{n}{camera\PYZus{}config\PYZus{}t}\PY{+w}{ }\PY{n}{config}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{p}{\PYZcb{}}\PY{p}{;}
 \PY{+w}{  }\PY{n}{config}\PY{p}{.}\PY{n}{ledc\PYZus{}channel}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{LEDC\PYZus{}CHANNEL\PYZus{}0}\PY{p}{;}
 \PY{+w}{  }\PY{n}{config}\PY{p}{.}\PY{n}{ledc\PYZus{}timer}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{LEDC\PYZus{}TIMER\PYZus{}0}\PY{p}{;}
 \PY{+w}{  }\PY{n}{config}\PY{p}{.}\PY{n}{pin\PYZus{}d0}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{11}\PY{p}{;}\PY{+w}{  }\PY{n}{config}\PY{p}{.}\PY{n}{pin\PYZus{}d1}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{9}\PY{p}{;}\PY{+w}{   }\PY{n}{config}\PY{p}{.}\PY{n}{pin\PYZus{}d2}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{8}\PY{p}{;}\PY{+w}{   }\PY{n}{config}\PY{p}{.}\PY{n}{pin\PYZus{}d3}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{10}\PY{p}{;}
 \PY{+w}{  }\PY{n}{config}\PY{p}{.}\PY{n}{pin\PYZus{}d4}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{12}\PY{p}{;}\PY{+w}{  }\PY{n}{config}\PY{p}{.}\PY{n}{pin\PYZus{}d5}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{18}\PY{p}{;}\PY{+w}{  }\PY{n}{config}\PY{p}{.}\PY{n}{pin\PYZus{}d6}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{17}\PY{p}{;}\PY{+w}{  }\PY{n}{config}\PY{p}{.}\PY{n}{pin\PYZus{}d7}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{16}\PY{p}{;}
-\PY{+w}{  }\PY{n}{config}\PY{p}{.}\PY{n}{pin\PYZus{}xclk}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{XCLK\PYZus{}GPIO\PYZus{}NUM}\PY{p}{;}
-\PY{+w}{  }\PY{n}{config}\PY{p}{.}\PY{n}{pin\PYZus{}pclk}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{PCLK\PYZus{}GPIO\PYZus{}NUM}\PY{p}{;}
-\PY{+w}{  }\PY{n}{config}\PY{p}{.}\PY{n}{pin\PYZus{}vsync}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{VSYNC\PYZus{}GPIO\PYZus{}NUM}\PY{p}{;}
-\PY{+w}{  }\PY{n}{config}\PY{p}{.}\PY{n}{pin\PYZus{}href}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{HREF\PYZus{}GPIO\PYZus{}NUM}\PY{p}{;}
-\PY{+w}{  }\PY{n}{config}\PY{p}{.}\PY{n}{pin\PYZus{}sccb\PYZus{}sda}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{SIOD\PYZus{}GPIO\PYZus{}NUM}\PY{p}{;}
-\PY{+w}{  }\PY{n}{config}\PY{p}{.}\PY{n}{pin\PYZus{}sccb\PYZus{}scl}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{SIOC\PYZus{}GPIO\PYZus{}NUM}\PY{p}{;}
-\PY{+w}{  }\PY{n}{config}\PY{p}{.}\PY{n}{pin\PYZus{}pwdn}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{\PYZhy{}1}\PY{p}{;}
-\PY{+w}{  }\PY{n}{config}\PY{p}{.}\PY{n}{pin\PYZus{}reset}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{\PYZhy{}1}\PY{p}{;}
+\PY{+w}{  }\PY{n}{config}\PY{p}{.}\PY{n}{pin\PYZus{}xclk}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{15}\PY{p}{;}\PY{+w}{  }\PY{n}{config}\PY{p}{.}\PY{n}{pin\PYZus{}pclk}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{13}\PY{p}{;}
+\PY{+w}{  }\PY{n}{config}\PY{p}{.}\PY{n}{pin\PYZus{}vsync}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{6}\PY{p}{;}\PY{+w}{  }\PY{n}{config}\PY{p}{.}\PY{n}{pin\PYZus{}href}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{7}\PY{p}{;}
+\PY{+w}{  }\PY{n}{config}\PY{p}{.}\PY{n}{pin\PYZus{}sccb\PYZus{}sda}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{4}\PY{p}{;}\PY{+w}{  }\PY{n}{config}\PY{p}{.}\PY{n}{pin\PYZus{}sccb\PYZus{}scl}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{5}\PY{p}{;}
+\PY{+w}{  }\PY{n}{config}\PY{p}{.}\PY{n}{pin\PYZus{}pwdn}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{\PYZhy{}1}\PY{p}{;}\PY{+w}{  }\PY{n}{config}\PY{p}{.}\PY{n}{pin\PYZus{}reset}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{\PYZhy{}1}\PY{p}{;}
 \PY{+w}{  }\PY{n}{config}\PY{p}{.}\PY{n}{xclk\PYZus{}freq\PYZus{}hz}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{20000000}\PY{p}{;}
 \PY{+w}{  }\PY{n}{config}\PY{p}{.}\PY{n}{pixel\PYZus{}format}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{PIXFORMAT\PYZus{}JPEG}\PY{p}{;}
 \PY{+w}{  }\PY{n}{config}\PY{p}{.}\PY{n}{frame\PYZus{}size}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{FRAMESIZE\PYZus{}VGA}\PY{p}{;}\PY{+w}{      }\PY{c+c1}{// для потока хватает 640x480}

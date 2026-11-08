@@ -1,0 +1,28 @@
+\begin{CodeVerbatim}
+\PY{c+c1}{// Шаг 3. ФРАГМЕНТ: loop() \PYZhy{}\PYZhy{} окно, признаки, сеть и замер времени.}
+\PY{c+c1}{// Всё остальное (модель, classify(), windowFeatures(), readAccel(), setup()) \PYZhy{}\PYZhy{} из шагов 1 и 2.}
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{uint32\PYZus{}t}\PY{+w}{ }\PY{n}{PERIOD\PYZus{}MS}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{20}\PY{p}{;}
+\PY{k}{const}\PY{+w}{ }\PY{k+kt}{char}\PY{o}{*}\PY{+w}{ }\PY{n}{NAMES}\PY{p}{[}\PY{p}{]}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{l+s}{\PYZdq{}}\PY{l+s}{покой}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{тряска}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{наклон}\PY{l+s}{\PYZdq{}}\PY{p}{\PYZcb{}}\PY{p}{;}
+\PY{k+kt}{int}\PY{+w}{ }\PY{n}{count}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}
+\PY{k+kt}{uint32\PYZus{}t}\PY{+w}{ }\PY{n}{nextMs}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}
+
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{loop}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{millis}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{o}{\PYZlt{}}\PY{+w}{ }\PY{n}{nextMs}\PY{p}{)}\PY{+w}{ }\PY{k}{return}\PY{p}{;}
+\PY{+w}{  }\PY{n}{nextMs}\PY{+w}{ }\PY{o}{+}\PY{o}{=}\PY{+w}{ }\PY{n}{PERIOD\PYZus{}MS}\PY{p}{;}
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{nextMs}\PY{+w}{ }\PY{o}{\PYZlt{}}\PY{+w}{ }\PY{n}{millis}\PY{p}{(}\PY{p}{)}\PY{p}{)}\PY{+w}{ }\PY{n}{nextMs}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{millis}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{o}{+}\PY{+w}{ }\PY{n}{PERIOD\PYZus{}MS}\PY{p}{;}
+
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{o}{!}\PY{n}{readAccel}\PY{p}{(}\PY{n}{samples}\PY{p}{[}\PY{n}{count}\PY{p}{]}\PY{p}{)}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{ }\PY{n}{Serial}\PY{p}{.}\PY{n}{println}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{sensor error}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{;}\PY{+w}{ }\PY{k}{return}\PY{p}{;}\PY{+w}{ }\PY{p}{\PYZcb{}}
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{o}{+}\PY{o}{+}\PY{n}{count}\PY{+w}{ }\PY{o}{\PYZlt{}}\PY{+w}{ }\PY{n}{WINDOW}\PY{p}{)}\PY{+w}{ }\PY{k}{return}\PY{p}{;}
+\PY{+w}{  }\PY{n}{count}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{0}\PY{p}{;}
+
+\PY{+w}{  }\PY{k+kt}{float}\PY{+w}{ }\PY{n}{feat}\PY{p}{[}\PY{l+m+mi}{6}\PY{p}{]}\PY{p}{;}
+\PY{+w}{  }\PY{n}{windowFeatures}\PY{p}{(}\PY{n}{feat}\PY{p}{)}\PY{p}{;}
+
+\PY{+w}{  }\PY{k+kt}{uint32\PYZus{}t}\PY{+w}{ }\PY{n}{t0}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{micros}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{k+kt}{float}\PY{+w}{ }\PY{n}{conf}\PY{p}{;}
+\PY{+w}{  }\PY{k+kt}{int}\PY{+w}{ }\PY{n}{cls}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{classify}\PY{p}{(}\PY{n}{feat}\PY{p}{,}\PY{+w}{ }\PY{o}{\PYZam{}}\PY{n}{conf}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{k+kt}{uint32\PYZus{}t}\PY{+w}{ }\PY{n}{us}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{micros}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{o}{\PYZhy{}}\PY{+w}{ }\PY{n}{t0}\PY{p}{;}
+
+\PY{+w}{  }\PY{n}{Serial}\PY{p}{.}\PY{n}{printf}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{class:\PYZpc{}s conf:\PYZpc{}.2f time:\PYZpc{}u us}\PY{l+s+se}{\PYZbs{}n}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{n}{NAMES}\PY{p}{[}\PY{n}{cls}\PY{p}{]}\PY{p}{,}\PY{+w}{ }\PY{n}{conf}\PY{p}{,}\PY{+w}{ }\PY{p}{(}\PY{k+kt}{unsigned}\PY{p}{)}\PY{n}{us}\PY{p}{)}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+\end{CodeVerbatim}

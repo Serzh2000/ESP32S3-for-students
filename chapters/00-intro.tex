@@ -245,7 +245,7 @@ GPIO & 34 & 45 & 22 \\
 \subsection{Структура Arduino-скетча}
 
 Функции \code{setup()} и \code{loop()} уже знакомы по вводной главе. Схема ниже показывает, что
-происходит до их вызова. (Под ними работает операционная система FreeRTOS; она понадобится в уроке~7.)
+происходит до их вызова. (Под ними работает операционная система FreeRTOS; она понадобится в уроке~8.)
 
 \begin{center}
 \begin{tikzpicture}[node distance=6mm]
@@ -271,6 +271,14 @@ GPIO & 34 & 45 & 22 \\
 непонятные символы, почти всегда выбрана неверная скорость порта.
 
 Откройте \textsf{Tools → Serial Monitor}, установите скорость 115200 --- должны появиться сообщения.
+
+\subsection{Все примеры лежат в папке}
+
+Код из книги не нужно перепечатывать. В репозитории курса есть папка \code{sketches}: в ней
+\code{arduino/<урок>/<скетч>} --- готовые папки для Arduino IDE (откройте файл \code{.ino}), а в
+\code{platformio} --- один проект PlatformIO, где каждому скетчу соответствует своё окружение:
+\code{pio run -e l1\_blink -t upload}. Файл \code{sketches/README.md} перечисляет скетчи и нужные
+библиотеки. Проекты побольше (тесты на компьютере, нейросети, ESP-IDF) лежат в папке \code{examples}.
 
 \subsection{Учимся программировать: как записывается программа}
 
@@ -433,12 +441,12 @@ GPIO & 34 & 45 & 22 \\
   % pot
   \draw (3.4,-0.9) node[left,font=\sffamily\small]{3,3 В} to[pR, n=pot, l_=\SI{10}{k\ohm}] (6.4,-0.9) -- (7,-0.9) node[right,font=\sffamily\small]{GND};
   \draw ($(esp.east)+(0,-0.1)$) node[left,font=\sffamily\scriptsize]{GPIO1} -| (pot.wiper);
-  \node[font=\sffamily\scriptsize,text=okgreen] at (9.2,-0.9) {урок 5};
+  \node[font=\sffamily\scriptsize,text=okgreen] at (9.2,-0.9) {урок 6};
   % OLED
   \node[draw,thick,fill=blkper,minimum width=2.2cm,minimum height=1.5cm,align=center,font=\sffamily\small] (oled) at (6,-2.35) {OLED\\ SSD1306};
   \draw ($(esp.east)+(0,-2.0)$) node[left,font=\sffamily\scriptsize]{GPIO8} -- node[above,font=\sffamily\scriptsize,pos=0.3]{SDA} (oled.west |- 0,-2.0);
   \draw ($(esp.east)+(0,-2.7)$) node[left,font=\sffamily\scriptsize]{GPIO9} -- node[below,font=\sffamily\scriptsize,pos=0.3]{SCL} (oled.west |- 0,-2.7);
-  \node[font=\sffamily\scriptsize,text=okgreen] at (9.2,-2.35) {урок 6};
+  \node[font=\sffamily\scriptsize,text=okgreen] at (9.2,-2.35) {урок 7};
   \node[font=\sffamily\scriptsize,align=left,anchor=west] at (7.4,-3.3) {питание экрана: 3V3, GND};
 \end{circuitikz}
 \caption{Учебный стенд: какие детали к каким выводам подключаются в опытах курса}

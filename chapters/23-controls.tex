@@ -3,7 +3,7 @@
 % =====================================================================
 \lessonintro
   {подключать три распространённых способа ввода и выбирать подходящий для своего устройства}
-  {урок 3 (кнопка, подтяжка, дребезг, прерывания), урок 5 (потенциометр)}
+  {урок 3 (кнопка, подтяжка, дребезг, прерывания), урок 6 (потенциометр)}
   {поворот ручки меняет счётчик, клавиатура печатает нажатую клавишу, касание провода зажигает светодиод}
   {модуль энкодера KY-040, матричная клавиатура 4×4, отрезок провода или фольги}
 
@@ -65,6 +65,30 @@
 к \pin{15}. Спад сигнала A ловит прерывание, поэтому ни один щелчок не теряется, даже если основная
 программа занята.
 
+\begin{figure}[H]
+\centering
+\begin{circuitikz}[scale=0.95,transform shape]
+  \node[blk,fill=blkcpu,minimum width=2.8cm,minimum height=5.4cm] (m) at (0,0) {};
+  \node[blk,fill=blkper,minimum width=2.8cm,minimum height=5.4cm] (d) at (8,0) {};
+  \node[font=\sffamily\small\bfseries] at (0,3.2) {ESP32-S3};
+  \node[font=\sffamily\small\bfseries,align=center] at (8,3.35) {KY-040\\[-2pt]\scriptsize энкодер};
+  \foreach \y/\n in {2/{\pin{6}},1/{\pin{7}},0/{\pin{15}},-1/3V3,-2/GND}
+    \node[font=\sffamily\scriptsize,anchor=east] at (1.4,\y) {\n};
+  \foreach \y/\n in {2/CLK,1/DT,0/SW,-1/{+},-2/GND}
+    \node[font=\sffamily\scriptsize,anchor=west] at (6.6,\y) {\n};
+  \draw[thick,accent]   (1.4,2)  -- (6.6,2);
+  \draw[thick,okgreen]  (1.4,1)  -- (6.6,1);
+  \draw[thick,warn]     (1.4,0)  -- (6.6,0);
+  \draw[thick,esp]      (1.4,-1) -- (6.6,-1);
+  \draw[thick,black!70] (1.4,-2) -- (6.6,-2);
+  \node[font=\sffamily\scriptsize,text=accent,fill=white,inner sep=1pt] at (4,2) {выход A};
+  \node[font=\sffamily\scriptsize,text=okgreen,fill=white,inner sep=1pt] at (4,1) {выход B};
+  \node[font=\sffamily\scriptsize,text=warn,fill=white,inner sep=1pt] at (4,0) {кнопка на оси};
+\end{circuitikz}
+\caption{Подключение энкодера KY-040: три сигнала на \pin{6}, \pin{7}, \pin{15}, питание \SI{3.3}{V}.
+Подтяжки на плате модуля уже есть, а программа включает ещё и внутренние}
+\end{figure}
+
 \codecap{Энкодер: счёт поворотов и сброс нажатием на ось}
 \codeinput{l23_encoder}
 
@@ -100,6 +124,33 @@
 переводятся в режим входа, то есть как бы отключаются: иначе при двух нажатых кнопках два выхода
 с разными уровнями окажутся соединены накоротко.
 
+Клавиатура подключается восемью проводами: четыре строки к \pin{15}--\pin{18}, четыре столбца к
+\pin{6}, \pin{7}, \pin{21} и \pin{47}. Резисторы не нужны: подтяжки столбцов включает программа.
+
+\begin{figure}[H]
+\centering
+\begin{circuitikz}[scale=0.95,transform shape]
+  \node[blk,fill=blkcpu,minimum width=2.8cm,minimum height=5.6cm] (m) at (0,0) {};
+  \node[blk,fill=blkper,minimum width=2.8cm,minimum height=5.6cm] (d) at (8,0) {};
+  \node[font=\sffamily\small\bfseries] at (0,3.3) {ESP32-S3};
+  \node[font=\sffamily\small\bfseries,align=center] at (8,3.45) {Клавиатура 4×4\\[-2pt]\scriptsize 8-контактный разъём};
+  \foreach \y/\n in {2.1/15,1.5/16,0.9/17,0.3/18}
+    \node[font=\sffamily\scriptsize,anchor=east] at (1.4,\y) {\pin{\n}};
+  \foreach \y/\n in {-0.3/6,-0.9/7,-1.5/21,-2.1/47}
+    \node[font=\sffamily\scriptsize,anchor=east] at (1.4,\y) {\pin{\n}};
+  \foreach \y/\n in {2.1/R1,1.5/R2,0.9/R3,0.3/R4}
+    \node[font=\sffamily\scriptsize,anchor=west] at (6.6,\y) {\n};
+  \foreach \y/\n in {-0.3/C1,-0.9/C2,-1.5/C3,-2.1/C4}
+    \node[font=\sffamily\scriptsize,anchor=west] at (6.6,\y) {\n};
+  \foreach \y in {2.1,1.5,0.9,0.3}  \draw[thick,accent]  (1.4,\y) -- (6.6,\y);
+  \foreach \y in {-0.3,-0.9,-1.5,-2.1} \draw[thick,okgreen] (1.4,\y) -- (6.6,\y);
+  \node[font=\sffamily\scriptsize,text=accent,fill=white,inner sep=1pt] at (4,1.2) {строки 0--3 (выходы)};
+  \node[font=\sffamily\scriptsize,text=okgreen,fill=white,inner sep=1pt] at (4,-1.2) {столбцы 0--3 (входы)};
+\end{circuitikz}
+\caption{Подключение клавиатуры 4×4. Порядок выводов на разъёме у разных моделей разный: найдите первую
+строку и первый столбец по прозвонке}
+\end{figure}
+
 \codecap{Опрос матричной клавиатуры 4×4}
 \codeinput{l23_keypad}
 
@@ -107,7 +158,26 @@
 
 Выводы \pin{1}--\pin{14} умеют измерять электрическую ёмкость. Палец увеличивает ёмкость контакта, и число,
 которое возвращает \code{touchRead()}, растёт. Достаточно вставить в \pin{14} отрезок провода или
-приклеить к нему кусочек фольги.
+приклеить к нему кусочек фольги. Для индикации к \pin{4} подключён светодиод через резистор
+\SI{220}{\ohm}, катодом к земле.
+
+\begin{figure}[H]
+\centering
+\begin{circuitikz}[scale=0.95,transform shape]
+  \node[blk,fill=blkcpu,minimum width=2.8cm,minimum height=4.2cm] (m) at (0,0) {};
+  \node[font=\sffamily\small\bfseries] at (0,2.6) {ESP32-S3};
+  \foreach \y/\n in {1/{\pin{14}},-0.5/{\pin{4}},-1.7/GND}
+    \node[font=\sffamily\scriptsize,anchor=east] at (1.4,\y) {\n};
+  \draw[thick,accent] (1.4,1) -- (5.2,1);
+  \draw[fill=black!15,draw=black!60] (5.2,0.6) rectangle (7.4,1.4);
+  \node[font=\sffamily\scriptsize,align=center,anchor=west] at (7.6,1) {отрезок провода\\[-2pt] или фольга};
+  \draw[thick,okgreen] (1.4,-0.5) -- (3.2,-0.5) to[R,l=\SI{220}{\ohm},color=okgreen] (5.2,-0.5)
+    to[led,l=LED,color=okgreen] (7.2,-0.5) -- (7.2,-1.7);
+  \draw[thick,black!70] (7.2,-1.7) -- (1.4,-1.7);
+\end{circuitikz}
+\caption{Сенсорная кнопка: на \pin{14} --- только кусочек проводника, никаких деталей. Светодиод со своим
+резистором подключён к \pin{4}}
+\end{figure}
 
 \codecap{Сенсорная кнопка с калибровкой при запуске}
 \codeinput{l23_touch}
@@ -123,7 +193,7 @@
 
 \subsection{Самостоятельный опыт: меню на энкодере}
 
-Соедините энкодер с OLED-дисплеем из урока 6. На экране --- три строки меню («Яркость», «Звук», «Выход»),
+Соедините энкодер с OLED-дисплеем из урока 7. На экране --- три строки меню («Яркость», «Звук», «Выход»),
 поворот ручки перемещает указатель, нажатие на ось печатает выбранный пункт в Serial Monitor. Указатель
 не должен уходить за первую и последнюю строку.
 

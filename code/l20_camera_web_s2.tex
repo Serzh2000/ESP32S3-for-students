@@ -1,0 +1,12 @@
+\begin{CodeVerbatim}
+\PY{k+kt}{void}\PY{+w}{ }\PY{n+nf}{handleCapture}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{                    }\PY{c+c1}{// один JPEG\PYZhy{}кадр по адресу /capture}
+\PY{+w}{  }\PY{n}{camera\PYZus{}fb\PYZus{}t}\PY{+w}{ }\PY{o}{*}\PY{n}{fb}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{esp\PYZus{}camera\PYZus{}fb\PYZus{}get}\PY{p}{(}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{o}{!}\PY{n}{fb}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{+w}{ }\PY{n}{server}\PY{p}{.}\PY{n}{send}\PY{p}{(}\PY{l+m+mi}{500}\PY{p}{,}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{text/plain}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{Кадр не получен}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{;}\PY{+w}{ }\PY{k}{return}\PY{p}{;}\PY{+w}{ }\PY{p}{\PYZcb{}}
+\PY{+w}{  }\PY{n}{server}\PY{p}{.}\PY{n}{sendHeader}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{Content\PYZhy{}Disposition}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{inline; filename=capture.jpg}\PY{l+s}{\PYZdq{}}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{server}\PY{p}{.}\PY{n}{send\PYZus{}P}\PY{p}{(}\PY{l+m+mi}{200}\PY{p}{,}\PY{+w}{ }\PY{l+s}{\PYZdq{}}\PY{l+s}{image/jpeg}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{p}{(}\PY{k}{const}\PY{+w}{ }\PY{k+kt}{char}\PY{o}{*}\PY{p}{)}\PY{n}{fb}\PY{o}{\PYZhy{}}\PY{o}{\PYZgt{}}\PY{n}{buf}\PY{p}{,}\PY{+w}{ }\PY{n}{fb}\PY{o}{\PYZhy{}}\PY{o}{\PYZgt{}}\PY{n}{len}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{n}{esp\PYZus{}camera\PYZus{}fb\PYZus{}return}\PY{p}{(}\PY{n}{fb}\PY{p}{)}\PY{p}{;}\PY{+w}{               }\PY{c+c1}{// вернуть буфер, иначе кадры закончатся}
+\PY{p}{\PYZcb{}}
+
+\PY{c+c1}{// в setup() после server.on(\PYZdq{}/\PYZdq{}, handleRoot):}
+\PY{c+c1}{//   server.on(\PYZdq{}/capture\PYZdq{}, handleCapture);}
+\end{CodeVerbatim}

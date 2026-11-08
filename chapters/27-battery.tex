@@ -3,7 +3,7 @@
 % =====================================================================
 \lessonintro
   {выбрать источник питания для устройства без USB, безопасно обращаться с литиевым аккумулятором и измерять его заряд}
-  {урок 5 (делитель напряжения и АЦП), урок 9 (сон и расчёт времени работы), урок 16 (раздельное питание)}
+  {урок 6 (делитель напряжения и АЦП), урок 9 (сон и расчёт времени работы), урок 16 (раздельное питание)}
   {устройство работает без компьютера, показывает напряжение батареи и засыпает при разряде}
   {держатель на три батарейки AA или powerbank; для опытов с Li-ion --- аккумулятор с платой защиты и модуль зарядки TP4056}
 
@@ -31,6 +31,22 @@ Li-ion / Li-Po & 4,2 В → 3,0 В & большая ёмкость при мал
 
 Для первых автономных опытов возьмите powerbank или три батарейки AA, подключённые к выводу 5V и GND:
 на плате есть стабилизатор, который сделает из них \SI{3.3}{V}.
+
+\begin{figure}[H]
+\centering
+\begin{circuitikz}[scale=0.95,transform shape]
+  \node[blk,fill=blkcpu,minimum width=2.8cm,minimum height=3.0cm] (m) at (0,0) {};
+  \node[font=\sffamily\small\bfseries] at (0,1.9) {ESP32-S3};
+  \foreach \y/\n in {0.7/5V,-0.7/GND}
+    \node[font=\sffamily\scriptsize,anchor=east] at (1.4,\y) {\n};
+  \draw[thick,esp] (1.4,0.7) -- (6,0.7) to[battery1,l_=3\,×\,AA (\SI{4.5}{V}),color=black,invert] (6,-0.7);
+  \draw[thick,black!70] (6,-0.7) -- (1.4,-0.7);
+  \node[font=\sffamily\scriptsize,text=esp,anchor=south] at (3.7,0.75) {плюс батарейного отсека};
+  \node[font=\sffamily\scriptsize,text=black!70,anchor=north] at (3.7,-0.75) {минус батарейного отсека};
+\end{circuitikz}
+\caption{Питание платы от трёх батареек AA через вывод 5V. Во время работы от батареек
+USB-кабель лучше отключить}
+\end{figure}
 
 \begin{caution}
 Литиевый аккумулятор при коротком замыкании, перезаряде или повреждении корпуса может загореться.
@@ -73,8 +89,30 @@ Li-ion / Li-Po & 4,2 В → 3,0 В & большая ёмкость при мал
 \subsection{Сколько осталось заряда}
 
 Напряжение литиевого аккумулятора падает по мере разряда, поэтому заряд можно оценить вольтметром
-из урока 5. Напряжение до \SI{4.2}{V} выше предела АЦП, и его делят пополам двумя резисторами по
+из урока 6. Напряжение до \SI{4.2}{V} выше предела АЦП, и его делят пополам двумя резисторами по
 \SI{100}{k\ohm}: большие номиналы почти не разряжают аккумулятор.
+
+\begin{figure}[H]
+\centering
+\begin{circuitikz}[scale=0.95,transform shape]
+  \node[blk,fill=blkcpu,minimum width=2.8cm,minimum height=3.4cm] (m) at (8,0) {};
+  \node[font=\sffamily\small\bfseries] at (8,2.1) {ESP32-S3};
+  \foreach \y/\n in {0.8/{\pin{2}},-1.3/GND}
+    \node[font=\sffamily\scriptsize,anchor=west] at (6.6,\y) {\n};
+  % аккумулятор
+  \draw (0,2.2) to[battery1,l_=Li-ion] (0,-1.3);
+  \node[font=\sffamily\scriptsize,anchor=west] at (0.15,1.5) {\SIrange{3.0}{4.2}{V}};
+  \draw[thick,esp] (0,2.2) -- (3,2.2) to[R,l=\SI{100}{k\ohm},color=esp] (3,0.8) to[short,-*] (3,0.8)
+     -- (6.6,0.8);
+  \draw[thick,esp] (3,0.8) to[R,l=\SI{100}{k\ohm},color=esp] (3,-1.3);
+  \draw[thick,black!70] (0,-1.3) -- (6.6,-1.3);
+  \fill[black!70] (3,-1.3) circle (1.5pt);
+  \draw[thick,esp,-{Stealth[length=2mm]}] (0,2.2) -- ++(0,0.5) node[above,font=\sffamily\scriptsize]{к преобразователю питания};
+  \node[font=\sffamily\scriptsize,text=accent,anchor=south] at (4.8,0.85) {до \SI{2.1}{V}};
+\end{circuitikz}
+\caption{Делитель напряжения для измерения заряда: два резистора по \SI{100}{k\ohm} уменьшают напряжение
+вдвое, и на \pin{2} попадает не более \SI{2.1}{V}. «Минус» аккумулятора обязательно соединяют с GND платы}
+\end{figure}
 
 \begin{figure}[H]
 \centering

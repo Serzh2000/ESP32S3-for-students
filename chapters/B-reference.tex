@@ -82,9 +82,9 @@ GPIO22--25 & не существуют \\
   b/.style={blk,minimum width=24mm,minimum height=10mm,font=\sffamily\scriptsize},
   col/.style={draw=gray!60,rounded corners=4pt,inner sep=5pt}]
   \node[b,fill=blkcpu] (a1) at (0,0.7) {\textbf{Уроки 0--3}\\ выводы, Serial, кнопки};
-  \node[b,fill=blkcpu] (a2) at (0,-0.7) {\textbf{Уроки 4--6}\\ ШИМ, АЦП, I\textsuperscript{2}C};
-  \node[b,fill=blkmem] (b1) at (3.3,1.4) {\textbf{Урок 7}\\ FreeRTOS};
-  \node[b,fill=blkrf]  (b2) at (3.3,0) {\textbf{Уроки 8--9}\\ Wi-Fi, сон};
+  \node[b,fill=blkcpu] (a2) at (0,-0.7) {\textbf{Уроки 4, 6--7}\\ ШИМ, АЦП, I\textsuperscript{2}C};
+  \node[b,fill=blkmem] (b1) at (3.3,1.4) {\textbf{Урок 8}\\ FreeRTOS};
+  \node[b,fill=blkrf]  (b2) at (3.3,0) {\textbf{Уроки 5, 9}\\ Wi-Fi, сон};
   \node[b,fill=blkmem] (b3) at (3.3,-1.4) {\textbf{Уроки 10--11}\\ SPI, память};
   \node[b,fill=blkrf]  (c1) at (6.6,1.4) {\textbf{Урок 12}\\ ESP-NOW, MQTT, BLE};
   \node[b,fill=blkrtc] (c2) at (6.6,0) {\textbf{Урок 13}\\ HTTPS, OTA};
@@ -93,7 +93,7 @@ GPIO22--25 & не существуют \\
   \node[b,fill=blkrf]  (e1) at (9.9,0.7) {\textbf{Уроки 18--20}\\ HTTP, USB, камера};
   \node[b,fill=blkmem] (e2) at (9.9,-0.7) {\textbf{Уроки 21, 22, 28}\\ автоматы, биты, код};
   \node[b,fill=blkper] (e3) at (9.9,-2.1) {\textbf{Уроки 23--27}\\ ввод, звук, шаговик,\\ IMU, батареи};
-  \node[b,fill=blkcpu,minimum width=57mm] (prj) at (8.25,-3.75) {\textbf{Урок 41.} Итоговый проект: от идеи до защиты};
+  \node[b,fill=blkcpu,minimum width=57mm] (prj) at (8.25,-3.75) {\textbf{Урок 43.} Итоговый проект: от идеи до защиты};
   \node[b,dashed,fill=white] (d1) at (13.2,2.1) {I²S, RMT, PCNT};
   \node[b,dashed,fill=white] (d2) at (13.2,0.7) {TWAI, LCD, USB};
   \node[b,dashed,fill=white] (d3) at (13.2,-0.7) {ESP-IDF, JTAG, ULP};
@@ -107,13 +107,19 @@ GPIO22--25 & не существуют \\
   \draw[arr] (C.south) -- (C.south |- prj.north);
   \draw[arr] (E.south) -- (E.south |- prj.north);
 \end{tikzpicture}
-\caption{Карта курса: четыре ступени, итоговый проект и направления для дальнейшего роста. Расширенный модуль 29--38 изучает аппаратные возможности ESP32-S3 до итогового проекта 41.}
+\caption{Карта курса: четыре ступени, итоговый проект и направления для дальнейшего роста. Расширенный модуль 29--38 изучает аппаратные возможности ESP32-S3 до итогового проекта 43.}
 \end{figure}
 
+\subsection*{Углубление: инструменты и TinyML}
+Урок 41 переносит проект из Arduino IDE в PlatformIO: версии библиотек, тесты на компьютере и
+отладка описаны файлом. Урок 42 продолжает урок 37: полный путь нейросети от данных до платы
+с квантованием и измерением качества, времени и памяти. Оба урока стоят перед итоговым проектом 43
+и дают инструменты для его выполнения.
+
 \subsection*{Маршрут веб-интерфейсов}
-Урок 8 объясняет собственные HTTP/HTML/CSS/JavaScript, 18 --- JSON и работу с файлами,
-39 --- готовые виджеты ESPUI, 40 --- выдачу настроек сети. Рабочая панель и портал настройки
-имеют разные задачи; итоговый проект 41 объединяет их через явные режимы.
+Урок 5 учит собирать панели в ESPUI, 18 --- JSON и работу с файлами,
+39 --- полный каталог виджетов ESPUI, 40 --- выдачу настроек сети. Рабочая панель и портал настройки
+имеют разные задачи; итоговый проект 43 объединяет их через явные режимы, а урок 44 показывает, как написать такую страницу вручную на HTML, CSS и JavaScript.
 
 \subsection*{Полезные источники}
 \begin{itemize}

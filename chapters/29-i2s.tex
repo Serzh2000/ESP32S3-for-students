@@ -1,7 +1,7 @@
 \section{Цифровой звук: I²S и микрофон}\label{les:i2s}
 \lessonintro
   {получать звуковые отсчёты и измерять уровень сигнала}
-  {уроки 5, 7 и 24}
+  {уроки 6, 8 и 24}
   {график относительной громкости речи}
   {INMP441, провода; для расширения --- I²S-усилитель}
 
@@ -19,7 +19,35 @@ I²S и I²C --- разные интерфейсы. У стандартного 
 \subsection{Подключение и первый поток}
 Отключите предыдущую схему. INMP441: VDD к 3V3, GND к GND, SCK к GPIO16,
 WS к GPIO17, SD к GPIO18, L/R к GND. Последняя перемычка выбирает левый слот.
-Проверьте питание и маркировку конкретного модуля. В Arduino-ESP32 3.2.0 используем
+Проверьте питание и маркировку конкретного модуля.
+
+\begin{figure}[H]
+\centering
+\begin{circuitikz}[scale=0.95,transform shape]
+  \node[blk,fill=blkcpu,minimum width=2.8cm,minimum height=4.6cm] (m) at (0,0) {};
+  \node[blk,fill=blkper,minimum width=2.8cm,minimum height=4.6cm] (d) at (8,0) {};
+  \node[font=\sffamily\small\bfseries] at (0,2.8) {ESP32-S3};
+  \node[font=\sffamily\small\bfseries,align=center] at (8,2.95) {INMP441\\[-2pt]\scriptsize микрофонный модуль};
+  \foreach \y/\n in {1.8/{\pin{16}},0.9/{\pin{17}},0/{\pin{18}},-0.9/3V3,-1.8/GND}
+    \node[font=\sffamily\scriptsize,anchor=east] at (1.4,\y) {\n};
+  \foreach \y/\n in {1.8/SCK,0.9/WS,0/SD,-0.9/VDD,-1.35/{L/R},-1.8/GND}
+    \node[font=\sffamily\scriptsize,anchor=west] at (6.6,\y) {\n};
+  \draw[thick,accent]   (1.4,1.8)  -- (6.6,1.8);
+  \draw[thick,okgreen]  (1.4,0.9)  -- (6.6,0.9);
+  \draw[thick,warn]     (1.4,0)    -- (6.6,0);
+  \draw[thick,esp]      (1.4,-0.9) -- (6.6,-0.9);
+  \draw[thick,black!70] (1.4,-1.8) -- (6.6,-1.8);
+  \draw[thick,black!70] (6.6,-1.35) -- (5.6,-1.35) -- (5.6,-1.8);
+  \fill[black!70] (5.6,-1.8) circle (1.5pt);
+  \node[font=\sffamily\scriptsize,text=accent,fill=white,inner sep=1pt] at (4,1.8) {BCLK};
+  \node[font=\sffamily\scriptsize,text=okgreen,fill=white,inner sep=1pt] at (4,0.9) {выбор канала};
+  \node[font=\sffamily\scriptsize,text=warn,fill=white,inner sep=1pt] at (4,0) {данные};
+\end{circuitikz}
+\caption{Подключение микрофона INMP441: три сигнальные линии, питание \SI{3.3}{V} и перемычка L/R на землю
+(левый слот). Порядок выводов на модуле зависит от производителя}
+\end{figure}
+
+В Arduino-ESP32 3.2.0 используем
 \code{ESP\_I2S.h}, а не примеры старого драйвера \code{driver/i2s.h}.
 
 \codecap{Отсчёты INMP441 и среднеквадратичный уровень}

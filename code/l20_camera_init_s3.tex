@@ -1,0 +1,33 @@
+\begin{CodeVerbatim}
+\PY{k+kt}{bool}\PY{+w}{ }\PY{n+nf}{startCamera}\PY{p}{(}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{  }\PY{n}{camera\PYZus{}config\PYZus{}t}\PY{+w}{ }\PY{n}{config}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{p}{\PYZob{}}\PY{p}{\PYZcb{}}\PY{p}{;}
+\PY{+w}{  }\PY{n}{config}\PY{p}{.}\PY{n}{ledc\PYZus{}channel}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{LEDC\PYZus{}CHANNEL\PYZus{}0}\PY{p}{;}
+\PY{+w}{  }\PY{n}{config}\PY{p}{.}\PY{n}{ledc\PYZus{}timer}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{LEDC\PYZus{}TIMER\PYZus{}0}\PY{p}{;}
+\PY{+w}{  }\PY{n}{config}\PY{p}{.}\PY{n}{pin\PYZus{}d0}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{Y2\PYZus{}GPIO\PYZus{}NUM}\PY{p}{;}\PY{+w}{  }\PY{n}{config}\PY{p}{.}\PY{n}{pin\PYZus{}d1}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{Y3\PYZus{}GPIO\PYZus{}NUM}\PY{p}{;}
+\PY{+w}{  }\PY{n}{config}\PY{p}{.}\PY{n}{pin\PYZus{}d2}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{Y4\PYZus{}GPIO\PYZus{}NUM}\PY{p}{;}\PY{+w}{  }\PY{n}{config}\PY{p}{.}\PY{n}{pin\PYZus{}d3}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{Y5\PYZus{}GPIO\PYZus{}NUM}\PY{p}{;}
+\PY{+w}{  }\PY{n}{config}\PY{p}{.}\PY{n}{pin\PYZus{}d4}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{Y6\PYZus{}GPIO\PYZus{}NUM}\PY{p}{;}\PY{+w}{  }\PY{n}{config}\PY{p}{.}\PY{n}{pin\PYZus{}d5}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{Y7\PYZus{}GPIO\PYZus{}NUM}\PY{p}{;}
+\PY{+w}{  }\PY{n}{config}\PY{p}{.}\PY{n}{pin\PYZus{}d6}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{Y8\PYZus{}GPIO\PYZus{}NUM}\PY{p}{;}\PY{+w}{  }\PY{n}{config}\PY{p}{.}\PY{n}{pin\PYZus{}d7}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{Y9\PYZus{}GPIO\PYZus{}NUM}\PY{p}{;}
+\PY{+w}{  }\PY{n}{config}\PY{p}{.}\PY{n}{pin\PYZus{}xclk}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{XCLK\PYZus{}GPIO\PYZus{}NUM}\PY{p}{;}
+\PY{+w}{  }\PY{n}{config}\PY{p}{.}\PY{n}{pin\PYZus{}pclk}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{PCLK\PYZus{}GPIO\PYZus{}NUM}\PY{p}{;}
+\PY{+w}{  }\PY{n}{config}\PY{p}{.}\PY{n}{pin\PYZus{}vsync}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{VSYNC\PYZus{}GPIO\PYZus{}NUM}\PY{p}{;}
+\PY{+w}{  }\PY{n}{config}\PY{p}{.}\PY{n}{pin\PYZus{}href}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{HREF\PYZus{}GPIO\PYZus{}NUM}\PY{p}{;}
+\PY{+w}{  }\PY{n}{config}\PY{p}{.}\PY{n}{pin\PYZus{}sccb\PYZus{}sda}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{SIOD\PYZus{}GPIO\PYZus{}NUM}\PY{p}{;}
+\PY{+w}{  }\PY{n}{config}\PY{p}{.}\PY{n}{pin\PYZus{}sccb\PYZus{}scl}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{SIOC\PYZus{}GPIO\PYZus{}NUM}\PY{p}{;}
+\PY{+w}{  }\PY{n}{config}\PY{p}{.}\PY{n}{pin\PYZus{}pwdn}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{PWDN\PYZus{}GPIO\PYZus{}NUM}\PY{p}{;}
+\PY{+w}{  }\PY{n}{config}\PY{p}{.}\PY{n}{pin\PYZus{}reset}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{RESET\PYZus{}GPIO\PYZus{}NUM}\PY{p}{;}
+\PY{+w}{  }\PY{n}{config}\PY{p}{.}\PY{n}{xclk\PYZus{}freq\PYZus{}hz}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{20000000}\PY{p}{;}\PY{+w}{         }\PY{c+c1}{// тактовая частота датчика, 20 МГц}
+\PY{+w}{  }\PY{n}{config}\PY{p}{.}\PY{n}{pixel\PYZus{}format}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{PIXFORMAT\PYZus{}JPEG}\PY{p}{;}\PY{+w}{   }\PY{c+c1}{// сжатие в JPEG делает сам датчик}
+\PY{+w}{  }\PY{n}{config}\PY{p}{.}\PY{n}{frame\PYZus{}size}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{FRAMESIZE\PYZus{}VGA}\PY{p}{;}\PY{+w}{      }\PY{c+c1}{// 640x480}
+\PY{+w}{  }\PY{n}{config}\PY{p}{.}\PY{n}{jpeg\PYZus{}quality}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{12}\PY{p}{;}\PY{+w}{               }\PY{c+c1}{// 0..63: меньше число \PYZhy{}\PYZhy{} лучше качество}
+\PY{+w}{  }\PY{n}{config}\PY{p}{.}\PY{n}{fb\PYZus{}count}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{l+m+mi}{2}\PY{p}{;}\PY{+w}{                    }\PY{c+c1}{// два буфера кадра в PSRAM}
+\PY{+w}{  }\PY{n}{config}\PY{p}{.}\PY{n}{fb\PYZus{}location}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{CAMERA\PYZus{}FB\PYZus{}IN\PYZus{}PSRAM}\PY{p}{;}
+\PY{+w}{  }\PY{n}{config}\PY{p}{.}\PY{n}{grab\PYZus{}mode}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{CAMERA\PYZus{}GRAB\PYZus{}LATEST}\PY{p}{;}\PY{+w}{  }\PY{c+c1}{// при отставании брать самый свежий кадр}
+
+\PY{+w}{  }\PY{n}{esp\PYZus{}err\PYZus{}t}\PY{+w}{ }\PY{n}{err}\PY{+w}{ }\PY{o}{=}\PY{+w}{ }\PY{n}{esp\PYZus{}camera\PYZus{}init}\PY{p}{(}\PY{o}{\PYZam{}}\PY{n}{config}\PY{p}{)}\PY{p}{;}
+\PY{+w}{  }\PY{k}{if}\PY{+w}{ }\PY{p}{(}\PY{n}{err}\PY{+w}{ }\PY{o}{!}\PY{o}{=}\PY{+w}{ }\PY{n}{ESP\PYZus{}OK}\PY{p}{)}\PY{+w}{ }\PY{p}{\PYZob{}}
+\PY{+w}{    }\PY{n}{Serial}\PY{p}{.}\PY{n}{printf}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{Камера не запустилась, код 0x\PYZpc{}x}\PY{l+s+se}{\PYZbs{}n}\PY{l+s}{\PYZdq{}}\PY{p}{,}\PY{+w}{ }\PY{n}{err}\PY{p}{)}\PY{p}{;}
+\PY{+w}{    }\PY{k}{return}\PY{+w}{ }\PY{n+nb}{false}\PY{p}{;}
+\PY{+w}{  }\PY{p}{\PYZcb{}}
+\PY{+w}{  }\PY{k}{return}\PY{+w}{ }\PY{n+nb}{true}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+\end{CodeVerbatim}
